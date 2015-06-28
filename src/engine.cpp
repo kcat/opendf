@@ -17,6 +17,7 @@
 #include <osg/PolygonMode>
 
 #include "components/sdlutil/graphicswindow.hpp"
+#include "components/vfs/manager.hpp"
 
 
 namespace DF
@@ -24,6 +25,7 @@ namespace DF
 
 Engine::Engine(void)
   : mSDLWindow(nullptr)
+  , mRootPath("")
 {
 }
 
@@ -46,6 +48,12 @@ bool Engine::parseOptions(int argc, char *argv[])
 {
     for(int i = 1;i < argc;i++)
     {
+        if(strcasecmp(argv[i], "-data") == 0)
+        {
+            if(i < argc-1)
+                mRootPath = argv[++i];
+        }
+        else
         {
             std::stringstream str;
             str<< "Unrecognized option: "<<argv[i];
@@ -113,6 +121,21 @@ bool Engine::pumpEvents()
             break;
 
         case SDL_MOUSEMOTION:
+            {
+                /* HACK: mouse rotates the camera around */
+                static float x=0.0f, y=0.0f;
+                /* Rotation (x motion rotates around y, y motion rotates around x) */
+                x += evt.motion.yrel * 0.1f;
+                y += evt.motion.xrel * 0.1f;
+                x = std::min(std::max(x, -89.0f), 89.0f);
+
+                mCameraRot.makeRotate(
+                     x*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+                    -y*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+                                  0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+                );
+            }
+
             break;
         case SDL_MOUSEWHEEL:
             break;
@@ -144,6 +167,8 @@ bool Engine::go(void)
         sstr<< "SDL_Init Error: "<<SDL_GetError();
         throw std::runtime_error(sstr.str());
     }
+
+    VFS::Manager::get().initialize(mRootPath);
 
     // Configure
     osg::ref_ptr<osgViewer::Viewer> viewer;
@@ -213,6 +238,8 @@ bool Engine::go(void)
     viewer->addEventHandler(new osgViewer::StatsHandler);
     viewer->realize();
 
+    mCameraPos.z() = 16.0;
+
     // And away we go!
     Uint32 last_tick = SDL_GetTicks();
     while(!viewer->done() && pumpEvents())
@@ -224,8 +251,36 @@ bool Engine::go(void)
         Uint32 current_tick = SDL_GetTicks();
         Uint32 tick_count = current_tick - last_tick;
         last_tick = current_tick;
+        float timediff = tick_count / 1000.0;
 
-        viewer->frame(tick_count / 1000.0);
+        {
+            float speed = 16.0f * timediff;
+            if(keystate[SDL_SCANCODE_LSHIFT])
+                speed *= 2.0f;
+
+            osg::Vec3f movedir;
+            if(keystate[SDL_SCANCODE_W])
+                movedir.z() += -1.0f;
+            if(keystate[SDL_SCANCODE_A])
+                movedir.x() += -1.0f;
+            if(keystate[SDL_SCANCODE_S])
+                movedir.z() += +1.0f;
+            if(keystate[SDL_SCANCODE_D])
+                movedir.x() += +1.0f;
+            if(keystate[SDL_SCANCODE_PAGEUP])
+                movedir.y() += +1.0f;
+            if(keystate[SDL_SCANCODE_PAGEDOWN])
+                movedir.y() += -1.0f;
+
+
+            mCameraPos += (mCameraRot*movedir)*speed;
+
+            osg::Matrixf matf(mCameraRot.inverse());
+            matf.preMultTranslate(-mCameraPos);
+            mCamera->setViewMatrix(matf);
+        }
+
+        viewer->frame(timediff);
     }
 
     return true;

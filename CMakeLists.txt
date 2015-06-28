@@ -24,6 +24,7 @@ find_package(MyGUI REQUIRED)
 include_directories("${opendf_SOURCE_DIR}")
 
 set(SRCS components/sdlutil/graphicswindow.cpp
+         components/vfs/manager.cpp
          components/mygui_osg/rendermanager.cpp
          components/mygui_osg/texture.cpp
          components/mygui_osg/vertexbuffer.cpp
@@ -31,6 +32,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          main.cpp
 )
 set(HDRS components/sdlutil/graphicswindow.hpp
+         components/vfs/manager.hpp
          components/mygui_osg/diagnostic.h
          components/mygui_osg/rendermanager.h
          components/mygui_osg/texture.h

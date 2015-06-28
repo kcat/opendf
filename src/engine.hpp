@@ -5,6 +5,8 @@
 #include <map>
 
 #include <osg/ref_ptr>
+#include <osg/Vec3>
+#include <osg/Quat>
 
 
 struct SDL_Window;
@@ -29,6 +31,10 @@ class Engine {
     typedef std::map<std::string,CmdFuncT> CommandFuncMap;
 
     SDL_Window *mSDLWindow;
+
+    const char *mRootPath;
+    osg::Vec3f mCameraPos;
+    osg::Quat mCameraRot;
 
     osg::ref_ptr<osg::Group> mSceneRoot;
 
