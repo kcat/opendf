@@ -15,8 +15,19 @@ if(HAVE_STD_CXX11)
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 endif()
 
-add_executable(opendf main.cpp)
+include_directories("${opendf_SOURCE_DIR}")
+
+set(SRCS components/sdlutil/graphicswindow.cpp
+         src/engine.cpp
+         main.cpp
+)
+set(HDRS components/sdlutil/graphicswindow.hpp
+         src/engine.hpp
+)
+
+add_executable(opendf ${SRCS} ${HDRS})
 set_property(TARGET opendf APPEND PROPERTY INCLUDE_DIRECTORIES
+    "${opendf_SOURCE_DIR}/src"
     ${OPENSCENEGRAPH_INCLUDE_DIRS}
     ${SDL2_INCLUDE_DIR}
     ${OPENGL_INCLUDE_DIR}

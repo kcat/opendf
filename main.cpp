@@ -11,6 +11,8 @@
 #include <set>
 #include <array>
 
+#include "engine.hpp"
+
 
 static uint32_t read_le32(std::istream &stream)
 {
@@ -172,6 +174,17 @@ int main(int argc, char **argv)
     GameData::gMonster.load(GameData::gRootPath+"MONSTER.BSA");
     GameData::gSound.load(GameData::gRootPath+"DAGGER.SND");
     GameData::gMusic.load(GameData::gRootPath+"MIDI.BSA");
+
+    try {
+        DF::Engine app;
+        if(!app.parseOptions(argc-1, argv+1))
+            return 0;
+        app.go();
+    }
+    catch(std::exception &e) {
+        std::cerr<< "Uncaught exception: "<<e.what() <<std::endl;
+        return 1;
+    }
 
     return 0;
 }
