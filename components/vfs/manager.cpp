@@ -83,13 +83,13 @@ public:
         if(pos < 0 || pos > (mEnd-mStart))
             return traits_type::eof();
 
-        if(!mFile->seekg(pos))
+        if(!mFile->seekg(pos + mStart))
             return traits_type::eof();
 
         // Clear read pointers so underflow() gets called on the next read attempt.
         setg(0, 0, 0);
 
-        return pos - mStart;
+        return pos;
     }
 };
 
@@ -105,24 +105,6 @@ public:
         delete rdbuf();
     }
 };
-
-
-static uint32_t read_le32(std::istream &stream)
-{
-    char buf[4];
-    if(!stream.read(buf, sizeof(buf)) || stream.gcount() != sizeof(buf))
-        return 0;
-    return ((uint32_t(buf[0]    )&0x000000ff) | (uint32_t(buf[1]<< 8)&0x0000ff00) |
-            (uint32_t(buf[2]<<16)&0x00ff0000) | (uint32_t(buf[3]<<24)&0xff000000));
-}
-
-static uint16_t read_le16(std::istream &stream)
-{
-    char buf[2];
-    if(!stream.read(buf, sizeof(buf)) || stream.gcount() != sizeof(buf))
-        return 0;
-    return ((uint16_t(buf[0]   )&0x00ff) | (uint16_t(buf[1]<<8)&0xff00));
-}
 
 
 class Archive {
@@ -169,10 +151,10 @@ void BsaArchive::loadIndexed(size_t count, std::istream &stream)
     }
     for(size_t i = 0;i < count;++i)
     {
-        idxs.push_back(read_le32(stream));
+        idxs.push_back(VFS::read_le32(stream));
         Entry entry;
         entry.mStart = ((i == 0) ? base : entries[i-1].mEnd);
-        entry.mEnd = entry.mStart + read_le32(stream);
+        entry.mEnd = entry.mStart + VFS::read_le32(stream);
         entries.push_back(entry);
     }
     if(!stream.good())
@@ -205,12 +187,12 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         std::array<char,12> name;
         stream.read(name.data(), name.size());
         names.push_back(std::string(name.data(), name.size()));
-        int iscompressed = read_le16(stream);
+        int iscompressed = VFS::read_le16(stream);
         if(iscompressed != 0)
             throw std::runtime_error("Compressed entries not supported");
         Entry entry;
         entry.mStart = ((i == 0) ? base : entries[i-1].mEnd);
-        entry.mEnd = entry.mStart + read_le32(stream);
+        entry.mEnd = entry.mStart + VFS::read_le32(stream);
         entries.push_back(entry);
     }
     if(!stream.good())
@@ -234,8 +216,8 @@ void BsaArchive::load(const std::string &fname)
     if(!stream.is_open())
         throw std::runtime_error("Failed to open "+mFilename);
 
-    size_t count = read_le16(stream);
-    int type = read_le16(stream);
+    size_t count = VFS::read_le16(stream);
+    int type = VFS::read_le16(stream);
 
     mEntries.reserve(count);
     if(type == 0x0100)
