@@ -14,10 +14,12 @@
 #include <osgDB/Registry>
 #include <osgDB/ReadFile>
 #include <osg/MatrixTransform>
-#include <osg/PolygonMode>
+#include <osg/Depth>
+#include <osg/CullFace>
 
 #include "components/sdlutil/graphicswindow.hpp"
 #include "components/vfs/manager.hpp"
+#include "components/dfosg/meshloader.hpp"
 
 
 namespace DF
@@ -184,7 +186,7 @@ bool Engine::go(void)
         SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
@@ -208,7 +210,7 @@ bool Engine::go(void)
         traits->red = 8;
         traits->green = 8;
         traits->blue = 8;
-        traits->alpha = 8;
+        traits->alpha = 0;
         traits->depth = 24;
         traits->stencil = 8;
         traits->doubleBuffer = true;
@@ -223,22 +225,36 @@ bool Engine::go(void)
         mCamera->setGraphicsContext(gc.get());
         mCamera->setViewport(0, 0, width, height);
         mCamera->setProjectionResizePolicy(osg::Camera::FIXED);
-        mCamera->setProjectionMatrix(osg::Matrix::identity());
+        mCamera->setProjectionMatrix(osg::Matrix::perspective(65.0, double(width)/double(height), 1.0, 10000.0));
+        mCamera->setClearColor(osg::Vec4());
+        mCamera->setClearDepth(1.0);
 
         viewer = new osgViewer::Viewer();
         viewer->setCamera(mCamera.get());
     }
     SDL_ShowCursor(0);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
 
-    mSceneRoot = new osg::Group();
+    {
+        mSceneRoot = new osg::MatrixTransform(osg::Matrix::scale(osg::Vec3(1.0f, -1.0f, -1.0f)));
+        osg::StateSet *ss = mSceneRoot->getOrCreateStateSet();
+        ss->setAttributeAndModes(new osg::Depth(osg::Depth::LESS, 0.0, 1.0, true));
+        ss->setAttributeAndModes(new osg::CullFace(osg::CullFace::BACK));
+        ss->setMode(GL_BLEND, osg::StateAttribute::OFF);
+    }
 
     viewer->setSceneData(mSceneRoot);
     viewer->requestContinuousUpdate();
-    viewer->setLightingMode(osg::View::NO_LIGHT);
+    viewer->setLightingMode(osg::View::HEADLIGHT);
     viewer->addEventHandler(new osgViewer::StatsHandler);
     viewer->realize();
 
-    mCameraPos.z() = 16.0;
+    {
+        osg::ref_ptr<osg::Node> node = DFOSG::MeshLoader::get().load(0);
+        mSceneRoot->addChild(node);
+    }
+
+    mCameraPos.z() = 64.0;
 
     // And away we go!
     Uint32 last_tick = SDL_GetTicks();

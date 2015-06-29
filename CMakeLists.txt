@@ -28,6 +28,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          components/mygui_osg/rendermanager.cpp
          components/mygui_osg/texture.cpp
          components/mygui_osg/vertexbuffer.cpp
+         components/dfosg/meshloader.cpp
          src/engine.cpp
          main.cpp
 )
@@ -37,6 +38,7 @@ set(HDRS components/sdlutil/graphicswindow.hpp
          components/mygui_osg/rendermanager.h
          components/mygui_osg/texture.h
          components/mygui_osg/vertexbuffer.h
+         components/dfosg/meshloader.hpp
          src/engine.hpp
 )
 
