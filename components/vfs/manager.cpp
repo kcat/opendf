@@ -6,6 +6,10 @@
 #include <vector>
 #include <set>
 
+#include <osgDB/Registry>
+
+#include "osg_callbacks.hpp"
+
 
 namespace
 {
@@ -293,6 +297,8 @@ void Manager::initialize(std::string&& root_path)
     }
     gArchitecture.load(gRootPath+"ARCH3D.BSA");
     gSound.load(gRootPath+"DAGGER.SND");
+
+    osgDB::Registry::instance()->setReadFileCallback(new VFS::OSGReadCallback());
 }
 
 IStreamPtr Manager::open(const char *name)
@@ -303,7 +309,7 @@ IStreamPtr Manager::open(const char *name)
     while(iter != gArchives.rend())
     {
         stream = (*iter)->open(name);
-        if(stream) break;
+        if(stream) return stream;
         ++iter;
     }
 
