@@ -307,6 +307,9 @@ IStreamPtr Manager::open(const char *name)
         ++iter;
     }
 
+    stream.reset(new std::ifstream((gRootPath+name).c_str(), std::ios_base::binary));
+    if(!stream->good()) stream.reset();
+
     return stream;
 }
 

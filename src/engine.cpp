@@ -19,6 +19,7 @@
 
 #include "components/sdlutil/graphicswindow.hpp"
 #include "components/vfs/manager.hpp"
+#include "components/resource/texturemanager.hpp"
 #include "components/dfosg/meshloader.hpp"
 
 
@@ -233,6 +234,9 @@ bool Engine::go(void)
         viewer->setCamera(mCamera.get());
     }
     SDL_ShowCursor(0);
+
+    Resource::TextureManager::get().initialize();
+
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     {
@@ -245,7 +249,12 @@ bool Engine::go(void)
 
     viewer->setSceneData(mSceneRoot);
     viewer->requestContinuousUpdate();
-    viewer->setLightingMode(osg::View::HEADLIGHT);
+    {
+        viewer->setLightingMode(osg::View::HEADLIGHT);
+        osg::ref_ptr<osg::Light> light(new osg::Light());
+        light->setAmbient(osg::Vec4(0.5f, 0.5f, 0.5f, 1.0f));
+        viewer->setLight(light);
+    }
     viewer->addEventHandler(new osgViewer::StatsHandler);
     viewer->realize();
 

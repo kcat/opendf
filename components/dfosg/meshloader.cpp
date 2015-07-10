@@ -5,8 +5,10 @@
 
 #include <osg/Geode>
 #include <osg/Geometry>
+#include <osg/Texture>
 
 #include "components/vfs/manager.hpp"
+#include "components/resource/texturemanager.hpp"
 
 
 namespace
@@ -97,22 +99,22 @@ public:
 
 class MdlPlanePoint {
     uint32_t mIndex;
-    int32_t mU;
-    int32_t mV;
+    float mU;
+    float mV;
 
 public:
     void load(std::istream &stream, uint32_t offset_scale)
     {
         mIndex = VFS::read_le32(stream) / offset_scale;
-        mU = ((VFS::read_le16(stream)&0x0fff) ^ 0x0800) - 0x0800;
-        mV = ((VFS::read_le16(stream)&0x0fff) ^ 0x0800) - 0x0800;
+        mU = (int16_t)VFS::read_le16(stream) / 16.0f;
+        mV = (int16_t)VFS::read_le16(stream) / 16.0f;
     }
 
     int32_t getIndex() const { return mIndex; }
-    int32_t& u() { return mU; }
-    const int32_t& u() const { return mU; }
-    int32_t& v() { return mV; }
-    const int32_t& v() const { return mV; }
+    float& u() { return mU; }
+    const float& u() const { return mU; }
+    float& v() { return mV; }
+    const float& v() const { return mV; }
 };
 
 class MdlPlane {
@@ -151,11 +153,11 @@ public:
             mPoints[i].v() += mPoints[i-1].v();
         }
 
-        /* Normalize the coords into 16.16 fixed point. */
+        /* Normalize the coords. */
         for(size_t i = 0;i < mPoints.size() && i < 3;++i)
         {
-            mPoints[i].u() = (mPoints[i].u()<<16) / width;
-            mPoints[i].v() = (mPoints[i].v()<<16) / height;
+            mPoints[i].u() /= width;
+            mPoints[i].v() /= height;
         }
 
         /* Daggerfall does not use the provided UV coords for the 4th point and beyond, so we can't rely on them.
@@ -311,9 +313,10 @@ osg::ref_ptr<osg::Node> MeshLoader::load(size_t id)
         osg::ref_ptr<osg::DrawElementsUShort> idxs(new osg::DrawElementsUShort(osg::PrimitiveSet::TRIANGLES));
         uint16_t texid = iter->getTextureId();
 
+        osg::ref_ptr<osg::Texture> tex = Resource::TextureManager::get().get(texid);
+
         do {
-            // TODO: Fixup plane UVs according to the texture's size.
-            iter->fixUVs(points, 1, 1);
+            iter->fixUVs(points, tex->getTextureWidth(), tex->getTextureHeight());
 
             const std::vector<MdlPlanePoint> &pts = iter->getPoints();
             size_t last_total = vtxs->size();
@@ -337,8 +340,8 @@ osg::ref_ptr<osg::Node> MeshLoader::load(size_t id)
                 (*nrms)[j].y() = iter->getNormal().y() / 256.0f;
                 (*nrms)[j].z() = iter->getNormal().z() / 256.0f;
 
-                (*texcrds)[j].x() = pt.u() / 65536.0f;
-                (*texcrds)[j].y() = pt.v() / 65536.0f;
+                (*texcrds)[j].x() = pt.u();
+                (*texcrds)[j].y() = pt.v();
 
                 (*colors)[j] = osg::Vec4ub(255, 255, 255, 255);
 
@@ -372,6 +375,9 @@ osg::ref_ptr<osg::Node> MeshLoader::load(size_t id)
         geometry->setUseVertexBufferObjects(true);
 
         geometry->addPrimitiveSet(idxs);
+
+        osg::StateSet *ss = geometry->getOrCreateStateSet();
+        ss->setTextureAttributeAndModes(0, tex);
 
         geode->addDrawable(geometry);
     }

@@ -25,19 +25,23 @@ include_directories("${opendf_SOURCE_DIR}")
 
 set(SRCS components/sdlutil/graphicswindow.cpp
          components/vfs/manager.cpp
+         components/resource/texturemanager.cpp
          components/mygui_osg/rendermanager.cpp
          components/mygui_osg/texture.cpp
          components/mygui_osg/vertexbuffer.cpp
+         components/dfosg/texloader.cpp
          components/dfosg/meshloader.cpp
          src/engine.cpp
          main.cpp
 )
 set(HDRS components/sdlutil/graphicswindow.hpp
          components/vfs/manager.hpp
+         components/resource/texturemanager.hpp
          components/mygui_osg/diagnostic.h
          components/mygui_osg/rendermanager.h
          components/mygui_osg/texture.h
          components/mygui_osg/vertexbuffer.h
+         components/dfosg/texloader.hpp
          components/dfosg/meshloader.hpp
          src/engine.hpp
 )

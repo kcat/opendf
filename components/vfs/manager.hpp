@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <memory>
+#include <string>
 
 
 namespace VFS
@@ -39,6 +40,7 @@ public:
     void initialize(std::string&& root_path);
 
     IStreamPtr open(const char *name);
+    IStreamPtr open(std::string&& name) { return open(name.c_str()); }
     IStreamPtr openSoundId(size_t id);
     IStreamPtr openArchId(size_t id);
 
