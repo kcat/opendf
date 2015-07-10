@@ -22,6 +22,8 @@
 #include "components/resource/texturemanager.hpp"
 #include "components/dfosg/meshloader.hpp"
 
+#include "log.hpp"
+
 
 namespace DF
 {
@@ -56,6 +58,13 @@ bool Engine::parseOptions(int argc, char *argv[])
             if(i < argc-1)
                 mRootPath = argv[++i];
         }
+        else if(strcasecmp(argv[i], "-log") == 0)
+        {
+            if(i < argc-1)
+                Log::get().setLog(argv[++i]);
+        }
+        else if(strcasecmp(argv[i], "-devparm") == 0)
+            Log::get().setLevel(Log::Level_Debug);
         else
         {
             std::stringstream str;
@@ -163,6 +172,8 @@ bool Engine::pumpEvents()
 
 bool Engine::go(void)
 {
+    Log::get().initialize();
+
     // Init everything except audio (we will use OpenAL for that)
     if(SDL_Init(SDL_INIT_EVERYTHING & ~SDL_INIT_AUDIO) != 0)
     {
@@ -191,7 +202,7 @@ bool Engine::go(void)
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-        std::cout<< "Creating window "<<width<<"x"<<height<<", flags 0x"<<std::hex<<flags <<std::endl;
+        Log::get().stream()<< "Creating window "<<width<<"x"<<height<<", flags 0x"<<std::hex<<flags;
         mSDLWindow = SDL_CreateWindow("OpenDF", xpos, ypos, width, height, flags);
         if(mSDLWindow == nullptr)
         {
