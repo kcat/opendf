@@ -10,6 +10,7 @@ namespace MyGUI_OSG
 // Doesn't really use OSG, since OSG doesn't have a proper VFS.
 class DataManager : public MyGUI::DataManager {
 public:
+
     /** Get data stream from specified resource name.
         @param _name Resource name (usually file name).
     */

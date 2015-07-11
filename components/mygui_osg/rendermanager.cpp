@@ -13,6 +13,7 @@
 #include <osg/PolygonMode>
 #include <osg/BlendFunc>
 #include <osg/Depth>
+#include <osg/Material>
 
 #include "vertexbuffer.h"
 #include "texture.h"
@@ -79,7 +80,11 @@ osg::StateSet *setShaderProgram(osg::Node *node, const std::string &vert, const 
     }
     else
     {
-        ss->setMode(GL_LIGHTING, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        osg::ref_ptr<osg::Material> mat(new osg::Material());
+        mat->setColorMode(osg::Material::OFF);
+        ss->setAttributeAndModes(mat, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
+        ss->setMode(GL_LIGHTING, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
+        ss->setTextureMode(0, GL_TEXTURE_2D, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
     }
     return ss;
 }
@@ -140,6 +145,7 @@ void RenderManager::initialise()
     camera->setClearMask(GL_NONE);
     osg::StateSet *state = setShaderProgram(camera.get(), "shaders/quad_2d.vert", "shaders/quad_2d.frag");
     state->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
+    state->setMode(GL_CULL_FACE, osg::StateAttribute::OFF);
     state->setAttributeAndModes(new osg::PolygonMode(osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::FILL));
     state->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     state->setAttribute(new osg::Depth(osg::Depth::ALWAYS, 0.0, 1.0, false));
@@ -182,10 +188,13 @@ void RenderManager::doRender(MyGUI::IVertexBuffer *buffer, MyGUI::ITexture *text
     osg::VertexBufferObject *vbo = static_cast<VertexBuffer*>(buffer)->getBuffer();
     MYGUI_PLATFORM_ASSERT(vbo, "Vertex buffer is not created");
 
-    if(texture)
+    if(!texture)
+        state->applyTextureMode(0, GL_TEXTURE_2D, false);
+    else
     {
         osg::Texture2D *tex = static_cast<Texture*>(texture)->getTexture();
         MYGUI_PLATFORM_ASSERT(tex, "Texture is not created");
+        state->applyTextureMode(0, GL_TEXTURE_2D, true);
         state->applyTextureAttribute(0, tex);
     }
 

@@ -36,8 +36,9 @@ public:
 
     virtual void readline(std::string &_source, MyGUI::Char _delim = '\n') final
     {
-        mStream->clear();
         int c;
+        mStream->clear();
+        std::string().swap(_source);
         while((c=mStream->get()) != std::istream::traits_type::eof() && c != _delim)
             _source += (char)c;
     }
