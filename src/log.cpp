@@ -7,7 +7,7 @@
 #include <chrono>
 #include <ctime>
 
-//#include "gui/iface.hpp"
+#include "gui/iface.hpp"
 
 
 namespace DF
@@ -57,10 +57,8 @@ void Log::setGuiIface(GuiIface *iface)
     mGui = iface;
     if(mGui)
     {
-#if 0
         for(const auto &str : mBuffer)
             mGui->printToConsole(str);
-#endif
         std::vector<std::string>().swap(mBuffer);
     }
 }
@@ -79,11 +77,7 @@ void Log::message(const std::string &msg, Level level)
     out<< msg <<std::endl;
 
     if(mGui)
-    {
-#if 0
         mGui->printToConsole(msg);
-#endif
-    }
     else
         mBuffer.push_back(msg);
 }

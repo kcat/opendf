@@ -22,6 +22,8 @@
 #include "components/resource/texturemanager.hpp"
 #include "components/dfosg/meshloader.hpp"
 
+#include "gui/iface.hpp"
+#include "input/input.hpp"
 #include "log.hpp"
 
 
@@ -30,14 +32,18 @@ namespace DF
 
 Engine::Engine(void)
   : mSDLWindow(nullptr)
-  , mRootPath("")
 {
 }
 
 Engine::~Engine(void)
 {
+    Log::get().setGuiIface(nullptr);
+    GuiIface::get().deinitialize();
+
     mSceneRoot = nullptr;
     mCamera = nullptr;
+
+    Input::get().deinitialize();
 
     if(mSDLWindow)
     {
@@ -56,7 +62,7 @@ bool Engine::parseOptions(int argc, char *argv[])
         if(strcasecmp(argv[i], "-data") == 0)
         {
             if(i < argc-1)
-                mRootPath = argv[++i];
+                mRootPaths.push_back(argv[++i]);
         }
         else if(strcasecmp(argv[i], "-log") == 0)
         {
@@ -133,6 +139,9 @@ bool Engine::pumpEvents()
             break;
 
         case SDL_MOUSEMOTION:
+            Input::get().handleMouseMotionEvent(evt.motion);
+
+            if(GuiIface::get().getMode() == GuiIface::Mode_Game)
             {
                 /* HACK: mouse rotates the camera around */
                 static float x=0.0f, y=0.0f;
@@ -147,18 +156,21 @@ bool Engine::pumpEvents()
                                   0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
                 );
             }
-
             break;
         case SDL_MOUSEWHEEL:
+            Input::get().handleMouseWheelEvent(evt.wheel);
             break;
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
+            Input::get().handleMouseButtonEvent(evt.button);
             break;
 
         case SDL_KEYDOWN:
         case SDL_KEYUP:
+            Input::get().handleKeyboardEvent(evt.key);
             break;
         case SDL_TEXTINPUT:
+            Input::get().handleTextInputEvent(evt.text);
             break;
 
         case SDL_QUIT:
@@ -175,6 +187,7 @@ bool Engine::go(void)
     Log::get().initialize();
 
     // Init everything except audio (we will use OpenAL for that)
+    Log::get().message("Initializing SDL...");
     if(SDL_Init(SDL_INIT_EVERYTHING & ~SDL_INIT_AUDIO) != 0)
     {
         std::stringstream sstr;
@@ -182,7 +195,22 @@ bool Engine::go(void)
         throw std::runtime_error(sstr.str());
     }
 
-    VFS::Manager::get().initialize(mRootPath);
+    if(mRootPaths.empty())
+    {
+        Log::get().message("Initializing VFS...");
+        VFS::Manager::get().initialize();
+    }
+    else
+    {
+        Log::get().stream()<< "Initializing VFS with root "<<mRootPaths.front()<<"...";
+        VFS::Manager::get().initialize(mRootPaths.front());
+        auto path = mRootPaths.begin()+1;
+        for(;path != mRootPaths.end();++path)
+        {
+            Log::get().stream()<< "Adding data path "<<*path<<"...";
+            VFS::Manager::get().addDataPath(*path);
+        }
+    }
 
     // Configure
     osg::ref_ptr<osgViewer::Viewer> viewer;
@@ -246,9 +274,11 @@ bool Engine::go(void)
     }
     SDL_ShowCursor(0);
 
+    Log::get().message("Initializing Texture Manager...");
     Resource::TextureManager::get().initialize();
 
-    SDL_SetRelativeMouseMode(SDL_TRUE);
+    Log::get().message("Initializing Input...");
+    Input::get().initialize();
 
     {
         mSceneRoot = new osg::MatrixTransform(osg::Matrix::scale(osg::Vec3(1.0f, -1.0f, -1.0f)));
@@ -268,6 +298,10 @@ bool Engine::go(void)
     }
     viewer->addEventHandler(new osgViewer::StatsHandler);
     viewer->realize();
+
+    Log::get().message("Initializing GUI...");
+    GuiIface::get().initialize(viewer, mSceneRoot.get());
+    Log::get().setGuiIface(&GuiIface::get());
 
     {
         osg::ref_ptr<osg::Node> node = DFOSG::MeshLoader::get().load(0);
@@ -289,6 +323,7 @@ bool Engine::go(void)
         last_tick = current_tick;
         float timediff = tick_count / 1000.0;
 
+        if(GuiIface::get().getMode() == GuiIface::Mode_Game)
         {
             float speed = 16.0f * timediff;
             if(keystate[SDL_SCANCODE_LSHIFT])
@@ -318,6 +353,7 @@ bool Engine::go(void)
 
         viewer->frame(timediff);
     }
+    Log::get().message("Main loop shutting down...");
 
     return true;
 }

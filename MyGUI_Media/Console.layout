@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+    <Widget type="Window" skin="WindowCSX" position="0 0 416 318" layer="Overlapped" name="_Main">
+        <Property key="Caption" value="Console"/>
+        <Property key="MinSize" value="200 100"/>
+        <Widget type="Widget" skin="PanelSkin" position="4 4 401 245" align="Stretch">
+            <Widget type="EditBox" skin="WordWrapEmpty" position="4 3 392 237" align="Stretch" name="list_History">
+                <Property key="ReadOnly" value="true"/>
+                <Property key="TextAlign" value="Left Bottom"/>
+            </Widget>
+        </Widget>
+        <Widget type="ComboBox" skin="ComboBox" position="5 254 305 26" align="HStretch Bottom" name="combo_Command"/>
+        <Widget type="Button" skin="Button" position="313 254 91 26" align="Right Bottom" name="button_Submit">
+            <Property key="Caption" value="Submit"/>
+        </Widget>
+    </Widget>
+    <CodeGeneratorSettings/>
+</MyGUI>

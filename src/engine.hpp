@@ -1,6 +1,7 @@
 #ifndef ENGINE_HPP
 #define ENGINE_HPP
 
+#include <vector>
 #include <string>
 #include <map>
 
@@ -32,7 +33,7 @@ class Engine {
 
     SDL_Window *mSDLWindow;
 
-    const char *mRootPath;
+    std::vector<const char*> mRootPaths;
     osg::Vec3f mCameraPos;
     osg::Quat mCameraRot;
 

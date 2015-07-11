@@ -33,6 +33,8 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          components/mygui_osg/datamanager.cpp
          components/dfosg/texloader.cpp
          components/dfosg/meshloader.cpp
+         src/input/input.cpp
+         src/gui/gui.cpp
          src/log.cpp
          src/engine.cpp
          main.cpp
@@ -48,6 +50,9 @@ set(HDRS components/sdlutil/graphicswindow.hpp
          components/mygui_osg/datamanager.h
          components/dfosg/texloader.hpp
          components/dfosg/meshloader.hpp
+         src/input/input.hpp
+         src/gui/iface.hpp
+         src/gui/gui.hpp
          src/log.hpp
          src/engine.hpp
 )
