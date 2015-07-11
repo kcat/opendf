@@ -280,8 +280,8 @@ bool BsaArchive::exists(const char *name)
     return (mLookupName.find(name) != mLookupName.end());
 }
 
-
-std::string gRootPath;
+// FIXME: These really should be Archives...
+std::vector<std::string> gRootPaths;
 std::vector<std::unique_ptr<Archive>> gArchives;
 // Architecture and sound archive entries are addressed by ID, so need some
 // special handling.
@@ -300,9 +300,10 @@ Manager::Manager()
 
 void Manager::initialize(std::string&& root_path)
 {
-    gRootPath = std::move(root_path);
-    if(!gRootPath.empty() && gRootPath.back() != '/' && gRootPath.back() != '\\')
-        gRootPath += "/";
+    if(root_path.empty())
+        root_path += "./";
+    else if(root_path.back() != '/' && root_path.back() != '\\')
+        root_path += "/";
 
     static const char names[4][16] = {
         "MAPS.BSA", "BLOCKS.BSA", "MONSTER.BSA", "MIDI.BSA"
@@ -310,31 +311,46 @@ void Manager::initialize(std::string&& root_path)
     for(size_t i = 0;i < 4;++i)
     {
         std::unique_ptr<BsaArchive> archive(new BsaArchive());
-        archive->load(gRootPath+names[i]);
+        archive->load(root_path+names[i]);
         gArchives.push_back(std::move(archive));
     }
-    gArchitecture.load(gRootPath+"ARCH3D.BSA");
-    gSound.load(gRootPath+"DAGGER.SND");
+    gArchitecture.load(root_path+"ARCH3D.BSA");
+    gSound.load(root_path+"DAGGER.SND");
+
+    gRootPaths.push_back(std::move(root_path));
 
     osgDB::Registry::instance()->setReadFileCallback(new VFS::OSGReadCallback());
 }
 
+void Manager::addDataPath(std::string&& path)
+{
+    if(path.empty())
+        path += "./";
+    else if(path.back() != '/' && path.back() != '\\')
+        path += "/";
+    gRootPaths.push_back(std::move(path));
+}
+
+
 IStreamPtr Manager::open(const char *name)
 {
-    IStreamPtr stream;
-
     auto iter = gArchives.rbegin();
     while(iter != gArchives.rend())
     {
-        stream = (*iter)->open(name);
+        IStreamPtr stream((*iter)->open(name));
         if(stream) return stream;
         ++iter;
     }
 
-    stream.reset(new std::ifstream((gRootPath+name).c_str(), std::ios_base::binary));
-    if(!stream->good()) stream.reset();
+    auto piter = gRootPaths.rbegin();
+    while(piter != gRootPaths.rend())
+    {
+        IStreamPtr stream(new std::ifstream((*piter+name).c_str(), std::ios_base::binary));
+        if(stream->good()) return stream;
+        ++piter;
+    }
 
-    return stream;
+    return IStreamPtr();
 }
 
 IStreamPtr Manager::openSoundId(size_t id)
@@ -357,8 +373,13 @@ bool Manager::exists(const char *name)
         ++iter;
     }
 
-    std::ifstream file((gRootPath+name).c_str(), std::ios_base::binary);
-    return file.is_open();
+    for(const std::string &path : gRootPaths)
+    {
+        std::ifstream file((path+name).c_str(), std::ios_base::binary);
+        if(file.is_open()) return true;
+    }
+
+    return false;
 }
 
 
@@ -394,16 +415,25 @@ std::set<std::string> Manager::list(const char *pattern) const
 {
     std::set<std::string> files;
 
+    auto piter = gRootPaths.rbegin();
+    while(piter != gRootPaths.rend())
+    {
+        add_dir(*piter+".", "", pattern, files);
+        ++piter;
+    }
+
     auto iter = gArchives.rbegin();
     while(iter != gArchives.rend())
     {
         for(const std::string &name : (*iter)->list())
-            files.insert(name);
+        {
+            if(!pattern || fnmatch(pattern, name.c_str(), 0) == 0)
+                files.insert(name);
+        }
+        ++iter;
     }
 
-    add_dir(gRootPath+".", "", pattern, files);
     return files;
 }
-
 
 } // namespace VFS
