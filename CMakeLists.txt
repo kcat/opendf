@@ -36,6 +36,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          src/input/input.cpp
          src/gui/gui.cpp
          src/log.cpp
+         src/cvars.cpp
          src/engine.cpp
          main.cpp
 )
@@ -54,6 +55,7 @@ set(HDRS components/sdlutil/graphicswindow.hpp
          src/gui/iface.hpp
          src/gui/gui.hpp
          src/log.hpp
+         src/cvars.hpp
          src/engine.hpp
 )
 

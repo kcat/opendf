@@ -24,11 +24,24 @@
 
 #include "gui/iface.hpp"
 #include "input/input.hpp"
+#include "cvars.hpp"
 #include "log.hpp"
 
 
 namespace DF
 {
+
+CVAR(CVarInt, vid_width, 1280, 0);
+CVAR(CVarInt, vid_height, 720, 0);
+CVAR(CVarBool, vid_fullscreen, false);
+
+CCMD(qqq)
+{
+    SDL_Event evt{};
+    evt.quit.type = SDL_QUIT;
+    SDL_PushEvent(&evt);
+}
+
 
 Engine::Engine(void)
   : mSDLWindow(nullptr)
@@ -215,11 +228,13 @@ bool Engine::go(void)
     // Configure
     osg::ref_ptr<osgViewer::Viewer> viewer;
     {
-        int width = 1024;
-        int height = 768;
+        int width = *vid_width;
+        int height = *vid_height;
         int xpos = SDL_WINDOWPOS_CENTERED;
         int ypos = SDL_WINDOWPOS_CENTERED;
         Uint32 flags = SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN;
+        if(*vid_fullscreen)
+            flags |= SDL_WINDOW_FULLSCREEN;
 
         SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, SDL_TRUE);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
@@ -302,6 +317,8 @@ bool Engine::go(void)
     Log::get().message("Initializing GUI...");
     GuiIface::get().initialize(viewer, mSceneRoot.get());
     Log::get().setGuiIface(&GuiIface::get());
+
+    CVar::registerAll();
 
     {
         osg::ref_ptr<osg::Node> node = DFOSG::MeshLoader::get().load(0);
