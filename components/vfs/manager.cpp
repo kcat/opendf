@@ -1,6 +1,13 @@
 
 #include "manager.hpp"
 
+#ifdef _WIN32
+#include "dirent.h"
+#else
+#include <dirent.h>
+#include <sys/stat.h>
+#endif
+#include <fnmatch.h>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -115,6 +122,8 @@ class Archive {
 public:
     virtual ~Archive() { }
     virtual VFS::IStreamPtr open(const char *name) = 0;
+    virtual bool exists(const char *name) = 0;
+    virtual const std::set<std::string> &list() const = 0;
 };
 
 class BsaArchive : public Archive {
@@ -139,6 +148,10 @@ public:
 
     virtual VFS::IStreamPtr open(const char *name);
     VFS::IStreamPtr open(size_t id);
+
+    virtual bool exists(const char *name);
+
+    virtual const std::set<std::string> &list() const final { return mLookupName; };
 };
 
 void BsaArchive::loadIndexed(size_t count, std::istream &stream)
@@ -262,6 +275,11 @@ VFS::IStreamPtr BsaArchive::open(size_t id)
     return open(mEntries[std::distance(mLookupId.begin(), iter)]);
 }
 
+bool BsaArchive::exists(const char *name)
+{
+    return (mLookupName.find(name) != mLookupName.end());
+}
+
 
 std::string gRootPath;
 std::vector<std::unique_ptr<Archive>> gArchives;
@@ -328,5 +346,64 @@ IStreamPtr Manager::openArchId(size_t id)
 {
     return gArchitecture.open(id);
 }
+
+bool Manager::exists(const char *name)
+{
+    auto iter = gArchives.rbegin();
+    while(iter != gArchives.rend())
+    {
+        if((*iter)->exists(name))
+            return true;
+        ++iter;
+    }
+
+    std::ifstream file((gRootPath+name).c_str(), std::ios_base::binary);
+    return file.is_open();
+}
+
+
+void Manager::add_dir(const std::string &path, const std::string &pre, const char *pattern, std::set<std::string> &names)
+{
+    DIR *dir = opendir(path.c_str());
+    if(!dir) return;
+
+    dirent *ent;
+    while((ent=readdir(dir)) != nullptr)
+    {
+        if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+            continue;
+
+        if(!S_ISDIR(ent->d_type))
+        {
+            std::string fname = pre + ent->d_name;
+            if(!pattern || fnmatch(pattern, fname.c_str(), 0) == 0)
+                names.insert(fname);
+        }
+        else
+        {
+            std::string newpath = path+"/"+ent->d_name;
+            std::string newpre = pre+ent->d_name+"/";
+            add_dir(newpath, newpre, pattern, names);
+        }
+    }
+
+    closedir(dir);
+}
+
+std::set<std::string> Manager::list(const char *pattern) const
+{
+    std::set<std::string> files;
+
+    auto iter = gArchives.rbegin();
+    while(iter != gArchives.rend())
+    {
+        for(const std::string &name : (*iter)->list())
+            files.insert(name);
+    }
+
+    add_dir(gRootPath+".", "", pattern, files);
+    return files;
+}
+
 
 } // namespace VFS

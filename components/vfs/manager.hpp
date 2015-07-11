@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <set>
 
 
 namespace VFS
@@ -34,6 +35,8 @@ class Manager {
     Manager(const Manager&) = delete;
     Manager& operator=(const Manager&) = delete;
 
+    static void add_dir(const std::string &path, const std::string &pre, const char *pattern, std::set<std::string> &names);
+
     Manager();
 
 public:
@@ -43,6 +46,9 @@ public:
     IStreamPtr open(std::string&& name) { return open(name.c_str()); }
     IStreamPtr openSoundId(size_t id);
     IStreamPtr openArchId(size_t id);
+
+    bool exists(const char *name);
+    std::set<std::string> list(const char *pattern=nullptr) const;
 
     static Manager &get()
     {
