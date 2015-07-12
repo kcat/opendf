@@ -24,6 +24,7 @@ find_package(MyGUI REQUIRED)
 include_directories("${opendf_SOURCE_DIR}")
 
 set(SRCS components/sdlutil/graphicswindow.cpp
+         components/settings/configfile.cpp
          components/vfs/manager.cpp
          components/vfs/osg_callbacks.cpp
          components/resource/texturemanager.cpp
@@ -41,6 +42,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          main.cpp
 )
 set(HDRS components/sdlutil/graphicswindow.hpp
+         components/settings/configfile.hpp
          components/vfs/manager.hpp
          components/vfs/osg_callbacks.hpp
          components/resource/texturemanager.hpp
@@ -58,6 +60,10 @@ set(HDRS components/sdlutil/graphicswindow.hpp
          src/cvars.hpp
          src/engine.hpp
 )
+
+set(DATA_PATH "${opendf_SOURCE_DIR}")
+configure_file("${opendf_SOURCE_DIR}/settings.cfg.in"
+               "${opendf_BINARY_DIR}/settings.cfg")
 
 add_executable(opendf ${SRCS} ${HDRS})
 set_property(TARGET opendf APPEND PROPERTY INCLUDE_DIRECTORIES

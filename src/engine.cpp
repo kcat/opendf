@@ -19,6 +19,7 @@
 
 #include "components/sdlutil/graphicswindow.hpp"
 #include "components/vfs/manager.hpp"
+#include "components/settings/configfile.hpp"
 #include "components/resource/texturemanager.hpp"
 #include "components/dfosg/meshloader.hpp"
 
@@ -40,6 +41,22 @@ CCMD(qqq)
     SDL_Event evt{};
     evt.quit.type = SDL_QUIT;
     SDL_PushEvent(&evt);
+}
+
+CCMD(savecfg)
+{
+    static const std::string default_cfg("opendf.cfg");
+    const std::string &cfg_name = (params.empty() ? default_cfg : params);
+    auto cvars = CVar::getAll();
+
+    Log::get().stream()<< "Saving config "<<cfg_name<<"...";
+    std::ofstream ocfg(cfg_name, std::ios_base::binary);
+    if(!ocfg.is_open())
+        throw std::runtime_error("Failed to open "+cfg_name+" for writing");
+
+    ocfg<< "[CVars]" <<std::endl;
+    for(const auto &cvar : cvars)
+        ocfg<< cvar.first<<" = "<<cvar.second <<std::endl;
 }
 
 
@@ -208,19 +225,47 @@ bool Engine::go(void)
         throw std::runtime_error(sstr.str());
     }
 
-    if(mRootPaths.empty())
-    {
-        Log::get().message("Initializing VFS...");
+    Log::get().message("Loading opendf.cfg...");
+    try {
+        Settings::ConfigFile cf;
+        cf.load("opendf.cfg");
+
+        Log::get().message("Loading cvar values...");
+        const Settings::ConfigSection &cvars = cf.getSection("CVars");
+        for(const Settings::ConfigEntry &cvar : cvars)
+            CVar::setByName(cvar.first, cvar.second);
+    }
+    catch(std::runtime_error &e) {
+        Log::get().message("Failed to load opendf.cfg, using defaults");
+    }
+
+    Log::get().message("Initializing VFS...");
+    try {
+        Settings::ConfigFile cf;
+        cf.load("settings.cfg");
+
+        std::string root_path = cf.getOption("data-root", ".");
+        Log::get().stream()<< "  Setting root path "<<root_path<<"...";
+        VFS::Manager::get().initialize(root_path.c_str());
+
+        Settings::ConfigMultiEntryRange paths = cf.getMultiOptionRange("data");
+        Settings::ConfigSection::const_iterator path = paths.first;
+        for(;path != paths.second;++path)
+        {
+            Log::get().stream()<< "  Adding data path "<<path->second<<"...";
+            VFS::Manager::get().addDataPath(path->second.c_str());
+        }
+    }
+    catch(std::runtime_error &e) {
+        Log::get().message("Failed to load settings.cfg");
         VFS::Manager::get().initialize();
     }
-    else
+
     {
-        Log::get().stream()<< "Initializing VFS with root "<<mRootPaths.front()<<"...";
-        VFS::Manager::get().initialize(mRootPaths.front());
-        auto path = mRootPaths.begin()+1;
+        auto path = mRootPaths.begin();
         for(;path != mRootPaths.end();++path)
         {
-            Log::get().stream()<< "Adding data path "<<*path<<"...";
+            Log::get().stream()<< "  Adding data path "<<*path<<"...";
             VFS::Manager::get().addDataPath(*path);
         }
     }
@@ -371,6 +416,7 @@ bool Engine::go(void)
         viewer->frame(timediff);
     }
     Log::get().message("Main loop shutting down...");
+    savecfg(std::string());
 
     return true;
 }

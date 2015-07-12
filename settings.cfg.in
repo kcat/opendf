@@ -1,0 +1,3 @@
+# Change data-root to your Daggerfall's arena2 directory
+data-root = $HOME/.wine/drive_c/Games/Daggerfall/arena2
+data = ${DATA_PATH}/MyGUI_Media

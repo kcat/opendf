@@ -40,7 +40,7 @@ class Manager {
     Manager();
 
 public:
-    void initialize(std::string&& root_path="");
+    void initialize(std::string&& root_path=std::string());
     void addDataPath(std::string&& path);
 
     IStreamPtr open(const char *name);
