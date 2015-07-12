@@ -12,6 +12,7 @@ namespace
 // within the range [front,back).
 std::string trim_whitespace(const std::string &str, size_t front=0, size_t back=std::string::npos)
 {
+    back = std::min(back, str.length());
     size_t start = std::min(str.find_first_not_of(" \t\r", front, 3), back);
     size_t end = std::min(str.find_last_not_of(" \t\r", back, 3), back);
     if(end < back) ++end;
