@@ -36,6 +36,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          components/dfosg/meshloader.cpp
          src/input/input.cpp
          src/gui/gui.cpp
+         src/world/world.cpp
          src/log.cpp
          src/cvars.cpp
          src/engine.cpp
@@ -56,6 +57,8 @@ set(HDRS components/sdlutil/graphicswindow.hpp
          src/input/input.hpp
          src/gui/iface.hpp
          src/gui/gui.hpp
+         src/world/iface.hpp
+         src/world/world.hpp
          src/log.hpp
          src/cvars.hpp
          src/engine.hpp

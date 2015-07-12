@@ -25,6 +25,7 @@
 
 #include "gui/iface.hpp"
 #include "input/input.hpp"
+#include "world/iface.hpp"
 #include "cvars.hpp"
 #include "log.hpp"
 
@@ -67,6 +68,8 @@ Engine::Engine(void)
 
 Engine::~Engine(void)
 {
+    WorldIface::get().deinitialize();
+
     Log::get().setGuiIface(nullptr);
     GuiIface::get().deinitialize();
 
@@ -350,12 +353,6 @@ bool Engine::go(void)
 
     viewer->setSceneData(mSceneRoot);
     viewer->requestContinuousUpdate();
-    {
-        viewer->setLightingMode(osg::View::HEADLIGHT);
-        osg::ref_ptr<osg::Light> light(new osg::Light());
-        light->setAmbient(osg::Vec4(0.5f, 0.5f, 0.5f, 1.0f));
-        viewer->setLight(light);
-    }
     viewer->addEventHandler(new osgViewer::StatsHandler);
     viewer->realize();
 
@@ -371,6 +368,8 @@ bool Engine::go(void)
     }
 
     mCameraPos.z() = 64.0;
+
+    WorldIface::get().initialize(viewer);
 
     // And away we go!
     Uint32 last_tick = SDL_GetTicks();
