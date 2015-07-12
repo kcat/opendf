@@ -5,6 +5,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <chrono>
+#include <ctime>
 
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -48,16 +50,17 @@ CCMD(savecfg)
 {
     static const std::string default_cfg("opendf.cfg");
     const std::string &cfg_name = (params.empty() ? default_cfg : params);
-    auto cvars = CVar::getAll();
 
     Log::get().stream()<< "Saving config "<<cfg_name<<"...";
     std::ofstream ocfg(cfg_name, std::ios_base::binary);
     if(!ocfg.is_open())
         throw std::runtime_error("Failed to open "+cfg_name+" for writing");
 
-    ocfg<< "[CVars]" <<std::endl;
-    for(const auto &cvar : cvars)
-        ocfg<< cvar.first<<" = "<<cvar.second <<std::endl;
+    std::time_t end_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    ocfg<< "# File saved on "<<std::ctime(&end_time);
+
+    ocfg<< std::endl<<"[CVars]" <<std::endl;
+    CVar::writeAll(ocfg);
 }
 
 

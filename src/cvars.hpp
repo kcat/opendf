@@ -18,8 +18,8 @@ public:
     virtual std::string show_range() const { return ""; }
 
     static void setByName(const std::string &name, const std::string &value);
-    static std::map<std::string,std::string> getAll();
     static void registerAll();
+    static void writeAll(std::ostream &stream);
 };
 
 class CVarString : public CVar {

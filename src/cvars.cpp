@@ -112,18 +112,16 @@ void CVar::setByName(const std::string &name, const std::string &value)
     CVarRegistry::get().loadCVarValue(name, value);
 }
 
-std::map<std::string,std::string> CVar::getAll()
-{
-    std::map<std::string,std::string> ret;
-    const auto &cvars = CVarRegistry::get().getAll();
-    for(const auto &cvar : cvars)
-        ret.insert(std::make_pair(cvar.first, cvar.second->get()));
-    return ret;
-}
-
 void CVar::registerAll()
 {
     CVarRegistry::get().registerAll();
+}
+
+void CVar::writeAll(std::ostream &stream)
+{
+    const auto &cvars = CVarRegistry::get().getAll();
+    for(const auto &cvar : cvars)
+        stream<< cvar.first<<" = "<<cvar.second->get() <<std::endl;
 }
 
 
