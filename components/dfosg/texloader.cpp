@@ -31,6 +31,7 @@ public:
         mNullValue[1] = VFS::read_le32(stream);
     }
 
+    uint8_t getColor() const { return mUnknown1>>8; }
     uint32_t getOffset() const { return mOffset; }
 };
 
@@ -182,6 +183,23 @@ std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource
     hdr.load(*stream);
 
     const TexEntryHeader &entryhdr = hdr.getHeaders().at(idx&0x7f);
+    if(entryhdr.getOffset() == 0)
+    {
+        osg::ref_ptr<osg::Image> image(new osg::Image());
+
+        // Solid color texture
+        image->allocateImage(1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE);
+        uint8_t idx = entryhdr.getColor();
+        unsigned char *dst = image->data(0, 0);
+        *(dst++) = palette[idx].r;
+        *(dst++) = palette[idx].g;
+        *(dst++) = palette[idx].b;
+        *(dst++) = (idx==0) ? 0 : 255;
+
+        std::vector<osg::ref_ptr<osg::Image>> images(1, image);
+        return images;
+    }
+
     if(!stream->seekg(entryhdr.getOffset()))
         throw std::runtime_error("Failed to seek to texture offset");
 
