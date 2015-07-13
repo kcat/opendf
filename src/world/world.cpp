@@ -140,6 +140,26 @@ void World::initialize(osgViewer::Viewer *viewer)
         }
         stream = nullptr;
 
+        /* Get exterior data */
+        fname = "MAPPITEM."+regstr;
+        stream = VFS::Manager::get().open(fname.c_str());
+        if(!stream) throw std::runtime_error("Failed to open "+fname);
+
+        std::vector<uint32_t> extoffsets(region.mNames.size());
+        for(uint32_t &offset : extoffsets)
+            offset = VFS::read_le32(*stream);
+        std::streamoff extbase_offset = stream->tellg();
+
+        uint32_t *extoffset = extoffsets.data();
+        region.mExteriors.resize(extoffsets.size());
+        for(ExteriorLocation &extinfo : region.mExteriors)
+        {
+            stream->seekg(extbase_offset + *extoffset);
+            extinfo.load(*stream);
+            ++extoffset;
+        }
+        stream = nullptr;
+
         /* Get dungeon data */
         fname = "MAPDITEM."+regstr;
         stream = VFS::Manager::get().open(fname.c_str());

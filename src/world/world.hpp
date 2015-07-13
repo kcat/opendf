@@ -9,6 +9,7 @@
 #include <osg/ref_ptr>
 
 #include "itembase.hpp"
+#include "pitems.hpp"
 #include "ditems.hpp"
 
 
@@ -33,7 +34,7 @@ struct MapTable {
 struct MapRegion {
     std::vector<std::string> mNames;
     std::vector<MapTable> mTable;
-
+    std::vector<ExteriorLocation> mExteriors;
     std::vector<DungeonInterior> mDungeons;
 };
 
