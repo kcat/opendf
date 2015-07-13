@@ -9,22 +9,22 @@ namespace DF
 
 struct DungeonInterior : public LocationHeader {
     struct Block {
-        uint8_t mX;
-        uint8_t mZ;
+        int8_t mX;
+        int8_t mZ;
         union {
             uint16_t mBlockNumberStartIndex;
             struct {
-                uint16_t mBlockPreIndex : 5;
-                uint16_t mStartBlock : 1;
                 uint16_t mBlockIdx : 10;
+                uint16_t mStartBlock : 1;
+                uint16_t mBlockPreIndex : 5;
             };
         };
     };
 
     uint16_t mNullValue;
-    uint16_t mUnknown1;
-    uint16_t mUnknown2;
-    uint32_t mBlockCount;
+    uint32_t mUnknown1;
+    uint32_t mUnknown2;
+    uint16_t mBlockCount;
     uint8_t mUnknown3[5];
 
     std::vector<Block> mBlocks;
