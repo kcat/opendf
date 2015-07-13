@@ -79,12 +79,14 @@ osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx)
     {
         osg::ref_ptr<osg::Texture2D> tex2d(new osg::Texture2D(images[0]));
         tex2d->setTextureSize(images[0]->s(), images[0]->t());
+        tex2d->setResizeNonPowerOfTwoHint(false);
         tex = tex2d;
     }
     else
     {
         osg::ref_ptr<osg::Texture2DArray> tex2darr(new osg::Texture2DArray());
         tex2darr->setTextureSize(images[0]->s(), images[0]->t(), images.size());
+        tex2darr->setResizeNonPowerOfTwoHint(false);
         for(size_t i = 0;i < images.size();++i)
             tex2darr->setImage(i, images[i]);
         tex = tex2darr;
