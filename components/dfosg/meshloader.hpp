@@ -16,6 +16,8 @@ namespace DFOSG
 {
 
 class MeshLoader {
+    static MeshLoader sLoader;
+
     std::map<size_t,osg::observer_ptr<osg::Node>> mModelCache;
 
     MeshLoader(const MeshLoader&) = delete;
@@ -28,8 +30,7 @@ public:
 
     static MeshLoader &get()
     {
-        static MeshLoader loader;
-        return loader;
+        return sLoader;
     }
 };
 

@@ -242,6 +242,9 @@ public:
 namespace DFOSG
 {
 
+MeshLoader MeshLoader::sLoader;
+
+
 MeshLoader::MeshLoader()
 {
 }
