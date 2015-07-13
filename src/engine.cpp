@@ -367,14 +367,8 @@ bool Engine::go(void)
 
     WorldIface::get().initialize(viewer);
 
+    // Region: Daggerfall, Location: Privateer's Hold
     WorldIface::get().loadDungeonByExterior(17, 179);
-
-    {
-        osg::ref_ptr<osg::Node> node = DFOSG::MeshLoader::get().load(0);
-        mSceneRoot->addChild(node);
-    }
-
-    mCameraPos.z() = 64.0;
 
     // And away we go!
     Uint32 last_tick = SDL_GetTicks();
@@ -391,7 +385,7 @@ bool Engine::go(void)
 
         if(GuiIface::get().getMode() == GuiIface::Mode_Game)
         {
-            float speed = 16.0f * timediff;
+            float speed = 64.0f * timediff;
             if(keystate[SDL_SCANCODE_LSHIFT])
                 speed *= 2.0f;
 
@@ -420,6 +414,8 @@ bool Engine::go(void)
         viewer->frame(timediff);
     }
     Log::get().message("Main loop shutting down...");
+    mSceneRoot->removeChildren(0, mSceneRoot->getNumChildren());
+
     savecfg(std::string());
 
     return true;

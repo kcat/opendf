@@ -19,7 +19,7 @@ void DungeonInterior::load(std::istream &stream)
     stream.read(reinterpret_cast<char*>(mUnknown3), sizeof(mUnknown3));
 
     mBlocks.resize(mBlockCount);
-    for(Block &block : mBlocks)
+    for(DungeonBlock &block : mBlocks)
     {
         block.mX = stream.get();
         block.mZ = stream.get();

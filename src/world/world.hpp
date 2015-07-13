@@ -16,6 +16,8 @@
 namespace DF
 {
 
+struct DBlockHeader;
+
 struct MapTable {
     uint32_t mMapId;
     uint8_t mUnknown1;
@@ -42,6 +44,8 @@ class World : public WorldIface {
     osg::ref_ptr<osgViewer::Viewer> mViewer;
 
     std::vector<MapRegion> mRegions;
+
+    std::vector<DBlockHeader> mDungeon;
 
     World();
     ~World();

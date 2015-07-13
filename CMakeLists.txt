@@ -39,6 +39,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          src/world/world.cpp
          src/world/pitems.cpp
          src/world/ditems.cpp
+         src/world/dblocks.cpp
          src/log.cpp
          src/cvars.cpp
          src/engine.cpp
@@ -64,6 +65,7 @@ set(HDRS components/sdlutil/graphicswindow.hpp
          src/world/itembase.hpp
          src/world/pitems.hpp
          src/world/ditems.hpp
+         src/world/dblocks.hpp
          src/log.hpp
          src/cvars.hpp
          src/engine.hpp

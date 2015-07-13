@@ -9,6 +9,7 @@
 
 #include "components/vfs/manager.hpp"
 
+#include "dblocks.hpp"
 #include "log.hpp"
 
 
@@ -201,6 +202,7 @@ void World::initialize(osgViewer::Viewer *viewer)
 
 void World::deinitialize()
 {
+    mDungeon.clear();
     mViewer = nullptr;
 }
 
@@ -214,16 +216,25 @@ void World::loadDungeonByExterior(int regnum, int extid)
         if(extloc.mLocationId != dinfo.mExteriorLocationId)
             continue;
 
+        mDungeon.clear();
         Log::get().stream()<< "Entering "<<dinfo.mLocationName;
-        for(const DungeonInterior::Block &block : dinfo.mBlocks)
+        for(const DungeonBlock &block : dinfo.mBlocks)
         {
             std::stringstream sstr;
             sstr<< std::setfill('0')<<std::setw(8)<< block.mBlockIdx<<".RDB";
             std::string name = sstr.str();
             name.front() = gBlockIndexLabel[block.mBlockPreIndex];
 
-            Log::get().stream()<< "  would load "<<name<<" @ "<<(int)block.mX<<"x"<<(int)block.mZ<<", start="<<block.mStartBlock;
+            VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
+            if(!stream) throw std::runtime_error("Failed to open "+name);
+
+            mDungeon.push_back(DBlockHeader());
+            mDungeon.back().load(*stream);
         }
+
+        osg::Group *root = mViewer->getSceneData()->asGroup();
+        for(size_t i = 0;i < mDungeon.size();++i)
+            mDungeon[i].buildNodes(root, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
         break;
     }
 }
