@@ -31,6 +31,7 @@ struct DungeonInterior : public LocationHeader {
 
     void load(std::istream &stream);
 };
+LogStream& operator<<(LogStream &stream, const DungeonInterior &dgn);
 
 } // namespace DF
 

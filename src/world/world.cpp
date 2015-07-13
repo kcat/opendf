@@ -10,6 +10,7 @@
 #include "components/vfs/manager.hpp"
 
 #include "dblocks.hpp"
+#include "cvars.hpp"
 #include "log.hpp"
 
 
@@ -82,11 +83,59 @@ void LocationHeader::load(std::istream &stream)
     stream.read(reinterpret_cast<char*>(mUnknown3), sizeof(mUnknown3));
 }
 
+LogStream& operator<<(LogStream &stream, const LocationHeader &loc)
+{
+    stream<<std::setfill('0');
+    stream<< "  Door count: "<<loc.mDoorCount<<"\n";
+    for(const LocationDoor &door : loc.mDoors)
+    {
+        stream<< "  Door "<<std::distance(loc.mDoors.data(), &door)<<":\n";
+        stream<< "    BuildingDataIndex: "<<door.mBuildingDataIndex<<"\n";
+        stream<< "    Null: "<<(int)door.mNullValue<<"\n";
+        stream<< "    UnknownMask: 0x"<<std::hex<<std::setw(2)<<(int)door.mUnknownMask<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    Unknown: 0x"<<std::hex<<std::setw(2)<<(int)door.mUnknown1<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    Unknown: 0x"<<std::hex<<std::setw(2)<<(int)door.mUnknown2<<std::setw(0)<<std::dec<<"\n";
+    }
+
+    stream<< "  Always one: "<<loc.mAlwaysOne1<<"\n";
+    stream<< "  Null: "<<loc.mNullValue1<<"\n";
+    stream<< "  Null: "<<(int)loc.mNullValue2<<"\n";
+    stream<< "  Y: "<<loc.mY<<"\n";
+    stream<< "  Null: "<<loc.mNullValue3<<"\n";
+    stream<< "  X: "<<loc.mX<<"\n";
+    stream<< "  IsExterior: "<<loc.mIsExterior<<"\n";
+    stream<< "  Null: "<<loc.mNullValue4<<"\n";
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<loc.mUnknown1<<std::setw(0)<<std::dec<<"\n";
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<loc.mUnknown2<<std::setw(0)<<std::dec<<"\n";
+    stream<< "  Always one: "<<loc.mAlwaysOne2<<"\n";
+    stream<< "  LocationID: "<<loc.mLocationId<<"\n";
+    stream<< "  Null: "<<loc.mNullValue5<<"\n";
+    stream<< "  IsInterior: "<<loc.mIsInterior<<"\n";
+    stream<< "  ExteriorLocationID: "<<loc.mExteriorLocationId<<"\n";
+    //uint8_t mNullValue6[26];
+    stream<< "  LocationName: \""<<loc.mLocationName<<"\"\n";
+    stream<< "  Unknown:";//<<std::hex<<std::setw(2);
+    for(uint32_t unk : loc.mUnknown3)
+        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
+    stream<<std::setw(0)<<std::dec<<std::setfill(' ');
+
+    return stream;
+}
+
+
+CCMD(dumparea)
+{
+    WorldIface::get().dumpArea();
+}
+
 
 World World::sWorld;
 WorldIface &WorldIface::sInstance = World::sWorld;
 
 World::World()
+  : mCurrentRegion(nullptr)
+  , mCurrentExterior(nullptr)
+  , mCurrentDungeon(nullptr)
 {
 }
 
@@ -217,6 +266,10 @@ void World::loadDungeonByExterior(int regnum, int extid)
             continue;
 
         mDungeon.clear();
+        mCurrentRegion = &region;
+        mCurrentExterior = &extloc;
+        mCurrentDungeon = &dinfo;
+
         Log::get().stream()<< "Entering "<<dinfo.mLocationName;
         for(const DungeonBlock &block : dinfo.mBlocks)
         {
@@ -239,5 +292,33 @@ void World::loadDungeonByExterior(int regnum, int extid)
     }
 }
 
+
+void World::dumpArea() const
+{
+    LogStream stream(Log::get().stream());
+    if(mCurrentDungeon)
+    {
+        int regnum = std::distance(mRegions.data(), mCurrentRegion);
+        stream<< "Current region index: "<<regnum<<"\n";
+        int mapnum = std::distance(mCurrentRegion->mExteriors.data(), mCurrentExterior);
+        stream<< "Current exterior index: "<<mapnum<<"\n";
+        stream<< "Current Dungeon:\n";
+        stream<< *mCurrentDungeon;
+    }
+    else if(mCurrentExterior)
+    {
+        int regnum = std::distance(mRegions.data(), mCurrentRegion);
+        stream<< "Current region index: "<<regnum<<"\n";
+        stream<< "Current Exterior:\n";
+        stream<< static_cast<const LocationHeader&>(*mCurrentExterior);
+    }
+    else if(mCurrentRegion)
+    {
+        int regnum = std::distance(mRegions.data(), mCurrentRegion);
+        stream<< "Current region index "<<regnum;
+    }
+    else
+        stream<< "Not in a region";
+}
 
 } // namespace DF

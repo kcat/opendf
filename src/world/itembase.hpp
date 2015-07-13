@@ -8,17 +8,20 @@
 namespace DF
 {
 
+class LogStream;
+
+struct LocationDoor {
+    uint16_t mBuildingDataIndex;
+    uint8_t mNullValue;
+    uint8_t mUnknownMask;
+    uint8_t mUnknown1;
+    uint8_t mUnknown2;
+};
+
 struct LocationHeader {
-    struct Door {
-        uint16_t mBuildingDataIndex;
-        uint8_t mNullValue;
-        uint8_t mUnknownMask;
-        uint8_t mUnknown1;
-        uint8_t mUnknown2;
-    };
 
     uint32_t mDoorCount;
-    std::vector<Door> mDoors;
+    std::vector<LocationDoor> mDoors;
 
     uint32_t mAlwaysOne1;
     uint16_t mNullValue1;
@@ -41,6 +44,7 @@ struct LocationHeader {
 
     void load(std::istream &stream);
 };
+LogStream& operator<<(LogStream &stream, const LocationHeader &loc);
 
 } // namespace DF
 

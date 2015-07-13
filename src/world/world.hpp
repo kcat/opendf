@@ -45,6 +45,9 @@ class World : public WorldIface {
 
     std::vector<MapRegion> mRegions;
 
+    const MapRegion *mCurrentRegion;
+    const ExteriorLocation *mCurrentExterior;
+    const DungeonInterior *mCurrentDungeon;
     std::vector<DBlockHeader> mDungeon;
 
     World();
@@ -57,6 +60,8 @@ public:
     virtual void deinitialize() final;
 
     virtual void loadDungeonByExterior(int regnum, int extid) final;
+
+    virtual void dumpArea() const final;
 };
 
 } // namespace DF
