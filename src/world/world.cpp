@@ -1,6 +1,9 @@
 
 #include "world.hpp"
 
+#include <sstream>
+#include <iomanip>
+
 #include <osgViewer/Viewer>
 #include <osg/Light>
 
@@ -11,6 +14,8 @@
 
 namespace
 {
+
+static const char gBlockIndexLabel[6] = { 'N', 'W', 'L', 'S', 'B', 'M' };
 
 /* This is only stored temporarily */
 struct DungeonHeader {
@@ -198,5 +203,30 @@ void World::deinitialize()
 {
     mViewer = nullptr;
 }
+
+
+void World::loadDungeonByExterior(int regnum, int extid)
+{
+    const MapRegion &region = mRegions.at(regnum);
+    const ExteriorLocation &extloc = region.mExteriors.at(extid);
+    for(const DungeonInterior &dinfo : region.mDungeons)
+    {
+        if(extloc.mLocationId != dinfo.mExteriorLocationId)
+            continue;
+
+        Log::get().stream()<< "Entering "<<dinfo.mLocationName;
+        for(const DungeonInterior::Block &block : dinfo.mBlocks)
+        {
+            std::stringstream sstr;
+            sstr<< std::setfill('0')<<std::setw(8)<< block.mBlockIdx<<".RDB";
+            std::string name = sstr.str();
+            name.front() = gBlockIndexLabel[block.mBlockPreIndex];
+
+            Log::get().stream()<< "  would load "<<name<<" @ "<<(int)block.mX<<"x"<<(int)block.mZ<<", start="<<block.mStartBlock;
+        }
+        break;
+    }
+}
+
 
 } // namespace DF

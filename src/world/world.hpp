@@ -51,6 +51,8 @@ public:
 
     virtual void initialize(osgViewer::Viewer *viewer) final;
     virtual void deinitialize() final;
+
+    virtual void loadDungeonByExterior(int regnum, int extid) final;
 };
 
 } // namespace DF

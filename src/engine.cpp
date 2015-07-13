@@ -365,14 +365,16 @@ bool Engine::go(void)
 
     CVar::registerAll();
 
+    WorldIface::get().initialize(viewer);
+
+    WorldIface::get().loadDungeonByExterior(17, 179);
+
     {
         osg::ref_ptr<osg::Node> node = DFOSG::MeshLoader::get().load(0);
         mSceneRoot->addChild(node);
     }
 
     mCameraPos.z() = 64.0;
-
-    WorldIface::get().initialize(viewer);
 
     // And away we go!
     Uint32 last_tick = SDL_GetTicks();

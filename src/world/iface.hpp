@@ -17,6 +17,8 @@ public:
     virtual void initialize(osgViewer::Viewer *viewer) = 0;
     virtual void deinitialize() = 0;
 
+    virtual void loadDungeonByExterior(int regnum, int extid) = 0;
+
     static WorldIface &get() { return sInstance; }
 };
 
