@@ -8,6 +8,9 @@
 
 #include <osg/ref_ptr>
 
+#include "itembase.hpp"
+#include "ditems.hpp"
+
 
 namespace DF
 {
@@ -30,6 +33,8 @@ struct MapTable {
 struct MapRegion {
     std::vector<std::string> mNames;
     std::vector<MapTable> mTable;
+
+    std::vector<DungeonInterior> mDungeons;
 };
 
 class World : public WorldIface {
