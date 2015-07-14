@@ -172,6 +172,46 @@ osg::Image *TexLoader::loadUncompressedSingle(size_t width, size_t height, const
 }
 
 
+void TexLoader::loadUncompressedMulti(osg::Image *image, const Resource::Palette &palette, std::istream &stream)
+{
+    size_t width = VFS::read_le16(stream);
+    size_t height = VFS::read_le16(stream);
+
+    for(uint32_t y = 0;y < height && stream;++y)
+    {
+        bool isZero = true;
+        uint8_t c = stream.get();
+
+        uint32_t x = 0;
+        do {
+            if(isZero)
+            {
+                for(uint32_t i = 0;i < c;++i)
+                {
+                    unsigned char *dst = image->data(x++, y);
+                    *(dst++) = palette[0].r;
+                    *(dst++) = palette[0].g;
+                    *(dst++) = palette[0].b;
+                    *(dst++) = 0;
+                }
+            }
+            else for(uint32_t i = 0;i < c;++i)
+            {
+                unsigned char *dst = image->data(x++, y);
+                uint8_t idx = stream.get();
+                *(dst++) = palette[idx].r;
+                *(dst++) = palette[idx].g;
+                *(dst++) = palette[idx].b;
+                *(dst++) = (idx==0) ? 0 : 255;
+            }
+            if(x < width || (x >= width && isZero))
+                c = stream.get();
+            isZero = !isZero;
+        } while(x < width && stream);
+    }
+}
+
+
 std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource::Palette &palette)
 {
     std::stringstream sstr; sstr.fill('0');
@@ -187,7 +227,7 @@ std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource
     {
         osg::ref_ptr<osg::Image> image(new osg::Image());
 
-        // Solid color texture
+        // Solid color "texture".
         image->allocateImage(1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE);
         uint8_t idx = entryhdr.getColor();
         unsigned char *dst = image->data(0, 0);
@@ -240,9 +280,36 @@ std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource
     }
     else
     {
-        std::cerr<< "Unhandled multiframe texture"<< std::endl;
+        if(texhdr.getCompression() == texhdr.sRleCompressed)
+            std::cerr<< "Unhandled RleCompressed compression type"<< std::endl;
+        else if(texhdr.getCompression() == texhdr.sImageRle)
+            std::cerr<< "Unhandled ImageRle compression type"<< std::endl;
+        else if(texhdr.getCompression() == texhdr.sRecordRle)
+            std::cerr<< "Unhandled RecordRle compression type"<< std::endl;
+        else //if(texhdr.getCompression() == texhdr.sUncompressed)
+        {
+            if(!stream->seekg(entryhdr.getOffset() + texhdr.getDataOffset()))
+                throw std::runtime_error("Failed to seek to image offset");
+            std::vector<uint32_t> offsets(texhdr.getFrameCount());
+            for(uint32_t &offset : offsets)
+                offset = VFS::read_le32(*stream);
 
-        images.push_back(createDummyImage());
+            for(uint32_t offset : offsets)
+            {
+                if(!stream->seekg(entryhdr.getOffset() + texhdr.getDataOffset() + offset))
+                    throw std::runtime_error("Failed to seek to frame offset");
+                images.push_back(new osg::Image());
+
+                osg::Image *image = images.back();
+                image->allocateImage(texhdr.getWidth(), texhdr.getHeight(), 1,
+                                     GL_RGBA, GL_UNSIGNED_BYTE);
+
+                loadUncompressedMulti(image, palette, *stream);
+            }
+        }
+
+        if(images.empty())
+            images.push_back(createDummyImage());
     }
 
     return images;

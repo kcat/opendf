@@ -30,6 +30,8 @@ class TexLoader {
     osg::Image *loadUncompressedSingle(size_t width, size_t height,
                                        const Resource::Palette &palette,
                                        std::istream &stream);
+    void loadUncompressedMulti(osg::Image *image, const Resource::Palette &palette,
+                               std::istream &stream);
 
 public:
     std::vector<osg::ref_ptr<osg::Image>> load(size_t idx, const Resource::Palette &palette);
