@@ -129,6 +129,38 @@ CCMD(dumparea)
 }
 
 
+CCMD(dwarp)
+{
+    if(params.empty())
+    {
+        Log::get().stream(Log::Level_Error)<< "Usage: dwarp <region index> <location index>";
+        return;
+    }
+
+    try {
+        char *next = nullptr;
+        size_t regnum = strtoul(params.c_str(), &next, 10);
+        if(!next || *next != ' ')
+        {
+            Log::get().stream(Log::Level_Error)<< "Invalid region parameter: "<<params;
+            return;
+        }
+        size_t mapnum = strtoul(next, &next, 10);
+        if(next && *next != '\0')
+        {
+            Log::get().stream(Log::Level_Error)<< "Invalid location parameter: "<<params;
+            return;
+        }
+
+        WorldIface::get().loadDungeonByExterior(regnum, mapnum);
+    }
+    catch(std::exception &e) {
+        Log::get().stream(Log::Level_Error)<< "Exception: "<<e.what();
+        return;
+    }
+}
+
+
 World World::sWorld;
 WorldIface &WorldIface::sInstance = World::sWorld;
 
@@ -265,6 +297,8 @@ void World::loadDungeonByExterior(int regnum, int extid)
         if(extloc.mLocationId != dinfo.mExteriorLocationId)
             continue;
 
+        for(DBlockHeader &block : mDungeon)
+            block.detachNode();
         mDungeon.clear();
         mCurrentRegion = &region;
         mCurrentExterior = &extloc;

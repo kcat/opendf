@@ -65,6 +65,7 @@ struct DBlockHeader {
     void load(std::istream &stream);
 
     void buildNodes(osg::Group *root, int x, int z);
+    void detachNode();
 };
 
 

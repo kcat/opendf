@@ -31,8 +31,6 @@ void ModelObject::load(std::istream &stream, const std::array<int,750> &mdlidx)
 
 void ModelObject::buildNodes(osg::Group *root)
 {
-    osg::ref_ptr<osg::MatrixTransform> base(new osg::MatrixTransform());
-
     osg::Matrix mat;
     mat.makeRotate(
         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
@@ -40,9 +38,8 @@ void ModelObject::buildNodes(osg::Group *root)
         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
     );
     mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
-    base->setMatrix(mat);
 
-    mBaseNode = base;
+    mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->addChild(DFOSG::MeshLoader::get().load(mModelIdx));
     root->addChild(mBaseNode);
 }
@@ -107,14 +104,26 @@ void DBlockHeader::load(std::istream &stream)
 
 void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
 {
-    osg::ref_ptr<osg::MatrixTransform> base(new osg::MatrixTransform());
-    base->setMatrix(osg::Matrix::translate(x*2048.0f, 0.0f, z*2048.0f));
-    mBaseNode = base;
+    if(!mBaseNode)
+    {
+        osg::ref_ptr<osg::MatrixTransform> base(new osg::MatrixTransform());
+        base->setMatrix(osg::Matrix::translate(x*2048.0f, 0.0f, z*2048.0f));
+        mBaseNode = base;
 
-    for(ref_ptr<ObjectBase> &obj : mObjects)
-        obj->buildNodes(mBaseNode.get());
+        for(ref_ptr<ObjectBase> &obj : mObjects)
+            obj->buildNodes(mBaseNode.get());
+    }
 
     root->addChild(mBaseNode);
+}
+
+void DBlockHeader::detachNode()
+{
+    while(mBaseNode->getNumParents() > 0)
+    {
+        osg::Group *parent = mBaseNode->getParent(0);
+        parent->removeChild(mBaseNode);
+    }
 }
 
 
