@@ -11,8 +11,8 @@
 namespace DF
 {
 
-ObjectBase::ObjectBase(int32_t offset, int x, int y, int z)
-  : mOffsetId(offset), mXPos(x), mYPos(y), mZPos(z)
+ObjectBase::ObjectBase(int x, int y, int z)
+  : mXPos(x), mYPos(y), mZPos(z)
 {
 }
 
@@ -42,6 +42,11 @@ void ModelObject::buildNodes(osg::Group *root)
     mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->addChild(DFOSG::MeshLoader::get().load(mModelIdx));
     root->addChild(mBaseNode);
+}
+
+DBlockHeader::~DBlockHeader()
+{
+    detachNode();
 }
 
 
@@ -91,9 +96,16 @@ void DBlockHeader::load(std::istream &stream)
             if(type == 0x01)
             {
                 stream.seekg(objoffset);
-                ref_ptr<ModelObject> mdl(new ModelObject(offset, x, y, z));
+                ref_ptr<ModelObject> mdl(new ModelObject(x, y, z));
                 mdl->load(stream, mdlidx);
-                mObjects.push_back(mdl.get());
+
+                auto ret = mObjectIds.insert(offset);
+                if(ret.second)
+                {
+                    size_t pos = std::distance(mObjectIds.begin(), ret.first);
+                    mObjects.resize(mObjectIds.size()-1);
+                    mObjects.insert(mObjects.begin()+pos, mdl);
+                }
             }
 
             offset = next;
@@ -119,6 +131,7 @@ void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
 
 void DBlockHeader::detachNode()
 {
+    if(!mBaseNode) return;
     while(mBaseNode->getNumParents() > 0)
     {
         osg::Group *parent = mBaseNode->getParent(0);

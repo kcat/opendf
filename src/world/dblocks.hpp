@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 
 #include <osg/ref_ptr>
 
@@ -21,13 +22,10 @@ namespace DF
 struct ObjectBase : public Referenceable {
     osg::ref_ptr<osg::Group> mBaseNode;
 
-    // This is the offset the object base was at in the file. This is used as
-    // an ID lookup for Action records that specify targets as a byte offset.
-    int32_t mOffsetId;
-
     int32_t mXPos, mYPos, mZPos;
 
-    ObjectBase(int32_t offset, int x, int y, int z);
+    ObjectBase(int x, int y, int z);
+
     virtual void buildNodes(osg::Group *root) = 0;
 };
 
@@ -39,7 +37,7 @@ struct ModelObject : public ObjectBase {
     uint8_t  mUnknown2;
     int32_t  mActionOffset;
 
-    ModelObject(int32_t offset, int x, int y, int z) : ObjectBase(offset, x, y, z) { }
+    ModelObject(int x, int y, int z) : ObjectBase(x, y, z) { }
     void load(std::istream &stream, const std::array<int,750> &mdlidx);
 
     virtual void buildNodes(osg::Group *root) final;
@@ -57,10 +55,16 @@ struct DBlockHeader {
 
     /* Objects are stored in the files as an array of (width*height) root
      * offsets, which contain a linked list of objects. We merely use an array
-     * of pointers to polymorphic objects. */
+     * of pointers to polymorphic objects, using its offset as a lookup. The
+     * offset is used as an ID lookup for Action records that specify targets
+     * as a byte offset.
+     */
+    std::set<int32_t> mObjectIds;
     std::vector<ref_ptr<ObjectBase>> mObjects;
 
     osg::ref_ptr<osg::Group> mBaseNode;
+
+    ~DBlockHeader();
 
     void load(std::istream &stream);
 

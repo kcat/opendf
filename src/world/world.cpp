@@ -297,8 +297,6 @@ void World::loadDungeonByExterior(int regnum, int extid)
         if(extloc.mLocationId != dinfo.mExteriorLocationId)
             continue;
 
-        for(DBlockHeader &block : mDungeon)
-            block.detachNode();
         mDungeon.clear();
         mCurrentRegion = &region;
         mCurrentExterior = &extloc;
