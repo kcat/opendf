@@ -20,6 +20,7 @@ public:
     virtual void loadDungeonByExterior(int regnum, int extid) = 0;
 
     virtual void dumpArea() const = 0;
+    virtual void dumpBlocks() const = 0;
 
     static WorldIface &get() { return sInstance; }
 };

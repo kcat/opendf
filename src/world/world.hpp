@@ -62,6 +62,7 @@ public:
     virtual void loadDungeonByExterior(int regnum, int extid) final;
 
     virtual void dumpArea() const final;
+    virtual void dumpBlocks() const final;
 };
 
 } // namespace DF

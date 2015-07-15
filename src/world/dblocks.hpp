@@ -19,14 +19,24 @@ namespace osg
 namespace DF
 {
 
+class LogStream;
+
+enum ObjectType {
+    ObjectType_Model = 0x01,
+    ObjectType_Light = 0x02,
+    ObjectType_Flat = 0x03,
+};
+
 struct ObjectBase : public Referenceable {
     osg::ref_ptr<osg::Group> mBaseNode;
 
+    uint8_t mType;
     int32_t mXPos, mYPos, mZPos;
 
-    ObjectBase(int x, int y, int z);
+    ObjectBase(uint8_t type, int x, int y, int z);
 
     virtual void buildNodes(osg::Group *root) = 0;
+    virtual void print(LogStream &stream) const;
 };
 
 struct ModelObject : public ObjectBase {
@@ -37,10 +47,11 @@ struct ModelObject : public ObjectBase {
     uint8_t  mUnknown2;
     int32_t  mActionOffset;
 
-    ModelObject(int x, int y, int z) : ObjectBase(x, y, z) { }
+    ModelObject(int x, int y, int z) : ObjectBase(ObjectType_Model, x, y, z) { }
     void load(std::istream &stream, const std::array<int,750> &mdlidx);
 
     virtual void buildNodes(osg::Group *root) final;
+    virtual void print(LogStream &stream) const final;
 };
 
 struct FlatObject : public ObjectBase {
@@ -49,10 +60,11 @@ struct FlatObject : public ObjectBase {
     uint16_t mFactionId;
     uint8_t mUnknown[5];
 
-    FlatObject(int x, int y, int z) : ObjectBase(x, y, z) { }
+    FlatObject(int x, int y, int z) : ObjectBase(ObjectType_Flat, x, y, z) { }
     void load(std::istream &stream);
 
     virtual void buildNodes(osg::Group *root) final;
+    virtual void print(LogStream &stream) const final;
 };
 
 struct DBlockHeader {
@@ -82,6 +94,8 @@ struct DBlockHeader {
 
     void buildNodes(osg::Group *root, int x, int z);
     void detachNode();
+
+    void print(LogStream &stream, int objtype=0) const;
 };
 
 

@@ -128,6 +128,11 @@ CCMD(dumparea)
     WorldIface::get().dumpArea();
 }
 
+CCMD(dumpblocks)
+{
+    WorldIface::get().dumpBlocks();
+}
+
 
 CCMD(dwarp)
 {
@@ -351,6 +356,18 @@ void World::dumpArea() const
     }
     else
         stream<< "Not in a region";
+}
+
+void World::dumpBlocks() const
+{
+    LogStream stream(Log::get().stream());
+    int i = 0;
+    for(const DBlockHeader &block : mDungeon)
+    {
+        stream<< "Block "<<i<<":\n";
+        block.print(stream);
+        ++i;
+    }
 }
 
 } // namespace DF

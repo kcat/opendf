@@ -1,8 +1,11 @@
 
 #include "dblocks.hpp"
-#include <log.hpp>
+
+#include <iomanip>
 
 #include <osg/MatrixTransform>
+
+#include "log.hpp"
 
 #include "components/vfs/manager.hpp"
 #include "components/dfosg/meshloader.hpp"
@@ -11,9 +14,17 @@
 namespace DF
 {
 
-ObjectBase::ObjectBase(int x, int y, int z)
-  : mXPos(x), mYPos(y), mZPos(z)
+ObjectBase::ObjectBase(uint8_t type, int x, int y, int z)
+  : mType(type), mXPos(x), mYPos(y), mZPos(z)
 {
+}
+
+void ObjectBase::print(LogStream &stream) const
+{
+    stream<<std::setfill('0');
+    stream<< "   Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   Pos: "<<mXPos<<" "<<mYPos<<" "<<mZPos<<"\n";
+    stream<<std::setfill(' ');
 }
 
 
@@ -44,6 +55,19 @@ void ModelObject::buildNodes(osg::Group *root)
     root->addChild(mBaseNode);
 }
 
+void ModelObject::print(LogStream &stream) const
+{
+    ObjectBase::print(stream);
+
+    stream<<std::setfill('0');
+    stream<< "   Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
+    stream<< "   ModelIdx: "<<mModelIdx<<"\n";
+    stream<< "   Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<<std::setfill(' ');
+}
+
 
 void FlatObject::load(std::istream &stream)
 {
@@ -58,6 +82,21 @@ void FlatObject::buildNodes(osg::Group *root)
     mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(mXPos, mYPos, mZPos));
     mBaseNode->addChild(DFOSG::MeshLoader::get().loadFlat(mTexture));
     root->addChild(mBaseNode);
+}
+
+void FlatObject::print(LogStream &stream) const
+{
+    ObjectBase::print(stream);
+
+    stream<<std::setfill('0');
+    stream<< "   Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   FactionId: "<<mFactionId<<"\n";
+    stream<< "   Unknown:";
+    for(int unk : mUnknown)
+        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
+    stream<<std::setw(0)<<std::dec<<"\n";
+    stream<<std::setfill(' ');
 }
 
 
@@ -167,6 +206,38 @@ void DBlockHeader::detachNode()
     {
         osg::Group *parent = mBaseNode->getParent(0);
         parent->removeChild(mBaseNode);
+    }
+}
+
+void DBlockHeader::print(LogStream &stream, int objtype) const
+{
+    stream<<std::setfill('0');
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
+    stream<< "  Width: "<<mWidth<<"\n";
+    stream<< "  Height: "<<mHeight<<"\n";
+    stream<< "  ObjectRootOffset: 0x"<<std::hex<<std::setw(8)<<mobjectRootOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "  ModelData:"<<"\n";
+    const uint32_t *unknown = mUnknown3.data();
+    int idx = 0;
+    for(const auto &id : mModelData)
+    {
+        if(id[0] != -1)
+        {
+            std::array<char,9> disp{{id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7], 0}};
+            stream<< "   "<<idx<<": "<<disp.data()<<" 0x"<<std::hex<<std::setw(8)<<*unknown<<std::dec<<std::setw(0)<<"\n";
+        }
+        ++unknown;
+        ++idx;
+    }
+    stream<<std::setfill(' ');
+
+    auto iditer = mObjectIds.begin();
+    for(ref_ptr<ObjectBase> obj : mObjects)
+    {
+        stream<< "  Object 0x"<<std::setfill('0')<<std::hex<<std::setw(8)<<*iditer<<std::dec<<std::setw(0)<<std::setfill(' ')<<"\n";
+        obj->print(stream);
+        ++iditer;
     }
 }
 
