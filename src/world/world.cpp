@@ -330,6 +330,35 @@ void World::loadDungeonByExterior(int regnum, int extid)
 }
 
 
+void World::move(float xrel, float yrel, float zrel)
+{
+    mCameraPos += mCameraRot*osg::Vec3f(xrel, yrel, zrel);
+}
+
+void World::rotate(float xrel, float yrel)
+{
+    /* HACK: rotate the camera around */
+    static float x=0.0f, y=0.0f;
+
+    x = std::min(std::max(x+xrel, -89.0f), 89.0f);
+    y += yrel;
+
+    mCameraRot.makeRotate(
+        x*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+       -y*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+                     0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+    );
+}
+
+
+void World::update(float timediff)
+{
+    osg::Matrixf matf(mCameraRot.inverse());
+    matf.preMultTranslate(-mCameraPos);
+    mViewer->getCamera()->setViewMatrix(matf);
+}
+
+
 void World::dumpArea() const
 {
     LogStream stream(Log::get().stream());

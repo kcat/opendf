@@ -7,6 +7,8 @@
 #include <string>
 
 #include <osg/ref_ptr>
+#include <osg/Vec3>
+#include <osg/Quat>
 
 #include "itembase.hpp"
 #include "pitems.hpp"
@@ -50,6 +52,9 @@ class World : public WorldIface {
     const DungeonInterior *mCurrentDungeon;
     std::vector<DBlockHeader> mDungeon;
 
+    osg::Vec3f mCameraPos;
+    osg::Quat mCameraRot;
+
     World();
     ~World();
 
@@ -60,6 +65,11 @@ public:
     virtual void deinitialize() final;
 
     virtual void loadDungeonByExterior(int regnum, int extid) final;
+
+    virtual void move(/*int objid,*/ float xrel, float yrel, float zrel) final;
+    virtual void rotate(/*int objid,*/ float xrel, float yrel) final;
+
+    virtual void update(float timediff) final;
 
     virtual void dumpArea() const final;
     virtual void dumpBlocks() const final;

@@ -19,6 +19,11 @@ public:
 
     virtual void loadDungeonByExterior(int regnum, int extid) = 0;
 
+    virtual void move(/*int objid,*/ float xrel, float yrel, float zrel) = 0;
+    virtual void rotate(/*int objid,*/ float xrel, float yrel) = 0;
+
+    virtual void update(float timediff) = 0;
+
     virtual void dumpArea() const = 0;
     virtual void dumpBlocks() const = 0;
 

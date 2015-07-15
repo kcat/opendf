@@ -28,6 +28,8 @@ public:
     void initialize();
     void deinitialize();
 
+    void update(float timediff);
+
     void handleMouseMotionEvent(const SDL_MouseMotionEvent &evt);
     void handleMouseWheelEvent(const SDL_MouseWheelEvent &evt);
     void handleMouseButtonEvent(const SDL_MouseButtonEvent &evt);

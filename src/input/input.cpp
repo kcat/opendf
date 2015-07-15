@@ -3,7 +3,10 @@
 
 #include <SDL.h>
 
+#include <osg/Vec3>
+
 #include "gui/iface.hpp"
+#include "world/iface.hpp"
 #include "log.hpp"
 
 
@@ -38,8 +41,50 @@ void Input::deinitialize()
 }
 
 
+void Input::update(float timediff)
+{
+    const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+    if(keystate[SDL_SCANCODE_ESCAPE])
+    {
+        SDL_Event evt{};
+        evt.quit.type = SDL_QUIT;
+        SDL_PushEvent(&evt);
+    }
+
+    if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+    {
+        float speed = 64.0f * timediff;
+        if(keystate[SDL_SCANCODE_LSHIFT])
+            speed *= 2.0f;
+
+        osg::Vec3f movedir;
+        if(keystate[SDL_SCANCODE_W])
+            movedir.z() += -1.0f;
+        if(keystate[SDL_SCANCODE_A])
+            movedir.x() += -1.0f;
+        if(keystate[SDL_SCANCODE_S])
+            movedir.z() += +1.0f;
+        if(keystate[SDL_SCANCODE_D])
+            movedir.x() += +1.0f;
+        if(keystate[SDL_SCANCODE_PAGEUP])
+            movedir.y() += +1.0f;
+        if(keystate[SDL_SCANCODE_PAGEDOWN])
+            movedir.y() += -1.0f;
+        movedir.normalize();
+        movedir *= speed;
+
+        WorldIface::get().move(movedir.x(), movedir.y(), movedir.z());
+    }
+}
+
+
 void Input::handleMouseMotionEvent(const SDL_MouseMotionEvent &evt)
 {
+    if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+    {
+        WorldIface::get().rotate(evt.yrel * 0.1f, evt.xrel * 0.1f);
+    }
+
     mMouseX = evt.x;
     mMouseY = evt.y;
     GuiIface::get().mouseMoved(mMouseX, mMouseY, mMouseZ);

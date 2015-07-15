@@ -6,8 +6,6 @@
 #include <map>
 
 #include <osg/ref_ptr>
-#include <osg/Vec3>
-#include <osg/Quat>
 
 
 struct SDL_Window;
@@ -34,8 +32,6 @@ class Engine {
     SDL_Window *mSDLWindow;
 
     std::vector<const char*> mRootPaths;
-    osg::Vec3f mCameraPos;
-    osg::Quat mCameraRot;
 
     osg::ref_ptr<osg::Group> mSceneRoot;
 
