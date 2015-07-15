@@ -149,7 +149,7 @@ void DBlockHeader::load(std::istream &stream)
             uint8_t type = stream.get();
             uint32_t objoffset = VFS::read_le32(stream);
 
-            if(type == 0x01)
+            if(type == ObjectType_Model)
             {
                 stream.seekg(objoffset);
                 ref_ptr<ModelObject> mdl(new ModelObject(x, y, z));
@@ -163,7 +163,7 @@ void DBlockHeader::load(std::istream &stream)
                     mObjects.insert(mObjects.begin()+pos, mdl);
                 }
             }
-            else if(type == 0x03)
+            else if(type == ObjectType_Flat)
             {
                 stream.seekg(objoffset);
                 ref_ptr<FlatObject> flat(new FlatObject(x, y, z));
