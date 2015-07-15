@@ -4,8 +4,10 @@
 #include <algorithm>
 
 #include <osg/Geode>
+#include <osg/Billboard>
 #include <osg/Geometry>
 #include <osg/Texture>
+#include <osg/AlphaFunc>
 
 #include "components/vfs/manager.hpp"
 #include "components/resource/texturemanager.hpp"
@@ -388,5 +390,95 @@ osg::ref_ptr<osg::Node> MeshLoader::load(size_t id)
     mModelCache[id] = osg::ref_ptr<osg::Node>(geode);
     return geode;
 }
+
+osg::ref_ptr<osg::Node> MeshLoader::loadFlat(size_t texid, size_t *num_frames, osg::Matrixf *mtx)
+{
+    /* Nodes for flats are stored with an inverted texid as a lookup, to avoid
+     * clashes with ARCH3D indices. */
+    auto iter = mModelCache.find(~texid);
+    if(iter != mModelCache.end())
+    {
+        osg::ref_ptr<osg::Node> node;
+        if(iter->second.lock(node))
+        {
+            if(mtx || num_frames)
+            {
+                int16_t xoffset, yoffset;
+                float xscale, yscale;
+                osg::ref_ptr<osg::Texture> tex = Resource::TextureManager::get().get(
+                    texid, &xoffset, &yoffset, &xscale, &yscale
+                );
+                if(num_frames)
+                    *num_frames = tex->getTextureDepth();
+                if(mtx)
+                {
+                    *mtx = osg::Matrixf::scale(xscale, yscale, 0.0f);
+                    mtx->postMultTranslate(osg::Vec3(xoffset, yoffset, 0));
+                }
+            }
+            return node;
+        }
+    }
+
+    int16_t xoffset, yoffset;
+    float xscale, yscale;
+    osg::ref_ptr<osg::Texture> tex = Resource::TextureManager::get().get(
+        texid, &xoffset, &yoffset, &xscale, &yscale
+    );
+    if(num_frames)
+        *num_frames = tex->getTextureDepth();
+    if(mtx)
+    {
+        *mtx = osg::Matrixf::scale(xscale, yscale, 0.0f);
+        mtx->postMultTranslate(osg::Vec3(xoffset, yoffset, 0));
+    }
+
+    float width = tex->getTextureWidth();
+    float height = tex->getTextureHeight();
+
+    osg::ref_ptr<osg::Billboard> base(new osg::Billboard());
+    base->setMode(osg::Billboard::AXIAL_ROT);
+    base->setAxis(osg::Vec3(0.0f, 1.0f, 0.0f));
+    base->setNormal(osg::Vec3(0.0f, 0.0f, -1.0f));
+
+    osg::ref_ptr<osg::Vec2Array> vtxs(new osg::Vec2Array(4));
+    (*vtxs)[0] = osg::Vec2(width* 0.5f, height*-0.5f);
+    (*vtxs)[1] = osg::Vec2(width*-0.5f, height*-0.5f);
+    (*vtxs)[2] = osg::Vec2(width*-0.5f, height* 0.5f);
+    (*vtxs)[3] = osg::Vec2(width* 0.5f, height* 0.5f);
+    osg::ref_ptr<osg::Vec2Array> texcrds(new osg::Vec2Array(4));
+    (*texcrds)[0] = osg::Vec2(1.0f, 0.0f);
+    (*texcrds)[1] = osg::Vec2(0.0f, 0.0f);
+    (*texcrds)[2] = osg::Vec2(0.0f, 1.0f);
+    (*texcrds)[3] = osg::Vec2(1.0f, 1.0f);
+    osg::ref_ptr<osg::Vec3Array> nrms(new osg::Vec3Array());
+    nrms->push_back(osg::Vec3(0.0f, 0.0f, -1.0f));
+    osg::ref_ptr<osg::Vec4ubArray> colors(new osg::Vec4ubArray());
+    colors->push_back(osg::Vec4ub(255, 255, 255, 255));
+    colors->setNormalize(true);
+
+    osg::ref_ptr<osg::VertexBufferObject> vbo(new osg::VertexBufferObject());
+    vtxs->setVertexBufferObject(vbo);
+    texcrds->setVertexBufferObject(vbo);
+
+    osg::ref_ptr<osg::Geometry> geometry(new osg::Geometry);
+    geometry->setVertexArray(vtxs);
+    geometry->setTexCoordArray(0, texcrds, osg::Array::BIND_PER_VERTEX);
+    geometry->setNormalArray(nrms, osg::Array::BIND_OVERALL);
+    geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
+    geometry->setUseDisplayList(false);
+    geometry->setUseVertexBufferObjects(true);
+    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4));
+
+    osg::StateSet *ss = geometry->getOrCreateStateSet();
+    ss->setTextureAttributeAndModes(0, tex);
+    ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::GREATER, 0.5f));
+
+    base->addDrawable(geometry);
+
+    mModelCache[~texid] = osg::ref_ptr<osg::Node>(base);
+    return base;
+}
+
 
 } // namespace DFOSG

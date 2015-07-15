@@ -44,6 +44,23 @@ void ModelObject::buildNodes(osg::Group *root)
     root->addChild(mBaseNode);
 }
 
+
+void FlatObject::load(std::istream &stream)
+{
+    mTexture = VFS::read_le16(stream);
+    mGender = VFS::read_le16(stream);
+    mFactionId = VFS::read_le16(stream);
+    stream.read(reinterpret_cast<char*>(mUnknown), sizeof(mUnknown));
+}
+
+void FlatObject::buildNodes(osg::Group *root)
+{
+    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(mXPos, mYPos, mZPos));
+    mBaseNode->addChild(DFOSG::MeshLoader::get().loadFlat(mTexture));
+    root->addChild(mBaseNode);
+}
+
+
 DBlockHeader::~DBlockHeader()
 {
     detachNode();
@@ -105,6 +122,20 @@ void DBlockHeader::load(std::istream &stream)
                     size_t pos = std::distance(mObjectIds.begin(), ret.first);
                     mObjects.resize(mObjectIds.size()-1);
                     mObjects.insert(mObjects.begin()+pos, mdl);
+                }
+            }
+            else if(type == 0x03)
+            {
+                stream.seekg(objoffset);
+                ref_ptr<FlatObject> flat(new FlatObject(x, y, z));
+                flat->load(stream);
+
+                auto ret = mObjectIds.insert(offset);
+                if(ret.second)
+                {
+                    size_t pos = std::distance(mObjectIds.begin(), ret.first);
+                    mObjects.resize(mObjectIds.size()-1);
+                    mObjects.insert(mObjects.begin()+pos, flat);
                 }
             }
 

@@ -16,7 +16,7 @@ if(HAVE_WALL_SWITCH)
     add_definitions("-Wall")
 endif()
 
-find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA)
+find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA osgUtil)
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(MyGUI REQUIRED)

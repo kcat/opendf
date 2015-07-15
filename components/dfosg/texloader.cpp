@@ -14,7 +14,8 @@ namespace
 {
 
 class TexEntryHeader {
-    uint16_t mUnknown1;
+    uint8_t mUnknown1;
+    uint8_t mColor;
     uint32_t mOffset;
     uint16_t mUnknown2;
     uint32_t mUnknown3;
@@ -23,7 +24,8 @@ class TexEntryHeader {
 public:
     void load(std::istream &stream)
     {
-        mUnknown1 = VFS::read_le16(stream);
+        mUnknown1 = stream.get();
+        mColor = stream.get();
         mOffset = VFS::read_le32(stream);
         mUnknown2 = VFS::read_le16(stream);
         mUnknown3 = VFS::read_le32(stream);
@@ -31,7 +33,7 @@ public:
         mNullValue[1] = VFS::read_le32(stream);
     }
 
-    uint8_t getColor() const { return mUnknown1>>8; }
+    uint8_t getColor() const { return mColor; }
     uint32_t getOffset() const { return mOffset; }
 };
 
@@ -91,13 +93,16 @@ public:
         mYScale = VFS::read_le16(stream);
     }
 
+    int16_t getXOffset() const { return mOffsetX; }
+    int16_t getYOffset() const { return mOffsetY; }
     uint16_t getWidth() const { return mWidth; }
     uint16_t getHeight() const { return mHeight; }
     uint16_t getCompression() const { return mCompression; }
+    uint32_t getDataOffset() const { return mDataOffset; }
     uint16_t getIsNormal() const { return mIsNormal; }
     uint16_t getFrameCount() const { return mFrameCount; }
-
-    uint32_t getDataOffset() const { return mDataOffset; }
+    int16_t getXScale() const { return mXScale; }
+    int16_t getYScale() const { return mYScale; }
 };
 
 } // namespace
@@ -171,7 +176,6 @@ osg::Image *TexLoader::loadUncompressedSingle(size_t width, size_t height, const
     return image;
 }
 
-
 void TexLoader::loadUncompressedMulti(osg::Image *image, const Resource::Palette &palette, std::istream &stream)
 {
     size_t width = VFS::read_le16(stream);
@@ -212,7 +216,9 @@ void TexLoader::loadUncompressedMulti(osg::Image *image, const Resource::Palette
 }
 
 
-std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource::Palette &palette)
+std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, int16_t *xoffset, int16_t *yoffset,
+                                                      int16_t *xscale, int16_t *yscale,
+                                                      const Resource::Palette& palette)
 {
     std::stringstream sstr; sstr.fill('0');
     sstr<<"TEXTURE."<<std::setw(3)<<(idx>>7);
@@ -245,6 +251,11 @@ std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource
 
     TexHeader texhdr;
     texhdr.load(*stream);
+
+    *xoffset = texhdr.getXOffset();
+    *yoffset = texhdr.getYOffset();
+    *xscale = texhdr.getXScale();
+    *yscale = texhdr.getYScale();
 
     // Would be nice to load a multiframe texture as a 3D Image, but such an
     // image can't be properly loaded into a Texture2DArray (it wants to load
@@ -314,6 +325,5 @@ std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, const Resource
 
     return images;
 }
-
 
 } // namespace DFOSG

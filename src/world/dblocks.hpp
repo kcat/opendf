@@ -43,6 +43,18 @@ struct ModelObject : public ObjectBase {
     virtual void buildNodes(osg::Group *root) final;
 };
 
+struct FlatObject : public ObjectBase {
+    uint16_t mTexture;
+    uint16_t mGender; // Flags?
+    uint16_t mFactionId;
+    uint8_t mUnknown[5];
+
+    FlatObject(int x, int y, int z) : ObjectBase(x, y, z) { }
+    void load(std::istream &stream);
+
+    virtual void buildNodes(osg::Group *root) final;
+};
+
 struct DBlockHeader {
     uint32_t mUnknown1;
     uint32_t mWidth;
