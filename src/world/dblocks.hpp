@@ -66,6 +66,10 @@ struct FlatObject : public ObjectBase {
     virtual void buildNodes(osg::Group *root) final;
     virtual void print(LogStream &stream) const final;
 };
+enum {
+    Marker_EnterID = 0x6388,
+    Marker_StartID = 0x638A
+};
 
 struct DBlockHeader {
     uint32_t mUnknown1;
@@ -94,6 +98,12 @@ struct DBlockHeader {
 
     void buildNodes(osg::Group *root, int x, int z);
     void detachNode();
+
+    /* Object types are (apparently) identified by what Texture ID they use.
+     * For instance, 0x638A (the 10th entry of TEXTURE.199) is the "Start"
+     * marker, and is used to identify where to spawn when entering a dungeon.
+     */
+    FlatObject *getFlatByTexture(size_t texid) const;
 
     void print(LogStream &stream, int objtype=0) const;
 };

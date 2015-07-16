@@ -55,6 +55,8 @@ class World : public WorldIface {
     osg::Vec3f mCameraPos;
     osg::Quat mCameraRot;
 
+    bool mFirstStart;
+
     World();
     ~World();
 

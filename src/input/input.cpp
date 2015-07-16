@@ -59,13 +59,13 @@ void Input::update(float timediff)
 
         osg::Vec3f movedir;
         if(keystate[SDL_SCANCODE_W])
-            movedir.z() += -1.0f;
-        if(keystate[SDL_SCANCODE_A])
-            movedir.x() += -1.0f;
-        if(keystate[SDL_SCANCODE_S])
             movedir.z() += +1.0f;
-        if(keystate[SDL_SCANCODE_D])
+        if(keystate[SDL_SCANCODE_A])
             movedir.x() += +1.0f;
+        if(keystate[SDL_SCANCODE_S])
+            movedir.z() += -1.0f;
+        if(keystate[SDL_SCANCODE_D])
+            movedir.x() += -1.0f;
         if(keystate[SDL_SCANCODE_PAGEUP])
             movedir.y() += +1.0f;
         if(keystate[SDL_SCANCODE_PAGEDOWN])

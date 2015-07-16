@@ -209,6 +209,22 @@ void DBlockHeader::detachNode()
     }
 }
 
+FlatObject *DBlockHeader::getFlatByTexture(size_t texid) const
+{
+    for(ref_ptr<ObjectBase> obj : mObjects)
+    {
+        if(obj->mType == ObjectType_Flat)
+        {
+            FlatObject *flat = static_cast<FlatObject*>(obj.get());
+            if(flat->mTexture == texid) return flat;
+        }
+    }
+    std::stringstream sstr;
+    sstr<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
+    throw std::runtime_error(sstr.str());
+}
+
+
 void DBlockHeader::print(LogStream &stream, int objtype) const
 {
     stream<<std::setfill('0');

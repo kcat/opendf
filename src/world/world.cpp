@@ -173,7 +173,13 @@ World::World()
   : mCurrentRegion(nullptr)
   , mCurrentExterior(nullptr)
   , mCurrentDungeon(nullptr)
+  , mFirstStart(true)
 {
+    mCameraRot.makeRotate(
+            0.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+        3.14159f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+            0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+    );
 }
 
 World::~World()
@@ -324,7 +330,31 @@ void World::loadDungeonByExterior(int regnum, int extid)
 
         osg::Group *root = mViewer->getSceneData()->asGroup();
         for(size_t i = 0;i < mDungeon.size();++i)
+        {
             mDungeon[i].buildNodes(root, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
+
+            if(dinfo.mBlocks[i].mStartBlock)
+            {
+                FlatObject *flat = nullptr;
+                if(mFirstStart)
+                {
+                    mFirstStart = false;
+                    try {
+                        flat = mDungeon[i].getFlatByTexture(Marker_EnterID);
+                    }
+                    catch(std::exception &e) {
+                        Log::get().stream(Log::Level_Error)<< "Exception looking for Enter marker: "<<e.what();
+                    }
+                }
+                if(!flat)
+                    flat = mDungeon[i].getFlatByTexture(Marker_StartID);
+                osg::Vec3f pos(flat->mXPos, flat->mYPos, flat->mZPos);
+                mCameraPos = osg::componentMultiply(
+                    -pos + osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f),
+                    osg::Vec3f(1.0f, -1.0f, -1.0f)
+                );
+            }
+        }
         break;
     }
 }
@@ -338,7 +368,7 @@ void World::move(float xrel, float yrel, float zrel)
 void World::rotate(float xrel, float yrel)
 {
     /* HACK: rotate the camera around */
-    static float x=0.0f, y=0.0f;
+    static float x=0.0f, y=180.0f;
 
     x = std::min(std::max(x+xrel, -89.0f), 89.0f);
     y += yrel;
@@ -354,7 +384,7 @@ void World::rotate(float xrel, float yrel)
 void World::update(float timediff)
 {
     osg::Matrixf matf(mCameraRot.inverse());
-    matf.preMultTranslate(-mCameraPos);
+    matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
 }
 
