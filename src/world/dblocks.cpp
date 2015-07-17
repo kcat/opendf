@@ -8,7 +8,7 @@
 #include "log.hpp"
 
 #include "components/vfs/manager.hpp"
-#include "components/dfosg/meshloader.hpp"
+#include "components/resource/meshmanager.hpp"
 
 
 namespace DF
@@ -51,7 +51,7 @@ void ModelObject::buildNodes(osg::Group *root)
     mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
 
     mBaseNode = new osg::MatrixTransform(mat);
-    mBaseNode->addChild(DFOSG::MeshLoader::get().load(mModelIdx));
+    mBaseNode->addChild(Resource::MeshManager::get().get(mModelIdx));
     root->addChild(mBaseNode);
 }
 
@@ -80,7 +80,7 @@ void FlatObject::load(std::istream &stream)
 void FlatObject::buildNodes(osg::Group *root)
 {
     mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(mXPos, mYPos, mZPos));
-    mBaseNode->addChild(DFOSG::MeshLoader::get().loadFlat(mTexture));
+    mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture));
     root->addChild(mBaseNode);
 }
 

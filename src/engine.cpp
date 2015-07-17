@@ -23,6 +23,7 @@
 #include "components/vfs/manager.hpp"
 #include "components/settings/configfile.hpp"
 #include "components/resource/texturemanager.hpp"
+#include "components/resource/meshmanager.hpp"
 #include "components/dfosg/meshloader.hpp"
 
 #include "gui/iface.hpp"
@@ -326,6 +327,9 @@ bool Engine::go(void)
 
     Log::get().message("Initializing Texture Manager...");
     Resource::TextureManager::get().initialize();
+
+    Log::get().message("Initializing Mesh Manager...");
+    Resource::MeshManager::get().initialize();
 
     Log::get().message("Initializing Input...");
     Input::get().initialize();
