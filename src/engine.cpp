@@ -8,6 +8,9 @@
 #include <chrono>
 #include <ctime>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <SDL.h>
 #include <SDL_syswm.h>
 
@@ -33,6 +36,83 @@
 #include "log.hpp"
 
 
+namespace
+{
+
+std::vector<std::string> getGlobalConfigDirs()
+{
+    std::vector<std::string> paths;
+#ifdef _WIN32
+    // ???
+#else
+    const char *str = getenv("XDG_CONFIG_DIRS");
+    if(!str || str[0] == 0)
+        str = "/etc/xdg";
+
+    /* Go through the list in reverse, since "the order of base directories
+     * denotes their importance; the first directory listed is the most
+     * important". Ergo, we need to load the settings from the later dirs
+     * first so that the settings in the earlier dirs override them.
+     */
+    std::string xdg_paths = str;
+    while(1)
+    {
+        size_t pos = xdg_paths.find_last_of(':');
+        if(pos == std::string::npos)
+        {
+            paths.push_back(xdg_paths);
+            break;
+        }
+
+        paths.push_back(xdg_paths.substr(pos+1));
+        xdg_paths.resize(pos);
+    }
+#endif
+    return paths;
+}
+
+std::string getUserConfigDir()
+{
+    std::string path;
+#ifdef _WIN32
+    const char *base = getenv("AppData");
+    if(base) path = base;
+#else
+    const char *base = getenv("XDG_CONFIG_HOME");
+    if(base && base[0] != 0)
+        path = base;
+    else
+    {
+        base = getenv("HOME");
+        if(base) path = base;
+        path += "/.config";
+    }
+#endif
+    return path;
+}
+
+void makeDirRecurse(std::string path)
+{
+    int err = mkdir(path.c_str(), S_IRWXU);
+    if(err != 0 && errno == ENOENT)
+    {
+        size_t pos = path.find_last_of('/');
+        if(pos != std::string::npos)
+        {
+            makeDirRecurse(path.substr(0, pos));
+            err = mkdir(path.c_str(), S_IRWXU);
+        }
+    }
+    if(err != 0)
+    {
+        std::stringstream sstr;
+        sstr<< "Failed to create "<<path<<": "<<strerror(errno)<<" ("<<errno<<")";
+        throw std::runtime_error(sstr.str());
+    }
+}
+
+}
+
 namespace DF
 {
 
@@ -50,12 +130,21 @@ CCMD(qqq)
 CCMD(savecfg)
 {
     static const std::string default_cfg("opendf.cfg");
-    const std::string &cfg_name = (params.empty() ? default_cfg : params);
+    std::string cfg_name = (params.empty() ? getUserConfigDir()+"/opendf/"+default_cfg : params);
 
     Log::get().stream()<< "Saving config "<<cfg_name<<"...";
     std::ofstream ocfg(cfg_name, std::ios_base::binary);
     if(!ocfg.is_open())
-        throw std::runtime_error("Failed to open "+cfg_name+" for writing");
+    {
+        size_t pos = cfg_name.find_last_of('/');
+        if(pos != std::string::npos)
+        {
+            makeDirRecurse(cfg_name.substr(0, pos));
+            ocfg.open(cfg_name, std::ios_base::binary);
+        }
+        if(!ocfg.is_open())
+            throw std::runtime_error("Failed to open "+cfg_name+" for writing");
+    }
 
     std::time_t end_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     ocfg<< "# File saved on "<<std::ctime(&end_time);
@@ -216,24 +305,38 @@ bool Engine::go(void)
         throw std::runtime_error(sstr.str());
     }
 
-    Log::get().message("Loading opendf.cfg...");
-    try {
+    {
+        std::string cfgname = getUserConfigDir() + "/opendf/opendf.cfg";
+        Log::get().stream()<< "Loading "<<cfgname<<"...";
+
         Settings::ConfigFile cf;
-        cf.load("opendf.cfg");
+        cf.load(cfgname);
 
         Log::get().message("Loading cvar values...");
         const Settings::ConfigSection &cvars = cf.getSection("CVars");
         for(const Settings::ConfigEntry &cvar : cvars)
             CVar::setByName(cvar.first, cvar.second);
     }
-    catch(std::runtime_error &e) {
-        Log::get().message("Failed to load opendf.cfg, using defaults");
-    }
 
     Log::get().message("Initializing VFS...");
-    try {
+    {
+        std::vector<std::string> cfg_paths = getGlobalConfigDirs();
+        cfg_paths.push_back(getUserConfigDir());
+        cfg_paths.push_back(".");
+
         Settings::ConfigFile cf;
-        cf.load("settings.cfg");
+        for(std::string path : cfg_paths)
+        {
+            if(!path.empty())
+            {
+                if(path == ".")
+                    path += "/settings.cfg";
+                else
+                    path += "/opendf/settings.cfg";
+                Log::get().stream()<< "Loading "<<path<<"...";
+                cf.load(path);
+            }
+        }
 
         std::string root_path = cf.getOption("data-root", ".");
         Log::get().stream()<< "  Setting root path "<<root_path<<"...";
@@ -246,10 +349,6 @@ bool Engine::go(void)
             Log::get().stream()<< "  Adding data path "<<path->second<<"...";
             VFS::Manager::get().addDataPath(path->second.c_str());
         }
-    }
-    catch(std::runtime_error &e) {
-        Log::get().message("Failed to load settings.cfg");
-        VFS::Manager::get().initialize();
     }
 
     {

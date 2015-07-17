@@ -84,8 +84,7 @@ namespace Settings
 void ConfigFile::load(const std::string &fname)
 {
     std::ifstream stream(fname.c_str(), std::ios_base::binary);
-    if(!stream.is_open())
-        throw std::runtime_error("Could not open "+fname);
+    if(!stream.is_open()) return;
 
     ConfigSection *section = nullptr;
     std::string cur_section;
