@@ -342,11 +342,12 @@ IStreamPtr Manager::open(const char *name)
         ++iter;
     }
 
+    std::unique_ptr<std::ifstream> stream(new std::ifstream());
     auto piter = gRootPaths.rbegin();
     while(piter != gRootPaths.rend())
     {
-        IStreamPtr stream(new std::ifstream((*piter+name).c_str(), std::ios_base::binary));
-        if(stream->good()) return stream;
+        stream->open((*piter+name).c_str(), std::ios_base::binary);
+        if(stream->good()) return IStreamPtr(std::move(stream));
         ++piter;
     }
 
@@ -373,9 +374,10 @@ bool Manager::exists(const char *name)
         ++iter;
     }
 
+    std::ifstream file;
     for(const std::string &path : gRootPaths)
     {
-        std::ifstream file((path+name).c_str(), std::ios_base::binary);
+        file.open((path+name).c_str(), std::ios_base::binary);
         if(file.is_open()) return true;
     }
 
