@@ -1,11 +1,26 @@
 
 #include <cstdint>
+#include <cstring>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include <stdexcept>
 #include <iostream>
 
 #include "engine.hpp"
 
+
+static void DoErrorMessage(const char *ttl, const char *msg)
+{
+#ifndef _WIN32
+    std::cerr<<std::endl
+             << "*** "<<ttl<<" ***" <<std::endl
+             << msg <<std::endl;
+#else
+    MessageBoxA(NULL, msg, ttl, MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#endif
+}
 
 int main(int argc, char **argv)
 {
@@ -16,7 +31,7 @@ int main(int argc, char **argv)
         app.go();
     }
     catch(std::exception &e) {
-        std::cerr<< "Uncaught exception: "<<e.what() <<std::endl;
+        DoErrorMessage("An exception has occurred!", e.what());
         return 1;
     }
 

@@ -338,7 +338,22 @@ bool Engine::go(void)
             }
         }
 
-        std::string root_path = cf.getOption("data-root", ".");
+        std::string root_path = cf.getOption("data-root", std::string());
+        if(root_path.empty())
+        {
+            std::string user_path = getUserConfigDir();
+            if(user_path.empty()) user_path = "settings.cfg";
+            else user_path += "/opendf/settings.cfg";
+            std::stringstream sstr;
+            sstr<< "No root path found. Please create or edit\n"<<
+            user_path<<"\n"<<
+            "and add:\n"<<
+            "data-root = C:\\DAGGER\\ARENA2\n"<<
+            "where C:\\DAGGER is your Daggerfall install folder";
+            Log::get().message(sstr.str(), Log::Level_Error);
+            throw std::runtime_error(sstr.str());
+        }
+
         Log::get().stream()<< "  Setting root path "<<root_path<<"...";
         VFS::Manager::get().initialize(root_path.c_str());
 
