@@ -161,11 +161,7 @@ void BsaArchive::loadIndexed(size_t count, std::istream &stream)
 
     std::streamsize base = stream.tellg();
     if(!stream.seekg(std::streampos(count) * -8, std::ios_base::end))
-    {
-        std::stringstream sstr;
-        sstr<< "Failed to seek to archive footer ("<<count<<" entries)";
-        throw std::runtime_error(sstr.str());
-    }
+        throw std::runtime_error("Failed to seek to archive footer ("+std::to_string(count)+" entries)");
     for(size_t i = 0;i < count;++i)
     {
         idxs.push_back(VFS::read_le32(stream));
@@ -180,7 +176,11 @@ void BsaArchive::loadIndexed(size_t count, std::istream &stream)
     for(size_t id : idxs)
     {
         if(!mLookupId.insert(id).second)
+        {
+#if 0
             std::cerr<< "Duplicate entry ID "<<std::to_string(id)<<" in "+mFilename <<std::endl;
+#endif
+        }
     }
     mEntries.resize(mLookupId.size());
     for(size_t i = 0;i < count;++i)
@@ -194,11 +194,7 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
 
     std::streamsize base = stream.tellg();
     if(!stream.seekg(std::streampos(count) * -18, std::ios_base::end))
-    {
-        std::stringstream sstr;
-        sstr<< "Failed to seek to archive footer ("<<count<<" entries)";
-        throw std::runtime_error(sstr.str());
-    }
+        throw std::runtime_error("Failed to seek to archive footer ("+std::to_string(count)+" entries)");
     for(size_t i = 0;i < count;++i)
     {
         std::array<char,12> name;
