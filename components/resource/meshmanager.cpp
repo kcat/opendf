@@ -181,11 +181,11 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames, 
     base->setAxis(osg::Vec3(0.0f, 1.0f, 0.0f));
     base->setNormal(osg::Vec3(0.0f, 0.0f, -1.0f));
 
-    osg::ref_ptr<osg::Vec2Array> vtxs(new osg::Vec2Array(4));
-    (*vtxs)[0] = osg::Vec2(width* 0.5f, height*-0.5f);
-    (*vtxs)[1] = osg::Vec2(width*-0.5f, height*-0.5f);
-    (*vtxs)[2] = osg::Vec2(width*-0.5f, height* 0.5f);
-    (*vtxs)[3] = osg::Vec2(width* 0.5f, height* 0.5f);
+    osg::ref_ptr<osg::Vec3Array> vtxs(new osg::Vec3Array(4));
+    (*vtxs)[0] = osg::Vec3(width* 0.5f, height*-0.5f, 0.0f);
+    (*vtxs)[1] = osg::Vec3(width*-0.5f, height*-0.5f, 0.0f);
+    (*vtxs)[2] = osg::Vec3(width*-0.5f, height* 0.5f, 0.0f);
+    (*vtxs)[3] = osg::Vec3(width* 0.5f, height* 0.5f, 0.0f);
     osg::ref_ptr<osg::Vec2Array> texcrds(new osg::Vec2Array(4));
     (*texcrds)[0] = osg::Vec2(1.0f, 0.0f);
     (*texcrds)[1] = osg::Vec2(0.0f, 0.0f);
