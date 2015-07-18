@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <array>
 
 #include <osgViewer/Viewer>
 #include <osg/Light>
@@ -17,7 +18,7 @@
 namespace
 {
 
-static const char gBlockIndexLabel[6] = { 'N', 'W', 'L', 'S', 'B', 'M' };
+static const std::array<char,6> gBlockIndexLabel{{ 'N', 'W', 'L', 'S', 'B', 'M' }};
 
 /* This is only stored temporarily */
 struct DungeonHeader {
@@ -319,7 +320,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
             std::stringstream sstr;
             sstr<< std::setfill('0')<<std::setw(8)<< block.mBlockIdx<<".RDB";
             std::string name = sstr.str();
-            name.front() = gBlockIndexLabel[block.mBlockPreIndex];
+            name.front() = gBlockIndexLabel.at(block.mBlockPreIndex);
 
             VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
             if(!stream) throw std::runtime_error("Failed to open "+name);
