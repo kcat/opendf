@@ -9,9 +9,12 @@
 #include <SDL_scancode.h>
 #include <SDL_mouse.h>
 
+#include <osg/Group>
+
 #include "components/mygui_osg/rendermanager.h"
 #include "components/mygui_osg/datamanager.h"
 
+#include "world/iface.hpp"
 #include "delegates.hpp"
 #include "log.hpp"
 
@@ -421,8 +424,12 @@ Gui::~Gui()
 
 void Gui::initialize(osgViewer::Viewer *viewer, osg::Group *sceneroot)
 {
+    osg::ref_ptr<osg::Group> uiroot(new osg::Group());
+    uiroot->setNodeMask(WorldIface::Mask_UI);
+    sceneroot->addChild(uiroot);
+
     MyGUI::DataManager *dataMgr = new MyGUI_OSG::DataManager();
-    MyGUI_OSG::RenderManager *renderMgr = new MyGUI_OSG::RenderManager(viewer, sceneroot);
+    MyGUI_OSG::RenderManager *renderMgr = new MyGUI_OSG::RenderManager(viewer, uiroot);
     MyGUI::LogManager *logMgr = new MyGUI::LogManager();
     try {
         switch(Log::get().getLevel())

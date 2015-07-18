@@ -5,6 +5,7 @@
 
 #include <osg/MatrixTransform>
 
+#include "iface.hpp"
 #include "log.hpp"
 
 #include "components/vfs/manager.hpp"
@@ -51,6 +52,7 @@ void ModelObject::buildNodes(osg::Group *root)
     mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
 
     mBaseNode = new osg::MatrixTransform(mat);
+    mBaseNode->setNodeMask(WorldIface::Mask_Static);
     mBaseNode->addChild(Resource::MeshManager::get().get(mModelIdx));
     root->addChild(mBaseNode);
 }
@@ -80,6 +82,7 @@ void FlatObject::load(std::istream &stream)
 void FlatObject::buildNodes(osg::Group *root)
 {
     mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(mXPos, mYPos, mZPos));
+    mBaseNode->setNodeMask(WorldIface::Mask_Flat);
     mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture));
     root->addChild(mBaseNode);
 }

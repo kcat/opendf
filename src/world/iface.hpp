@@ -14,6 +14,13 @@ class WorldIface {
     static WorldIface &sInstance;
 
 public:
+    enum {
+        Mask_UI     = 1<<0,
+        Mask_Static = 1<<1,
+        Mask_Light  = 1<<2,
+        Mask_Flat   = 1<<3,
+    };
+
     virtual void initialize(osgViewer::Viewer *viewer) = 0;
     virtual void deinitialize() = 0;
 
