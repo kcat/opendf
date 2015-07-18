@@ -75,6 +75,8 @@ public:
 
     virtual void dumpArea() const final;
     virtual void dumpBlocks() const final;
+
+    size_t castCameraToViewportRay(const float vpX, const float vpY, float maxDistance, bool ignoreFlats);
 };
 
 } // namespace DF

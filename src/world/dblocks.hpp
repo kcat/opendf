@@ -47,6 +47,7 @@ struct ObjectBase : public Referenceable {
 
     virtual void buildNodes(osg::Group *root, size_t objid) = 0;
     virtual void print(LogStream &stream) const;
+    virtual void print(std::ostream &stream) const;
 };
 
 struct ModelObject : public ObjectBase {
@@ -62,6 +63,7 @@ struct ModelObject : public ObjectBase {
 
     virtual void buildNodes(osg::Group *root, size_t objid) final;
     virtual void print(LogStream &stream) const final;
+    virtual void print(std::ostream &stream) const final;
 };
 
 struct FlatObject : public ObjectBase {
@@ -75,6 +77,7 @@ struct FlatObject : public ObjectBase {
 
     virtual void buildNodes(osg::Group *root, size_t objid) final;
     virtual void print(LogStream &stream) const final;
+    virtual void print(std::ostream &stream) const final;
 };
 enum {
     Marker_EnterID = 0x6388,
@@ -108,6 +111,8 @@ struct DBlockHeader {
 
     void buildNodes(osg::Group *root, size_t blockid, int x, int z);
     void detachNode();
+
+    ObjectBase *getObject(size_t id);
 
     /* Object types are (apparently) identified by what Texture ID they use.
      * For instance, 0x638A (the 10th entry of TEXTURE.199) is the "Start"

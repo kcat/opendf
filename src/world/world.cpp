@@ -10,6 +10,7 @@
 
 #include "components/vfs/manager.hpp"
 
+#include "gui/iface.hpp"
 #include "dblocks.hpp"
 #include "cvars.hpp"
 #include "log.hpp"
@@ -165,6 +166,9 @@ CCMD(dwarp)
         return;
     }
 }
+
+
+CVAR(CVarBool, g_introspect, false);
 
 
 World World::sWorld;
@@ -387,6 +391,24 @@ void World::update(float timediff)
     osg::Matrixf matf(mCameraRot.inverse());
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
+
+    size_t result = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
+    if(result == ~static_cast<size_t>(0) || !*g_introspect)
+        GuiIface::get().updateStatus(std::string());
+    else
+    {
+        std::stringstream sstr;
+        DBlockHeader &block = mDungeon.at(result>>24);
+        const ObjectBase *obj = block.getObject(result&0x00ffffff);
+        if(!obj)
+            sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<result;
+        else
+        {
+            sstr<<std::setfill('0');
+            obj->print(sstr);
+        }
+        GuiIface::get().updateStatus(sstr.str());
+    }
 }
 
 
@@ -428,6 +450,53 @@ void World::dumpBlocks() const
         block.print(stream);
         ++i;
     }
+}
+
+
+size_t World::castCameraToViewportRay(const float vpX, const float vpY, float maxDistance, bool ignoreFlats)
+{
+    osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(new osgUtil::LineSegmentIntersector(
+        osgUtil::LineSegmentIntersector::PROJECTION, vpX*2.f - 1.f, vpY*-2.f + 1.f
+    ));
+
+    osg::Vec3d dist = osg::Vec3d(0.0f,0.0f,-maxDistance) *
+                      mViewer->getCamera()->getProjectionMatrix();
+
+    osg::Vec3d end = intersector->getEnd();
+    end.z() = dist.z();
+    intersector->setEnd(end);
+    intersector->setIntersectionLimit(osgUtil::LineSegmentIntersector::LIMIT_NEAREST);
+
+    osgUtil::IntersectionVisitor intersectionVisitor(intersector);
+    int mask = intersectionVisitor.getTraversalMask();
+    mask &= ~(Mask_UI | Mask_Light);
+    if(ignoreFlats)
+        mask &= ~(Mask_Flat);
+
+    intersectionVisitor.setTraversalMask(mask);
+
+    mViewer->getCamera()->accept(intersectionVisitor);
+
+    size_t result = ~static_cast<size_t>(0);
+    if(intersector->containsIntersections())
+    {
+        osgUtil::LineSegmentIntersector::Intersection intersection = intersector->getFirstIntersection();
+
+        ObjectRef *ref = nullptr;
+        for(auto it = intersection.nodePath.cbegin();it != intersection.nodePath.cend();++it)
+        {
+            osg::Referenced *userData = (*it)->getUserData();
+            if(!userData) continue;
+
+            ref = dynamic_cast<ObjectRef*>(userData);
+            if(ref) break;
+        }
+
+        if(ref)
+            result = ref->getId();
+    }
+
+    return result;
 }
 
 } // namespace DF

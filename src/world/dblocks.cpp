@@ -28,6 +28,12 @@ void ObjectBase::print(LogStream &stream) const
     stream<<std::setfill(' ');
 }
 
+void ObjectBase::print(std::ostream &stream) const
+{
+    stream<< "Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Pos: "<<mXPos<<" "<<mYPos<<" "<<mZPos<<"\n";
+}
+
 
 void ModelObject::load(std::istream &stream, const std::array<int,750> &mdlidx)
 {
@@ -71,6 +77,17 @@ void ModelObject::print(LogStream &stream) const
     stream<<std::setfill(' ');
 }
 
+void ModelObject::print(std::ostream &stream) const
+{
+    DF::ObjectBase::print(stream);
+
+    stream<< "Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
+    stream<< "ModelIdx: "<<mModelIdx<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
+}
+
 
 void FlatObject::load(std::istream &stream)
 {
@@ -102,6 +119,19 @@ void FlatObject::print(LogStream &stream) const
         stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
     stream<<std::setw(0)<<std::dec<<"\n";
     stream<<std::setfill(' ');
+}
+
+void FlatObject::print(std::ostream &stream) const
+{
+    DF::ObjectBase::print(stream);
+
+    stream<< "Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
+    stream<< "FactionId: "<<mFactionId<<"\n";
+    stream<< "Unknown:";
+    for(int unk : mUnknown)
+        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
+    stream<<std::setw(0)<<std::dec<<"\n";
 }
 
 
@@ -214,6 +244,16 @@ void DBlockHeader::detachNode()
         parent->removeChild(mBaseNode);
     }
 }
+
+
+ObjectBase *DBlockHeader::getObject(size_t id)
+{
+    auto iter = mObjectIds.find(id);
+    if(iter == mObjectIds.end())
+        return nullptr;
+    return mObjects[std::distance(mObjectIds.begin(), iter)].get();
+}
+
 
 FlatObject *DBlockHeader::getFlatByTexture(size_t texid) const
 {
