@@ -6,6 +6,7 @@
 #include <set>
 
 #include <osg/ref_ptr>
+#include <osg/Referenced>
 
 #include "referenceable.hpp"
 
@@ -21,6 +22,15 @@ namespace DF
 
 class LogStream;
 
+class ObjectRef : public osg::Referenced {
+    size_t mId;
+
+public:
+    ObjectRef(size_t id) : mId(id) { }
+
+    size_t getId() const { return mId; }
+};
+
 enum ObjectType {
     ObjectType_Model = 0x01,
     ObjectType_Light = 0x02,
@@ -35,7 +45,7 @@ struct ObjectBase : public Referenceable {
 
     ObjectBase(uint8_t type, int x, int y, int z);
 
-    virtual void buildNodes(osg::Group *root) = 0;
+    virtual void buildNodes(osg::Group *root, size_t objid) = 0;
     virtual void print(LogStream &stream) const;
 };
 
@@ -50,7 +60,7 @@ struct ModelObject : public ObjectBase {
     ModelObject(int x, int y, int z) : ObjectBase(ObjectType_Model, x, y, z) { }
     void load(std::istream &stream, const std::array<int,750> &mdlidx);
 
-    virtual void buildNodes(osg::Group *root) final;
+    virtual void buildNodes(osg::Group *root, size_t objid) final;
     virtual void print(LogStream &stream) const final;
 };
 
@@ -63,7 +73,7 @@ struct FlatObject : public ObjectBase {
     FlatObject(int x, int y, int z) : ObjectBase(ObjectType_Flat, x, y, z) { }
     void load(std::istream &stream);
 
-    virtual void buildNodes(osg::Group *root) final;
+    virtual void buildNodes(osg::Group *root, size_t objid) final;
     virtual void print(LogStream &stream) const final;
 };
 enum {
@@ -96,7 +106,7 @@ struct DBlockHeader {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root, int x, int z);
+    void buildNodes(osg::Group *root, size_t blockid, int x, int z);
     void detachNode();
 
     /* Object types are (apparently) identified by what Texture ID they use.

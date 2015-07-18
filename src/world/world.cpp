@@ -332,7 +332,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
         osg::Group *root = mViewer->getSceneData()->asGroup();
         for(size_t i = 0;i < mDungeon.size();++i)
         {
-            mDungeon[i].buildNodes(root, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
+            mDungeon[i].buildNodes(root, i, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
 
             if(dinfo.mBlocks[i].mStartBlock)
             {

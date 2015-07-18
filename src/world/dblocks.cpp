@@ -41,7 +41,7 @@ void ModelObject::load(std::istream &stream, const std::array<int,750> &mdlidx)
     mActionOffset = VFS::read_le32(stream);
 }
 
-void ModelObject::buildNodes(osg::Group *root)
+void ModelObject::buildNodes(osg::Group *root, size_t objid)
 {
     osg::Matrix mat;
     mat.makeRotate(
@@ -53,6 +53,7 @@ void ModelObject::buildNodes(osg::Group *root)
 
     mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->setNodeMask(WorldIface::Mask_Static);
+    mBaseNode->setUserData(new ObjectRef(objid));
     mBaseNode->addChild(Resource::MeshManager::get().get(mModelIdx));
     root->addChild(mBaseNode);
 }
@@ -79,10 +80,11 @@ void FlatObject::load(std::istream &stream)
     stream.read(reinterpret_cast<char*>(mUnknown), sizeof(mUnknown));
 }
 
-void FlatObject::buildNodes(osg::Group *root)
+void FlatObject::buildNodes(osg::Group *root, size_t objid)
 {
     mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(mXPos, mYPos, mZPos));
     mBaseNode->setNodeMask(WorldIface::Mask_Flat);
+    mBaseNode->setUserData(new ObjectRef(objid));
     mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture));
     root->addChild(mBaseNode);
 }
@@ -187,7 +189,7 @@ void DBlockHeader::load(std::istream &stream)
 }
 
 
-void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
+void DBlockHeader::buildNodes(osg::Group *root, size_t blockid, int x, int z)
 {
     if(!mBaseNode)
     {
@@ -195,8 +197,9 @@ void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
         base->setMatrix(osg::Matrix::translate(x*2048.0f, 0.0f, z*2048.0f));
         mBaseNode = base;
 
+        auto iditer = mObjectIds.begin();
         for(ref_ptr<ObjectBase> &obj : mObjects)
-            obj->buildNodes(mBaseNode.get());
+            obj->buildNodes(mBaseNode.get(), (blockid<<24) | *(iditer++));
     }
 
     root->addChild(mBaseNode);
