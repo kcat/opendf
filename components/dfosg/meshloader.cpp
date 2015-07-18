@@ -149,8 +149,8 @@ void MdlPlane::fixUVs(const std::vector<MdlPoint> &points)
         // Solve this to get the unormalized T and B vectors.
 
         float scale = 1.0f / (s1*t2 - s2*t1);
-        osg::Vec3 tangent = (P*t2 - Q*t1) * scale; tangent.normalize();
-        osg::Vec3 binormal = (Q*s1 - P*s2) * scale; binormal.normalize();
+        osg::Vec3 tangent = (P*t2 - Q*t1) * scale;
+        osg::Vec3 binormal = (Q*s1 - P*s2) * scale;
 
         // Find the U and V scales. Without this, we would have to assume 1 world unit = 1 UV unit.
         float uscale = ((fabs(tangent * P) > fabs(tangent * Q)) ?
