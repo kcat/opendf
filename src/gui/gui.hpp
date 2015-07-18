@@ -61,6 +61,8 @@ public:
     virtual void injectKeyRelease(SDL_Keycode code) final;
     virtual void injectTextInput(const char *text) final;
 
+    virtual void updateStatus(std::string&& str) final;
+
     void updateStatus(const std::string &str);
 };
 

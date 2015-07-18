@@ -63,6 +63,8 @@ public:
     virtual void injectKeyRelease(SDL_Keycode code) = 0;
     virtual void injectTextInput(const char *text) = 0;
 
+    virtual void updateStatus(std::string&& str) = 0;
+
     static GuiIface &get() { return sInstance; }
 };
 

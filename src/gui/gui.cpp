@@ -622,4 +622,16 @@ void Gui::injectTextInput(const char *text)
         inputMgr.injectKeyPress(MyGUI::KeyCode::None, character);
 }
 
+
+void Gui::updateStatus(std::string&& str)
+{
+    if(str.empty())
+        mStatusMessages->setVisible(false);
+    else
+    {
+        mStatusMessages->setCaption(MyGUI::UString(str));
+        mStatusMessages->setVisible(true);
+    }
+}
+
 } // namespace DF
