@@ -66,6 +66,8 @@ public:
     virtual void initialize(osgViewer::Viewer *viewer) final;
     virtual void deinitialize() final;
 
+    virtual void loadExterior(int regnum, int extid) final;
+
     virtual void loadDungeonByExterior(int regnum, int extid) final;
 
     virtual void move(/*int objid,*/ float xrel, float yrel, float zrel) final;

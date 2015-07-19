@@ -7,24 +7,24 @@
 namespace DF
 {
 
-struct ExteriorLocation : public LocationHeader {
-    struct Building {
-        uint16_t mNameSeed;
-        uint32_t mNullValue1;
-        uint32_t mNullValue2;
-        uint32_t mNullValue3;
-        uint32_t mNullValue4;
-        uint16_t mFactionId;
-        int16_t  mSector;
-        uint16_t mLocationId;
-        uint8_t  mBuildingType;
-        uint8_t  mQuality;
-    };
+struct ExteriorBuilding {
+    uint16_t mNameSeed;
+    uint32_t mNullValue1;
+    uint32_t mNullValue2;
+    uint32_t mNullValue3;
+    uint32_t mNullValue4;
+    uint16_t mFactionId;
+    int16_t  mSector;
+    uint16_t mLocationId;
+    uint8_t  mBuildingType;
+    uint8_t  mQuality;
+};
 
+struct ExteriorLocation : public LocationHeader {
     uint16_t mBuildingCount;
     uint8_t  mUnknown1[5];
 
-    std::vector<Building> mBuildings;
+    std::vector<ExteriorBuilding> mBuildings;
 
     char mName[32]; // Unused?
     int32_t  mMapId; // 20 bits only
@@ -44,6 +44,8 @@ struct ExteriorLocation : public LocationHeader {
     uint32_t mUnknown6;
 
     void load(std::istream &stream);
+
+    std::string getMapBlockName(size_t idx, size_t regnum) const;
 };
 
 }

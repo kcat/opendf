@@ -136,6 +136,37 @@ CCMD(dumpblocks)
 }
 
 
+CCMD(warp)
+{
+    if(params.empty())
+    {
+        Log::get().stream(Log::Level_Error)<< "Usage: warp <region index> <location index>";
+        return;
+    }
+
+    try {
+        char *next = nullptr;
+        size_t regnum = strtoul(params.c_str(), &next, 10);
+        if(!next || *next != ' ')
+        {
+            Log::get().stream(Log::Level_Error)<< "Invalid region parameter: "<<params;
+            return;
+        }
+        size_t mapnum = strtoul(next, &next, 10);
+        if(next && *next != '\0')
+        {
+            Log::get().stream(Log::Level_Error)<< "Invalid location parameter: "<<params;
+            return;
+        }
+
+        WorldIface::get().loadExterior(regnum, mapnum);
+    }
+    catch(std::exception &e) {
+        Log::get().stream(Log::Level_Error)<< "Exception: "<<e.what();
+        return;
+    }
+}
+
 CCMD(dwarp)
 {
     if(params.empty())
@@ -303,6 +334,35 @@ void World::deinitialize()
     mViewer = nullptr;
 }
 
+
+void World::loadExterior(int regnum, int extid)
+{
+    const MapRegion &region = mRegions.at(regnum);
+    const ExteriorLocation &extloc = region.mExteriors.at(extid);
+
+    mDungeon.clear();
+    mCurrentRegion = &region;
+    mCurrentExterior = &extloc;
+    mCurrentDungeon = nullptr;
+
+    Log::get().stream()<< "Entering "<<extloc.mLocationName;
+    size_t count = extloc.mWidth * extloc.mHeight;
+    for(size_t i = 0;i < count;++i)
+    {
+        std::string name = extloc.getMapBlockName(i, regnum);
+        if(!VFS::Manager::get().exists(name.c_str()))
+        {
+            Log::get().stream()<< name<<" does not exist";
+            name.erase(4);
+            name[4] = '*';
+            std::set<std::string> list = VFS::Manager::get().list(name.c_str());
+            if(list.empty()) name.clear();
+            else name = *list.begin();
+        }
+
+        Log::get().stream()<< "Would load "<<name;
+    }
+}
 
 void World::loadDungeonByExterior(int regnum, int extid)
 {
