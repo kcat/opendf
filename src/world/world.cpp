@@ -392,7 +392,15 @@ void World::update(float timediff)
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
 
-    size_t result = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
+    size_t result;
+    if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+        result = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
+    else
+    {
+        float x, y;
+        GuiIface::get().getMousePosition(x, y);
+        result = castCameraToViewportRay(x, y, 1024.0f, false);
+    }
     if(result == ~static_cast<size_t>(0) || !*g_introspect)
         GuiIface::get().updateStatus(std::string());
     else

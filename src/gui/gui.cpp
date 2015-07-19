@@ -553,6 +553,17 @@ void Gui::updateStatus(const std::string &str)
 }
 
 
+void Gui::getMousePosition(float &x, float &y)
+{
+    const MyGUI::IntPoint &pos = MyGUI::InputManager::getInstance().getMousePosition();
+    x = static_cast<float>(pos.left);
+    y = static_cast<float>(pos.top);
+    const MyGUI::IntSize &viewSize = MyGUI::RenderManager::getInstance().getViewSize();
+    x /= viewSize.width;
+    y /= viewSize.height;
+}
+
+
 void Gui::mouseMoved(int x, int y, int z)
 {
     MyGUI::InputManager::getInstance().injectMouseMove(x, y, z);

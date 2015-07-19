@@ -56,6 +56,8 @@ public:
     /** \return The current top-level GUI mode. */
     virtual Mode getMode() const = 0;
 
+    virtual void getMousePosition(float &x, float &y) = 0;
+
     virtual void mouseMoved(int x, int y, int z) = 0;
     virtual void mousePressed(int x, int y, int button) = 0;
     virtual void mouseReleased(int x, int y, int button) = 0;
