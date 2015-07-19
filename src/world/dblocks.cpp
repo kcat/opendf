@@ -35,20 +35,25 @@ void ObjectBase::print(std::ostream &stream) const
 }
 
 
-void ModelObject::load(std::istream &stream, const std::array<int,750> &mdlidx)
+void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata)
 {
     mXRot = VFS::read_le32(stream);
     mYRot = VFS::read_le32(stream);
     mZRot = VFS::read_le32(stream);
 
-    mModelIdx = mdlidx.at(VFS::read_le16(stream));
+    mModelIdx = VFS::read_le16(stream);
     mUnknown1 = VFS::read_le32(stream);
     mUnknown2 = stream.get();
     mActionOffset = VFS::read_le32(stream);
+
+    mModelData = mdldata.at(mModelIdx);
 }
 
 void ModelObject::buildNodes(osg::Group *root, size_t objid)
 {
+    if(mModelData[0] == -1)
+        return;
+
     osg::Matrix mat;
     mat.makeRotate(
         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
@@ -57,10 +62,14 @@ void ModelObject::buildNodes(osg::Group *root, size_t objid)
     );
     mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
 
+    std::array<char,6> id{{ mModelData[0], mModelData[1], mModelData[2],
+                            mModelData[3], mModelData[4], 0 }};
+    size_t mdlidx = strtol(id.data(), nullptr, 10);
+
     mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->setNodeMask(WorldIface::Mask_Static);
     mBaseNode->setUserData(new ObjectRef(objid));
-    mBaseNode->addChild(Resource::MeshManager::get().get(mModelIdx));
+    mBaseNode->addChild(Resource::MeshManager::get().get(mdlidx));
     root->addChild(mBaseNode);
 }
 
@@ -81,8 +90,11 @@ void ModelObject::print(std::ostream &stream) const
 {
     DF::ObjectBase::print(stream);
 
+    std::array<char,9> id{{ mModelData[0], mModelData[1], mModelData[2], mModelData[3],
+                            mModelData[4], mModelData[5], mModelData[6], mModelData[7], 0 }};
+
     stream<< "Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
-    stream<< "ModelIdx: "<<mModelIdx<<"\n";
+    stream<< "ModelIdx: "<<mModelIdx<<" ("<<id.data()<<")\n";
     stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
     stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown2<<std::dec<<std::setw(0)<<"\n";
     stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
@@ -152,18 +164,6 @@ void DBlockHeader::load(std::istream &stream)
     for(uint32_t &val : mUnknown3)
         val = VFS::read_le32(stream);
 
-    std::array<int,750> mdlidx;
-    for(size_t i = 0;i < 750;++i)
-    {
-        if(mModelData[i][0] == -1)
-            mdlidx[i] = -1;
-        else
-        {
-            std::array<char,6> id{{ mModelData[i][0], mModelData[i][1], mModelData[i][2], mModelData[i][3], mModelData[i][4], 0 }};
-            mdlidx[i] = strtol(id.data(), nullptr, 10);
-        }
-    }
-
     stream.seekg(mobjectRootOffset);
 
     std::vector<int32_t> rootoffsets(mWidth*mHeight);
@@ -188,7 +188,7 @@ void DBlockHeader::load(std::istream &stream)
             {
                 stream.seekg(objoffset);
                 ref_ptr<ModelObject> mdl(new ModelObject(x, y, z));
-                mdl->load(stream, mdlidx);
+                mdl->load(stream, mModelData);
 
                 auto ret = mObjectIds.insert(offset);
                 if(ret.second)

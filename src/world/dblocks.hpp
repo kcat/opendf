@@ -53,13 +53,15 @@ struct ObjectBase : public Referenceable {
 struct ModelObject : public ObjectBase {
     int32_t mXRot, mYRot, mZRot;
 
-    uint32_t mModelIdx; // Was uint16_t
+    uint16_t mModelIdx;
     uint32_t mUnknown1;
     uint8_t  mUnknown2;
     int32_t  mActionOffset;
 
+    std::array<char,8> mModelData;
+
     ModelObject(int x, int y, int z) : ObjectBase(ObjectType_Model, x, y, z) { }
-    void load(std::istream &stream, const std::array<int,750> &mdlidx);
+    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata);
 
     virtual void buildNodes(osg::Group *root, size_t objid) final;
     virtual void print(LogStream &stream) const final;
