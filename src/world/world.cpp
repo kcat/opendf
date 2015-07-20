@@ -11,6 +11,7 @@
 #include "components/vfs/manager.hpp"
 
 #include "gui/iface.hpp"
+#include "mblocks.hpp"
 #include "dblocks.hpp"
 #include "cvars.hpp"
 #include "log.hpp"
@@ -330,6 +331,7 @@ void World::initialize(osgViewer::Viewer *viewer)
 
 void World::deinitialize()
 {
+    mExterior.clear();
     mDungeon.clear();
     mViewer = nullptr;
 }
@@ -340,6 +342,7 @@ void World::loadExterior(int regnum, int extid)
     const MapRegion &region = mRegions.at(regnum);
     const ExteriorLocation &extloc = region.mExteriors.at(extid);
 
+    mExterior.clear();
     mDungeon.clear();
     mCurrentRegion = &region;
     mCurrentExterior = &extloc;
@@ -360,8 +363,16 @@ void World::loadExterior(int regnum, int extid)
             else name = *list.begin();
         }
 
-        Log::get().stream()<< "Would load "<<name;
+        VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
+        if(!stream) throw std::runtime_error("Failed to open "+name);
+
+        mExterior.push_back(MBlockHeader());
+        mExterior.back().load(*stream);
     }
+
+    osg::Group *root = mViewer->getSceneData()->asGroup();
+    for(size_t i = 0;i < mExterior.size();++i)
+        mExterior[i].buildNodes(root, i%extloc.mWidth, i/extloc.mWidth);
 }
 
 void World::loadDungeonByExterior(int regnum, int extid)
@@ -373,6 +384,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
         if(extloc.mLocationId != dinfo.mExteriorLocationId)
             continue;
 
+        mExterior.clear();
         mDungeon.clear();
         mCurrentRegion = &region;
         mCurrentExterior = &extloc;

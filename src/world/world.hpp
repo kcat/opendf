@@ -18,6 +18,7 @@
 namespace DF
 {
 
+struct MBlockHeader;
 struct DBlockHeader;
 
 struct MapTable {
@@ -50,6 +51,8 @@ class World : public WorldIface {
     const MapRegion *mCurrentRegion;
     const ExteriorLocation *mCurrentExterior;
     const DungeonInterior *mCurrentDungeon;
+
+    std::vector<MBlockHeader> mExterior;
     std::vector<DBlockHeader> mDungeon;
 
     osg::Vec3f mCameraPos;
