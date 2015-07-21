@@ -123,7 +123,7 @@ IStreamPtr BsaArchive::open(size_t id)
     return open(mEntries[std::distance(mLookupId.begin(), iter)]);
 }
 
-bool BsaArchive::exists(const char *name)
+bool BsaArchive::exists(const char *name) const
 {
     return (mLookupName.find(name) != mLookupName.end());
 }

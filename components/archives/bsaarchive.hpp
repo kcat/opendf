@@ -35,7 +35,7 @@ public:
     virtual IStreamPtr open(const char *name);
     IStreamPtr open(size_t id);
 
-    virtual bool exists(const char *name);
+    virtual bool exists(const char *name) const;
 
     virtual const std::set<std::string> &list() const final { return mLookupName; };
 };

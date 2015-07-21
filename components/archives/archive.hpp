@@ -65,7 +65,7 @@ class Archive {
 public:
     virtual ~Archive() { }
     virtual IStreamPtr open(const char *name) = 0;
-    virtual bool exists(const char *name) = 0;
+    virtual bool exists(const char *name) const = 0;
     virtual const std::set<std::string> &list() const = 0;
 };
 
