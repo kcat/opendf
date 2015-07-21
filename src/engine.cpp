@@ -446,7 +446,7 @@ bool Engine::go(void)
     Resource::MeshManager::get().initialize();
 
     Log::get().message("Initializing Input...");
-    Input::get().initialize();
+    Input::get().initialize(viewer);
 
     {
         mSceneRoot = new osg::MatrixTransform(osg::Matrix::scale(osg::Vec3(1.0f, -1.0f, -1.0f)));
@@ -456,9 +456,13 @@ bool Engine::go(void)
         ss->setMode(GL_BLEND, osg::StateAttribute::OFF);
     }
 
+    {
+        osg::ref_ptr<osgViewer::StatsHandler> statshandler(new osgViewer::StatsHandler());
+        statshandler->setKeyEventTogglesOnScreenStats(osgGA::GUIEventAdapter::KEY_F3);
+        viewer->addEventHandler(statshandler);
+    }
     viewer->setSceneData(mSceneRoot);
     viewer->requestContinuousUpdate();
-    viewer->addEventHandler(new osgViewer::StatsHandler);
     viewer->realize();
 
     Log::get().message("Initializing GUI...");

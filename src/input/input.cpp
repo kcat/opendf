@@ -4,6 +4,8 @@
 #include <SDL.h>
 
 #include <osg/Vec3>
+#include <osgViewer/Viewer>
+#include <osgGA/GUIEventAdapter>
 
 #include "gui/iface.hpp"
 #include "world/iface.hpp"
@@ -32,8 +34,9 @@ Input::~Input()
 }
 
 
-void Input::initialize()
+void Input::initialize(osgViewer::Viewer *viewer)
 {
+    mViewer = viewer;
     int ret = SDL_SetRelativeMouseMode(SDL_TRUE);
     if(ret != 0)
         Log::get().stream()<< "SDL_SetRelativeMouseMode returned "<<ret<<", "<<SDL_GetError();
@@ -42,6 +45,7 @@ void Input::initialize()
 void Input::deinitialize()
 {
     SDL_SetRelativeMouseMode(SDL_FALSE);
+    mViewer = nullptr;
 }
 
 
@@ -139,6 +143,9 @@ void Input::handleKeyboardEvent(const SDL_KeyboardEvent &evt)
                 }
             }
         }
+        else if(evt.keysym.sym == SDLK_F3)
+            mViewer->getEventQueue()->keyPress(osgGA::GUIEventAdapter::KEY_F3);
+
     }
     else if(evt.state == SDL_RELEASED)
         GuiIface::get().injectKeyRelease(evt.keysym.sym);
