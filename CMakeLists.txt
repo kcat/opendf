@@ -25,6 +25,8 @@ include_directories("${opendf_SOURCE_DIR}")
 
 set(SRCS components/sdlutil/graphicswindow.cpp
          components/settings/configfile.cpp
+         components/archives/archive.cpp
+         components/archives/bsaarchive.cpp
          components/vfs/manager.cpp
          components/vfs/osg_callbacks.cpp
          components/resource/texturemanager.cpp
@@ -49,6 +51,8 @@ set(SRCS components/sdlutil/graphicswindow.cpp
 )
 set(HDRS components/sdlutil/graphicswindow.hpp
          components/settings/configfile.hpp
+         components/archives/archive.hpp
+         components/archives/bsaarchive.hpp
          components/vfs/manager.hpp
          components/vfs/osg_callbacks.hpp
          components/resource/texturemanager.hpp
