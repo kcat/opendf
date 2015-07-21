@@ -7,11 +7,15 @@
 
 #include "gui/iface.hpp"
 #include "world/iface.hpp"
+#include "cvars.hpp"
 #include "log.hpp"
 
 
 namespace DF
 {
+
+CVAR(CVarBool, i_inverty, true);
+
 
 Input Input::sInput;
 
@@ -67,9 +71,9 @@ void Input::update(float timediff)
         if(keystate[SDL_SCANCODE_D])
             movedir.x() += -1.0f;
         if(keystate[SDL_SCANCODE_PAGEUP])
-            movedir.y() += +1.0f;
-        if(keystate[SDL_SCANCODE_PAGEDOWN])
             movedir.y() += -1.0f;
+        if(keystate[SDL_SCANCODE_PAGEDOWN])
+            movedir.y() += +1.0f;
         movedir.normalize();
         movedir *= speed;
 
@@ -82,7 +86,10 @@ void Input::handleMouseMotionEvent(const SDL_MouseMotionEvent &evt)
 {
     if(GuiIface::get().getMode() == GuiIface::Mode_Game)
     {
-        WorldIface::get().rotate(evt.yrel * 0.1f, evt.xrel * 0.1f);
+        if(*i_inverty)
+            WorldIface::get().rotate(evt.yrel * 0.1f, evt.xrel * 0.1f);
+        else
+            WorldIface::get().rotate(evt.yrel * -0.1f, evt.xrel * 0.1f);
     }
 
     mMouseX = evt.x;
