@@ -72,7 +72,8 @@ struct FlatObject : public ObjectBase {
     uint16_t mTexture;
     uint16_t mGender; // Flags?
     uint16_t mFactionId;
-    uint8_t mUnknown[5];
+    uint32_t mActionOffset; // Maybe?
+    uint8_t mUnknown;
 
     FlatObject(int x, int y, int z) : ObjectBase(ObjectType_Flat, x, y, z) { }
     void load(std::istream &stream);

@@ -106,7 +106,8 @@ void FlatObject::load(std::istream &stream)
     mTexture = VFS::read_le16(stream);
     mGender = VFS::read_le16(stream);
     mFactionId = VFS::read_le16(stream);
-    stream.read(reinterpret_cast<char*>(mUnknown), sizeof(mUnknown));
+    mActionOffset = VFS::read_le32(stream);
+    stream.read(reinterpret_cast<char*>(&mUnknown), sizeof(mUnknown));
 }
 
 void FlatObject::buildNodes(osg::Group *root, size_t objid)
@@ -126,10 +127,8 @@ void FlatObject::print(LogStream &stream) const
     stream<< "   Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
     stream<< "   Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
     stream<< "   FactionId: "<<mFactionId<<"\n";
-    stream<< "   Unknown:";
-    for(int unk : mUnknown)
-        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
-    stream<<std::setw(0)<<std::dec<<"\n";
+    stream<< "   ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::setw(0)<<std::dec<<"\n";
     stream<<std::setfill(' ');
 }
 
@@ -140,10 +139,8 @@ void FlatObject::print(std::ostream &stream) const
     stream<< "Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
     stream<< "Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
     stream<< "FactionId: "<<mFactionId<<"\n";
-    stream<< "Unknown:";
-    for(int unk : mUnknown)
-        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
-    stream<<std::setw(0)<<std::dec<<"\n";
+    stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::setw(0)<<std::dec<<"\n";
 }
 
 
