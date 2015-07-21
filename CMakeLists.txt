@@ -98,4 +98,16 @@ target_link_libraries(opendf
     ${MYGUI_LIBRARIES}
 )
 
-install(TARGETS opendf RUNTIME DESTINATION bin)
+
+set(SRCS components/archives/archive.cpp
+         components/archives/bsaarchive.cpp
+         tools/bsatool/bsatool.cpp
+)
+set(HDRS components/archives/archive.hpp
+         components/archives/bsaarchive.hpp
+)
+
+add_executable(bsatool ${SRCS} ${HDRS})
+
+
+install(TARGETS opendf bsatool RUNTIME DESTINATION bin)
