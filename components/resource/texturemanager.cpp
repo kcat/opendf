@@ -82,8 +82,8 @@ osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx, int16_t *xoffset, int
                                                                                 gCurrentPalette);
     *xoffset = x_offset;
     *yoffset = y_offset;
-    *xscale = x_scale / 256.0f;
-    *yscale = y_scale / 256.0f;
+    *xscale = 1.0f + x_scale/256.0f;
+    *yscale = 1.0f + y_scale/256.0f;
     if(images.empty())
         return osg::ref_ptr<osg::Texture>();
 
@@ -123,7 +123,7 @@ osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx, int16_t *xoffset, int
     tex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST_MIPMAP_LINEAR);
     tex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::NEAREST);
 
-    mTexCache[idx] = TextureInfo{tex, x_offset, y_offset, x_scale/256.0f, y_scale/256.0f};
+    mTexCache[idx] = TextureInfo{tex, x_offset, y_offset, 1.0f + x_scale/256.0f, 1.0f + y_scale/256.0f};
     return tex;
 }
 
