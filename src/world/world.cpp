@@ -145,21 +145,35 @@ CCMD(warp)
         return;
     }
 
-    try {
+    size_t regnum = ~static_cast<size_t>(0);
+    size_t mapnum = ~static_cast<size_t>(0);
+
+    if(params[0] >= '0' && params[0] <= '9')
+    {
         char *next = nullptr;
-        size_t regnum = strtoul(params.c_str(), &next, 10);
+        regnum = strtoul(params.c_str(), &next, 10);
         if(!next || *next != ' ')
         {
             Log::get().stream(Log::Level_Error)<< "Invalid region parameter: "<<params;
             return;
         }
-        size_t mapnum = strtoul(next, &next, 10);
+        mapnum = strtoul(next, &next, 10);
         if(next && *next != '\0')
         {
             Log::get().stream(Log::Level_Error)<< "Invalid location parameter: "<<params;
             return;
         }
+    }
+    else
+    {
+        if(!WorldIface::get().getExteriorByName(params, regnum, mapnum))
+        {
+            Log::get().stream(Log::Level_Error)<< "Failed to find exterior \""<<params<<"\"";
+            return;
+        }
+    }
 
+    try {
         WorldIface::get().loadExterior(regnum, mapnum);
     }
     catch(std::exception &e) {
@@ -336,6 +350,21 @@ void World::deinitialize()
     mViewer = nullptr;
 }
 
+
+bool World::getExteriorByName(const std::string &name, size_t &regnum, size_t &mapnum) const
+{
+    for(const MapRegion &region : mRegions)
+    {
+        auto iter = std::find(region.mNames.begin(), region.mNames.end(), name);
+        if(iter != region.mNames.end())
+        {
+            regnum = std::distance(mRegions.data(), &region);
+            mapnum = std::distance(region.mNames.begin(), iter);
+            return true;
+        }
+    }
+    return false;
+}
 
 void World::loadExterior(int regnum, int extid)
 {

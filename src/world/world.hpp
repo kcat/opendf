@@ -69,6 +69,7 @@ public:
     virtual void initialize(osgViewer::Viewer *viewer) final;
     virtual void deinitialize() final;
 
+    virtual bool getExteriorByName(const std::string &name, size_t &regnum, size_t &mapnum) const final;
     virtual void loadExterior(int regnum, int extid) final;
 
     virtual void loadDungeonByExterior(int regnum, int extid) final;

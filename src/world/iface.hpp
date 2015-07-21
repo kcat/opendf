@@ -1,6 +1,8 @@
 #ifndef WORLD_IFACE_HPP
 #define WORLD_IFACE_HPP
 
+#include <string>
+
 
 namespace osgViewer
 {
@@ -24,6 +26,7 @@ public:
     virtual void initialize(osgViewer::Viewer *viewer) = 0;
     virtual void deinitialize() = 0;
 
+    virtual bool getExteriorByName(const std::string &name, size_t &regnum, size_t &mapnum) const = 0;
     virtual void loadExterior(int regnum, int extid) = 0;
 
     virtual void loadDungeonByExterior(int regnum, int extid) = 0;
