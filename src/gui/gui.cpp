@@ -21,178 +21,126 @@
 
 namespace
 {
-    const std::map<SDL_Keycode,MyGUI::KeyCode> SDLtoMyGUIKeycode{
-        {SDLK_UNKNOWN, MyGUI::KeyCode::None},
 
-        {SDLK_a, MyGUI::KeyCode::A},
-        {SDLK_b, MyGUI::KeyCode::B},
-        {SDLK_c, MyGUI::KeyCode::C},
-        {SDLK_d, MyGUI::KeyCode::D},
-        {SDLK_e, MyGUI::KeyCode::E},
-        {SDLK_f, MyGUI::KeyCode::F},
-        {SDLK_g, MyGUI::KeyCode::G},
-        {SDLK_h, MyGUI::KeyCode::H},
-        {SDLK_i, MyGUI::KeyCode::I},
-        {SDLK_j, MyGUI::KeyCode::J},
-        {SDLK_k, MyGUI::KeyCode::K},
-        {SDLK_l, MyGUI::KeyCode::L},
-        {SDLK_m, MyGUI::KeyCode::M},
-        {SDLK_n, MyGUI::KeyCode::N},
-        {SDLK_o, MyGUI::KeyCode::O},
-        {SDLK_p, MyGUI::KeyCode::P},
-        {SDLK_q, MyGUI::KeyCode::Q},
-        {SDLK_r, MyGUI::KeyCode::R},
-        {SDLK_s, MyGUI::KeyCode::S},
-        {SDLK_t, MyGUI::KeyCode::T},
-        {SDLK_u, MyGUI::KeyCode::U},
-        {SDLK_v, MyGUI::KeyCode::V},
-        {SDLK_w, MyGUI::KeyCode::W},
-        {SDLK_x, MyGUI::KeyCode::X},
-        {SDLK_y, MyGUI::KeyCode::Y},
-        {SDLK_z, MyGUI::KeyCode::Z},
+const std::map<SDL_Keycode,MyGUI::KeyCode> SDLtoMyGUIKeycode{
+    {SDLK_UNKNOWN, MyGUI::KeyCode::None},
 
-        {SDLK_1, MyGUI::KeyCode::One},
-        {SDLK_2, MyGUI::KeyCode::Two},
-        {SDLK_3, MyGUI::KeyCode::Three},
-        {SDLK_4, MyGUI::KeyCode::Four},
-        {SDLK_5, MyGUI::KeyCode::Five},
-        {SDLK_6, MyGUI::KeyCode::Six},
-        {SDLK_7, MyGUI::KeyCode::Seven},
-        {SDLK_8, MyGUI::KeyCode::Eight},
-        {SDLK_9, MyGUI::KeyCode::Nine},
-        {SDLK_0, MyGUI::KeyCode::Zero},
+    {SDLK_a, MyGUI::KeyCode::A},
+    {SDLK_b, MyGUI::KeyCode::B},
+    {SDLK_c, MyGUI::KeyCode::C},
+    {SDLK_d, MyGUI::KeyCode::D},
+    {SDLK_e, MyGUI::KeyCode::E},
+    {SDLK_f, MyGUI::KeyCode::F},
+    {SDLK_g, MyGUI::KeyCode::G},
+    {SDLK_h, MyGUI::KeyCode::H},
+    {SDLK_i, MyGUI::KeyCode::I},
+    {SDLK_j, MyGUI::KeyCode::J},
+    {SDLK_k, MyGUI::KeyCode::K},
+    {SDLK_l, MyGUI::KeyCode::L},
+    {SDLK_m, MyGUI::KeyCode::M},
+    {SDLK_n, MyGUI::KeyCode::N},
+    {SDLK_o, MyGUI::KeyCode::O},
+    {SDLK_p, MyGUI::KeyCode::P},
+    {SDLK_q, MyGUI::KeyCode::Q},
+    {SDLK_r, MyGUI::KeyCode::R},
+    {SDLK_s, MyGUI::KeyCode::S},
+    {SDLK_t, MyGUI::KeyCode::T},
+    {SDLK_u, MyGUI::KeyCode::U},
+    {SDLK_v, MyGUI::KeyCode::V},
+    {SDLK_w, MyGUI::KeyCode::W},
+    {SDLK_x, MyGUI::KeyCode::X},
+    {SDLK_y, MyGUI::KeyCode::Y},
+    {SDLK_z, MyGUI::KeyCode::Z},
 
-        {SDLK_RETURN,    MyGUI::KeyCode::Return},
-        {SDLK_ESCAPE,    MyGUI::KeyCode::Escape},
-        {SDLK_BACKSPACE, MyGUI::KeyCode::Backspace},
-        {SDLK_TAB,   MyGUI::KeyCode::Tab},
-        {SDLK_SPACE, MyGUI::KeyCode::Space},
+    {SDLK_1, MyGUI::KeyCode::One},
+    {SDLK_2, MyGUI::KeyCode::Two},
+    {SDLK_3, MyGUI::KeyCode::Three},
+    {SDLK_4, MyGUI::KeyCode::Four},
+    {SDLK_5, MyGUI::KeyCode::Five},
+    {SDLK_6, MyGUI::KeyCode::Six},
+    {SDLK_7, MyGUI::KeyCode::Seven},
+    {SDLK_8, MyGUI::KeyCode::Eight},
+    {SDLK_9, MyGUI::KeyCode::Nine},
+    {SDLK_0, MyGUI::KeyCode::Zero},
 
-        {SDLK_MINUS,  MyGUI::KeyCode::Minus},
-        {SDLK_EQUALS, MyGUI::KeyCode::Equals},
-        {SDLK_LEFTBRACKET,  MyGUI::KeyCode::LeftBracket},
-        {SDLK_RIGHTBRACKET, MyGUI::KeyCode::RightBracket},
-        {SDLK_BACKSLASH, MyGUI::KeyCode::Backslash},
+    {SDLK_RETURN,    MyGUI::KeyCode::Return},
+    {SDLK_ESCAPE,    MyGUI::KeyCode::Escape},
+    {SDLK_BACKSPACE, MyGUI::KeyCode::Backspace},
+    {SDLK_TAB,   MyGUI::KeyCode::Tab},
+    {SDLK_SPACE, MyGUI::KeyCode::Space},
 
-        {SDLK_SEMICOLON, MyGUI::KeyCode::Semicolon},
-        {SDLK_QUOTE, MyGUI::KeyCode::Apostrophe},
-        {SDLK_BACKQUOTE, MyGUI::KeyCode::Grave},
+    {SDLK_MINUS,  MyGUI::KeyCode::Minus},
+    {SDLK_EQUALS, MyGUI::KeyCode::Equals},
+    {SDLK_LEFTBRACKET,  MyGUI::KeyCode::LeftBracket},
+    {SDLK_RIGHTBRACKET, MyGUI::KeyCode::RightBracket},
+    {SDLK_BACKSLASH, MyGUI::KeyCode::Backslash},
 
-        {SDLK_COMMA, MyGUI::KeyCode::Comma},
-        {SDLK_PERIOD, MyGUI::KeyCode::Period},
-        {SDLK_SLASH, MyGUI::KeyCode::Slash},
+    {SDLK_SEMICOLON, MyGUI::KeyCode::Semicolon},
+    {SDLK_QUOTE, MyGUI::KeyCode::Apostrophe},
+    {SDLK_BACKQUOTE, MyGUI::KeyCode::Grave},
 
-        {SDLK_CAPSLOCK, MyGUI::KeyCode::Capital},
+    {SDLK_COMMA, MyGUI::KeyCode::Comma},
+    {SDLK_PERIOD, MyGUI::KeyCode::Period},
+    {SDLK_SLASH, MyGUI::KeyCode::Slash},
 
-        {SDLK_F1, MyGUI::KeyCode::F1},
-        {SDLK_F2, MyGUI::KeyCode::F2},
-        {SDLK_F3, MyGUI::KeyCode::F3},
-        {SDLK_F4, MyGUI::KeyCode::F4},
-        {SDLK_F5, MyGUI::KeyCode::F5},
-        {SDLK_F6, MyGUI::KeyCode::F6},
-        {SDLK_F7, MyGUI::KeyCode::F7},
-        {SDLK_F8, MyGUI::KeyCode::F8},
-        {SDLK_F9, MyGUI::KeyCode::F9},
-        {SDLK_F10, MyGUI::KeyCode::F10},
-        {SDLK_F11, MyGUI::KeyCode::F11},
-        {SDLK_F12, MyGUI::KeyCode::F12},
+    {SDLK_CAPSLOCK, MyGUI::KeyCode::Capital},
 
-        {SDLK_PRINTSCREEN, MyGUI::KeyCode::SysRq},
-        {SDLK_SCROLLLOCK, MyGUI::KeyCode::ScrollLock},
-        {SDLK_PAUSE, MyGUI::KeyCode::Pause},
+    {SDLK_F1, MyGUI::KeyCode::F1},
+    {SDLK_F2, MyGUI::KeyCode::F2},
+    {SDLK_F3, MyGUI::KeyCode::F3},
+    {SDLK_F4, MyGUI::KeyCode::F4},
+    {SDLK_F5, MyGUI::KeyCode::F5},
+    {SDLK_F6, MyGUI::KeyCode::F6},
+    {SDLK_F7, MyGUI::KeyCode::F7},
+    {SDLK_F8, MyGUI::KeyCode::F8},
+    {SDLK_F9, MyGUI::KeyCode::F9},
+    {SDLK_F10, MyGUI::KeyCode::F10},
+    {SDLK_F11, MyGUI::KeyCode::F11},
+    {SDLK_F12, MyGUI::KeyCode::F12},
 
-        {SDLK_INSERT, MyGUI::KeyCode::Insert},
-        {SDLK_HOME, MyGUI::KeyCode::Home},
-        {SDLK_PAGEUP, MyGUI::KeyCode::PageUp},
-        {SDLK_DELETE, MyGUI::KeyCode::Delete},
-        {SDLK_END, MyGUI::KeyCode::End},
-        {SDLK_PAGEDOWN, MyGUI::KeyCode::PageDown},
+    {SDLK_PRINTSCREEN, MyGUI::KeyCode::SysRq},
+    {SDLK_SCROLLLOCK, MyGUI::KeyCode::ScrollLock},
+    {SDLK_PAUSE, MyGUI::KeyCode::Pause},
 
-        {SDLK_RIGHT, MyGUI::KeyCode::ArrowRight},
-        {SDLK_LEFT, MyGUI::KeyCode::ArrowLeft},
-        {SDLK_DOWN, MyGUI::KeyCode::ArrowDown},
-        {SDLK_UP, MyGUI::KeyCode::ArrowUp},
+    {SDLK_INSERT, MyGUI::KeyCode::Insert},
+    {SDLK_HOME, MyGUI::KeyCode::Home},
+    {SDLK_PAGEUP, MyGUI::KeyCode::PageUp},
+    {SDLK_DELETE, MyGUI::KeyCode::Delete},
+    {SDLK_END, MyGUI::KeyCode::End},
+    {SDLK_PAGEDOWN, MyGUI::KeyCode::PageDown},
 
-        {SDLK_NUMLOCKCLEAR, MyGUI::KeyCode::NumLock},
-        {SDLK_KP_DIVIDE, MyGUI::KeyCode::Divide},
-        {SDLK_KP_MULTIPLY, MyGUI::KeyCode::Multiply},
-        {SDLK_KP_MINUS, MyGUI::KeyCode::Subtract},
-        {SDLK_KP_PLUS, MyGUI::KeyCode::Add},
-        {SDLK_KP_ENTER, MyGUI::KeyCode::NumpadEnter},
-        {SDLK_KP_1, MyGUI::KeyCode::Numpad1},
-        {SDLK_KP_2, MyGUI::KeyCode::Numpad2},
-        {SDLK_KP_3, MyGUI::KeyCode::Numpad3},
-        {SDLK_KP_4, MyGUI::KeyCode::Numpad4},
-        {SDLK_KP_5, MyGUI::KeyCode::Numpad5},
-        {SDLK_KP_6, MyGUI::KeyCode::Numpad6},
-        {SDLK_KP_7, MyGUI::KeyCode::Numpad7},
-        {SDLK_KP_8, MyGUI::KeyCode::Numpad8},
-        {SDLK_KP_9, MyGUI::KeyCode::Numpad9},
-        {SDLK_KP_0, MyGUI::KeyCode::Numpad0},
-        {SDLK_KP_PERIOD, MyGUI::KeyCode::Decimal},
+    {SDLK_RIGHT, MyGUI::KeyCode::ArrowRight},
+    {SDLK_LEFT, MyGUI::KeyCode::ArrowLeft},
+    {SDLK_DOWN, MyGUI::KeyCode::ArrowDown},
+    {SDLK_UP, MyGUI::KeyCode::ArrowUp},
 
-        {SDLK_LCTRL, MyGUI::KeyCode::LeftControl},
-        {SDLK_LSHIFT, MyGUI::KeyCode::LeftShift},
-        {SDLK_LALT, MyGUI::KeyCode::LeftAlt},
-        {SDLK_LGUI, MyGUI::KeyCode::LeftWindows},
-        {SDLK_RCTRL, MyGUI::KeyCode::RightControl},
-        {SDLK_RSHIFT, MyGUI::KeyCode::RightShift},
-        {SDLK_RALT, MyGUI::KeyCode::RightAlt},
-        {SDLK_RGUI, MyGUI::KeyCode::RightWindows},
-    };
+    {SDLK_NUMLOCKCLEAR, MyGUI::KeyCode::NumLock},
+    {SDLK_KP_DIVIDE, MyGUI::KeyCode::Divide},
+    {SDLK_KP_MULTIPLY, MyGUI::KeyCode::Multiply},
+    {SDLK_KP_MINUS, MyGUI::KeyCode::Subtract},
+    {SDLK_KP_PLUS, MyGUI::KeyCode::Add},
+    {SDLK_KP_ENTER, MyGUI::KeyCode::NumpadEnter},
+    {SDLK_KP_1, MyGUI::KeyCode::Numpad1},
+    {SDLK_KP_2, MyGUI::KeyCode::Numpad2},
+    {SDLK_KP_3, MyGUI::KeyCode::Numpad3},
+    {SDLK_KP_4, MyGUI::KeyCode::Numpad4},
+    {SDLK_KP_5, MyGUI::KeyCode::Numpad5},
+    {SDLK_KP_6, MyGUI::KeyCode::Numpad6},
+    {SDLK_KP_7, MyGUI::KeyCode::Numpad7},
+    {SDLK_KP_8, MyGUI::KeyCode::Numpad8},
+    {SDLK_KP_9, MyGUI::KeyCode::Numpad9},
+    {SDLK_KP_0, MyGUI::KeyCode::Numpad0},
+    {SDLK_KP_PERIOD, MyGUI::KeyCode::Decimal},
 
-    std::vector<unsigned int> utf8ToUnicode(const char *utf8)
-    {
-        std::vector<unsigned int> unicode;
-        for(size_t i = 0;utf8[i];)
-        {
-            unsigned long uni;
-            size_t todo;
-
-            unsigned char ch = utf8[i++];
-            if(ch <= 0x7F)
-            {
-                uni = ch;
-                todo = 0;
-            }
-            else if(ch <= 0xBF)
-                throw std::logic_error("not a UTF-8 string");
-            else if(ch <= 0xDF)
-            {
-                uni = ch&0x1F;
-                todo = 1;
-            }
-            else if(ch <= 0xEF)
-            {
-                uni = ch&0x0F;
-                todo = 2;
-            }
-            else if(ch <= 0xF7)
-            {
-                uni = ch&0x07;
-                todo = 3;
-            }
-            else
-                throw std::logic_error("not a UTF-8 string");
-
-            for(size_t j = 0;j < todo;++j)
-            {
-                if(utf8[i])
-                    throw std::logic_error("not a UTF-8 string");
-                unsigned char ch = utf8[i++];
-                if (ch < 0x80 || ch > 0xBF)
-                    throw std::logic_error("not a UTF-8 string");
-                uni <<= 6;
-                uni += ch & 0x3F;
-            }
-            if(uni >= 0xD800 && uni <= 0xDFFF)
-                throw std::logic_error("not a UTF-8 string");
-            if(uni > 0x10FFFF)
-                throw std::logic_error("not a UTF-8 string");
-            unicode.push_back(uni);
-        }
-        return unicode;
-    }
+    {SDLK_LCTRL, MyGUI::KeyCode::LeftControl},
+    {SDLK_LSHIFT, MyGUI::KeyCode::LeftShift},
+    {SDLK_LALT, MyGUI::KeyCode::LeftAlt},
+    {SDLK_LGUI, MyGUI::KeyCode::LeftWindows},
+    {SDLK_RCTRL, MyGUI::KeyCode::RightControl},
+    {SDLK_RSHIFT, MyGUI::KeyCode::RightShift},
+    {SDLK_RALT, MyGUI::KeyCode::RightAlt},
+    {SDLK_RGUI, MyGUI::KeyCode::RightWindows},
+};
 
 } // namespace
 
@@ -628,7 +576,7 @@ void Gui::injectKeyRelease(SDL_Keycode code)
 void Gui::injectTextInput(const char *text)
 {
     auto &inputMgr = MyGUI::InputManager::getInstance();
-    std::vector<unsigned int> unicode = utf8ToUnicode(text);
+    MyGUI::UString unicode(text);
     for(auto character : unicode)
         inputMgr.injectKeyPress(MyGUI::KeyCode::None, character);
 }
