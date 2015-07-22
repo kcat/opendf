@@ -10,6 +10,7 @@ namespace osg
 {
     class Matrixf;
     class Node;
+    class StateSet;
 }
 
 namespace Resource
@@ -19,12 +20,14 @@ class MeshManager {
     static MeshManager sManager;
 
     std::map<size_t,osg::observer_ptr<osg::Node>> mModelCache;
+    std::map<size_t,osg::observer_ptr<osg::StateSet>> mStateSetCache;
 
     MeshManager();
     ~MeshManager();
 
 public:
     void initialize();
+    void deinitialize();
 
     osg::ref_ptr<osg::Node> get(size_t idx);
 

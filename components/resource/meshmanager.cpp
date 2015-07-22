@@ -25,8 +25,15 @@ MeshManager::~MeshManager()
 {
 }
 
+
 void MeshManager::initialize()
 {
+}
+
+void MeshManager::deinitialize()
+{
+    mStateSetCache.clear();
+    mModelCache.clear();
 }
 
 
@@ -61,8 +68,6 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
         float height = tex->getTextureHeight();
 
         do {
-            //iter->fixUVs(mesh->getPoints(), tex->getTextureWidth(), tex->getTextureHeight());
-
             const std::vector<DFOSG::MdlPlanePoint> &pts = iter->getPoints();
             size_t last_total = vtxs->size();
 
@@ -121,8 +126,20 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
 
         geometry->addPrimitiveSet(idxs);
 
-        osg::StateSet *ss = geometry->getOrCreateStateSet();
-        ss->setTextureAttributeAndModes(0, tex);
+        /* Cache the stateset used for this texture, so it can be reused for
+         * multiple models (should help OSG batch together objects with similar
+         * state).
+         */
+        auto &stateiter = mStateSetCache[texid];
+        osg::ref_ptr<osg::StateSet> ss;
+        if(stateiter.lock(ss) && ss)
+            geometry->setStateSet(ss);
+        else
+        {
+            ss = geometry->getOrCreateStateSet();
+            ss->setTextureAttributeAndModes(0, tex);
+            stateiter = ss;
+        }
 
         geode->addDrawable(geometry);
     }

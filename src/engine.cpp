@@ -161,6 +161,8 @@ Engine::Engine(void)
 
 Engine::~Engine(void)
 {
+    Resource::MeshManager::get().deinitialize();
+
     WorldIface::get().deinitialize();
 
     Log::get().setGuiIface(nullptr);
