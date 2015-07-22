@@ -35,7 +35,7 @@ public:
      * Optionally returns the number of frames in the loaded texture, and a
      * scale+translate matrix with its X/Y scale and offset.
      */
-    osg::ref_ptr<osg::Node> loadFlat(size_t texid, size_t *num_frames=nullptr, osg::Matrixf *mtx=nullptr);
+    osg::ref_ptr<osg::Node> loadFlat(size_t texid, size_t *num_frames=nullptr);
 
     static MeshManager &get() { return sManager; }
 };

@@ -2,6 +2,7 @@
 #include "meshmanager.hpp"
 
 #include <osg/Node>
+#include <osg/MatrixTransform>
 #include <osg/Billboard>
 #include <osg/Geometry>
 #include <osg/Texture>
@@ -148,7 +149,7 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
     return geode;
 }
 
-osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames, osg::Matrixf *mtx)
+osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames)
 {
     /* Nodes for flats are stored with an inverted texid as a lookup, to avoid
      * clashes with ARCH3D indices. */
@@ -158,20 +159,10 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames, 
         osg::ref_ptr<osg::Node> node;
         if(iter->second.lock(node))
         {
-            if(mtx || num_frames)
+            if(num_frames)
             {
-                int16_t xoffset, yoffset;
-                float xscale, yscale;
-                osg::ref_ptr<osg::Texture> tex = TextureManager::get().get(
-                    texid, &xoffset, &yoffset, &xscale, &yscale
-                );
-                if(num_frames)
-                    *num_frames = tex->getTextureDepth();
-                if(mtx)
-                {
-                    *mtx = osg::Matrixf::scale(xscale, yscale, 0.0f);
-                    mtx->postMultTranslate(osg::Vec3(xoffset, yoffset, 0));
-                }
+                osg::ref_ptr<osg::Texture> tex = TextureManager::get().get(texid);
+                *num_frames = tex->getTextureDepth();
             }
             return node;
         }
@@ -184,19 +175,18 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames, 
     );
     if(num_frames)
         *num_frames = tex->getTextureDepth();
-    if(mtx)
-    {
-        *mtx = osg::Matrixf::scale(xscale, yscale, 0.0f);
-        mtx->postMultTranslate(osg::Vec3(xoffset, yoffset, 0));
-    }
 
     float width = tex->getTextureWidth();
     float height = tex->getTextureHeight();
 
-    osg::ref_ptr<osg::Billboard> base(new osg::Billboard());
-    base->setMode(osg::Billboard::AXIAL_ROT);
-    base->setAxis(osg::Vec3(0.0f, 1.0f, 0.0f));
-    base->setNormal(osg::Vec3(0.0f, 0.0f, -1.0f));
+    osg::Matrix mat(osg::Matrixf::scale(xscale, yscale, xscale));
+    //mat.postMultTranslate(osg::Vec3(xoffset, yoffset, 0)); seems to be incorrect values??
+    osg::ref_ptr<osg::MatrixTransform> base(new osg::MatrixTransform(mat));
+
+    osg::ref_ptr<osg::Billboard> bb(new osg::Billboard());
+    bb->setMode(osg::Billboard::AXIAL_ROT);
+    bb->setAxis(osg::Vec3(0.0f, 1.0f, 0.0f));
+    bb->setNormal(osg::Vec3(0.0f, 0.0f, -1.0f));
 
     osg::ref_ptr<osg::Vec3Array> vtxs(new osg::Vec3Array(4));
     (*vtxs)[0] = osg::Vec3(width* 0.5f, height*-0.5f, 0.0f);
@@ -231,7 +221,8 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames, 
     ss->setTextureAttributeAndModes(0, tex);
     ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::GREATER, 0.5f));
 
-    base->addDrawable(geometry);
+    bb->addDrawable(geometry);
+    base->addChild(bb);
 
     mModelCache[~texid] = osg::ref_ptr<osg::Node>(base);
     return base;
