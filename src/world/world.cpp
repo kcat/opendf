@@ -406,7 +406,7 @@ void World::loadExterior(int regnum, int extid)
     {
         int x = i%extloc.mWidth;
         int y = i/extloc.mWidth;
-        mExterior[i].buildNodes(root, x, y);
+        mExterior[i].buildNodes(root, i, x, y);
 
         if(gotstart) continue;
         const MFlat *flat = mExterior[i].getFlatByTexture(Marker_EnterID);
@@ -530,14 +530,29 @@ void World::update(float timediff)
     else
     {
         std::stringstream sstr;
-        DBlockHeader &block = mDungeon.at(result>>24);
-        const ObjectBase *obj = block.getObject(result&0x00ffffff);
-        if(!obj)
-            sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<result;
+        if(!mExterior.empty())
+        {
+            MBlockHeader &block = mExterior.at(result>>24);
+            const MObjectBase *obj = block.getObject(result&0x00ffffff);
+            if(!obj)
+                sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<result;
+            else
+            {
+                sstr<<std::setfill('0');
+                obj->print(sstr);
+            }
+        }
         else
         {
-            sstr<<std::setfill('0');
-            obj->print(sstr);
+            DBlockHeader &block = mDungeon.at(result>>24);
+            const ObjectBase *obj = block.getObject(result&0x00ffffff);
+            if(!obj)
+                sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<result;
+            else
+            {
+                sstr<<std::setfill('0');
+                obj->print(sstr);
+            }
         }
         GuiIface::get().updateStatus(sstr.str());
     }

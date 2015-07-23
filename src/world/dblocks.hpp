@@ -22,15 +22,6 @@ namespace DF
 
 class LogStream;
 
-class ObjectRef : public osg::Referenced {
-    size_t mId;
-
-public:
-    ObjectRef(size_t id) : mId(id) { }
-
-    size_t getId() const { return mId; }
-};
-
 enum ObjectType {
     ObjectType_Model = 0x01,
     ObjectType_Light = 0x02,

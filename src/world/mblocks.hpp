@@ -23,6 +23,8 @@ struct MObjectBase {
     osg::ref_ptr<osg::Group> mBaseNode;
 
     void load(std::istream &stream);
+
+    virtual void print(std::ostream &stream) const;
 };
 
 struct MSection3 : public MObjectBase {
@@ -48,7 +50,9 @@ struct MFlat : public MObjectBase {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root);
+    void buildNodes(osg::Group *root, size_t objid);
+
+    virtual void print(std::ostream &stream) const;
 };
 
 struct MPerson : public MObjectBase {
@@ -77,7 +81,9 @@ struct MModel : public MObjectBase {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root);
+    void buildNodes(osg::Group *root, size_t objid);
+
+    virtual void print(std::ostream &stream) const;
 };
 
 struct MBlock {
@@ -103,7 +109,9 @@ struct MBlock {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root, int x, int z, int yrot);
+    void buildNodes(osg::Group *root, size_t objid, int x, int z, int yrot);
+
+    MObjectBase *getObject(size_t id);
 };
 
 struct MBlockPosition {
@@ -148,8 +156,10 @@ struct MBlockHeader {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root, int x, int z);
+    void buildNodes(osg::Group *root, size_t objid, int x, int z);
     void detachNode();
+
+    MObjectBase *getObject(size_t id);
 
     /* Object types are (apparently) identified by what Texture ID they use.
      * For instance, 0x638A (the 10th entry of TEXTURE.199) is the "Start"

@@ -5,7 +5,7 @@
 
 #include <osg/MatrixTransform>
 
-#include "iface.hpp"
+#include "world.hpp"
 #include "log.hpp"
 
 #include "components/vfs/manager.hpp"

@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+#include <osg/Referenced>
 #include <osg/ref_ptr>
 #include <osg/Vec3>
 #include <osg/Quat>
@@ -20,6 +21,15 @@ namespace DF
 
 struct MBlockHeader;
 struct DBlockHeader;
+
+class ObjectRef : public osg::Referenced {
+    size_t mId;
+
+public:
+    ObjectRef(size_t id) : mId(id) { }
+
+    size_t getId() const { return mId; }
+};
 
 struct MapTable {
     uint32_t mMapId;

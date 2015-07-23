@@ -1,13 +1,16 @@
 
 #include "mblocks.hpp"
 
+#include <iostream>
+#include <iomanip>
+
 #include <osg/Group>
 #include <osg/MatrixTransform>
 
 #include "components/vfs/manager.hpp"
 #include "components/resource/meshmanager.hpp"
 
-#include "iface.hpp"
+#include "world.hpp"
 
 
 namespace DF
@@ -18,6 +21,11 @@ void MObjectBase::load(std::istream &stream)
     mXPos = VFS::read_le32(stream);
     mYPos = VFS::read_le32(stream);
     mZPos = VFS::read_le32(stream);
+}
+
+void MObjectBase::print(std::ostream &stream) const
+{
+    stream<< "Pos: "<<mXPos<<" "<<mYPos<<" "<<mZPos<<"\n";
 }
 
 void MSection3::load(std::istream &stream)
@@ -45,7 +53,7 @@ void MFlat::load(std::istream &stream)
     mFlags = stream.get();
 }
 
-void MFlat::buildNodes(osg::Group *root)
+void MFlat::buildNodes(osg::Group *root, size_t objid)
 {
     osg::Matrix mat(osg::Matrix::translate(
         osg::Vec3(mXPos, mYPos, mZPos)
@@ -53,9 +61,17 @@ void MFlat::buildNodes(osg::Group *root)
 
     mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->setNodeMask(WorldIface::Mask_Flat);
-    //mBaseNode->setUserData(new ObjectRef(objid));
+    mBaseNode->setUserData(new ObjectRef(objid));
     mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture));
     root->addChild(mBaseNode);
+}
+
+void MFlat::print(std::ostream &stream) const
+{
+    DF::MObjectBase::print(stream);
+    stream<< "Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(4)<<mUnknown<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Flags: 0x"<<std::hex<<std::setw(2)<<(int)mFlags<<std::setw(0)<<std::dec<<"\n";
 }
 
 
@@ -91,17 +107,37 @@ void MModel::load(std::istream &stream)
     mNullValue4 = VFS::read_le16(stream);
 }
 
-void MModel::buildNodes(osg::Group *root)
+void MModel::buildNodes(osg::Group *root, size_t objid)
 {
-    osg::Matrix mat(osg::Matrix::translate(
-        osg::Vec3(mXPos, mYPos, mZPos)
+    osg::Matrix mat(osg::Matrix::rotate(
+        -mYRotation*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f)
     ));
+    mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
 
     mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->setNodeMask(WorldIface::Mask_Static);
-    //mBaseNode->setUserData(new ObjectRef(objid));
+    mBaseNode->setUserData(new ObjectRef(objid));
     mBaseNode->addChild(Resource::MeshManager::get().get(mModelIdx));
     root->addChild(mBaseNode);
+}
+
+void MModel::print(std::ostream &stream) const
+{
+    DF::MObjectBase::print(stream);
+    stream<< "ModelIdx: "<<mModelIdx<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown1<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown3<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown4<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Null: "<<mNullValue1<<"\n";
+    stream<< "Null: "<<mNullValue2<<"\n";
+    stream<< "UnknownPos: "<<mUnknownX<<" "<<mUnknownY<<" "<<mUnknownZ<<"\n";
+    stream<< "Null: "<<mNullValue3<<"\n";
+    stream<< "YRotation: "<<mYRotation<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(4)<<mUnknown5<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown6<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown8<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Null: "<<mNullValue4<<"\n";
 }
 
 
@@ -136,7 +172,7 @@ void MBlock::load(std::istream &stream)
         door.load(stream);
 }
 
-void MBlock::buildNodes(osg::Group *root, int x, int z, int yrot)
+void MBlock::buildNodes(osg::Group *root, size_t objid, int x, int z, int yrot)
 {
     if(!mBaseNode)
     {
@@ -147,12 +183,20 @@ void MBlock::buildNodes(osg::Group *root, int x, int z, int yrot)
 
         mBaseNode = new osg::MatrixTransform(mat);
         for(size_t i = 0;i < mModelCount;++i)
-            mModels[i].buildNodes(mBaseNode);
+            mModels[i].buildNodes(mBaseNode, (objid<<16)|i);
         for(size_t i = 0;i < mFlatCount;++i)
-            mFlats[i].buildNodes(mBaseNode);
+            mFlats[i].buildNodes(mBaseNode, (objid<<16)|(mModelCount+i));
     }
 
     root->addChild(mBaseNode);
+}
+
+MObjectBase *MBlock::getObject(size_t id)
+{
+    if(id < mModelCount)
+        return &mModels[id];
+    id -= mModelCount;
+    return &mFlats.at(id);
 }
 
 
@@ -223,7 +267,7 @@ void MBlockHeader::load(std::istream &stream)
         flat.load(stream);
 }
 
-void MBlockHeader::buildNodes(osg::Group *root, int x, int z)
+void MBlockHeader::buildNodes(osg::Group *root, size_t objid, int x, int z)
 {
     if(!mBaseNode)
     {
@@ -235,14 +279,15 @@ void MBlockHeader::buildNodes(osg::Group *root, int x, int z)
         for(size_t i = 0;i < mBlockCount;++i)
         {
             MBlock &block = mExteriorBlocks[i];
-            block.buildNodes(mBaseNode, mBlockPositions[i].mX, mBlockPositions[i].mZ,
+            block.buildNodes(mBaseNode, (objid<<8)|i, mBlockPositions[i].mX, mBlockPositions[i].mZ,
                              mBlockPositions[i].mYRot);
         }
 
+        size_t idbase = (objid<<8)|0xff;
         for(size_t i = 0;i < mModelCount;++i)
-            mModels[i].buildNodes(mBaseNode);
+            mModels[i].buildNodes(mBaseNode, (idbase<<16)|i);
         for(size_t i = 0;i < mFlatCount;++i)
-            mFlats[i].buildNodes(mBaseNode);
+            mFlats[i].buildNodes(mBaseNode, (idbase<<16)|(mModelCount+i));
     }
 
     root->addChild(mBaseNode);
@@ -256,6 +301,19 @@ void MBlockHeader::detachNode()
         osg::Group *parent = mBaseNode->getParent(0);
         parent->removeChild(mBaseNode);
     }
+}
+
+MObjectBase *MBlockHeader::getObject(size_t id)
+{
+    if((id>>16) == 0xff)
+    {
+        id &= 0xffff;
+        if(id < mModelCount)
+            return &mModels[id];
+        id -= mModelCount;
+        return &mFlats.at(id);
+    }
+    return mExteriorBlocks.at(id>>16).getObject(id&0xffff);
 }
 
 const MFlat *MBlockHeader::getFlatByTexture(size_t texid) const
