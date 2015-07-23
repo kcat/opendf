@@ -58,7 +58,7 @@ struct MPerson : public MObjectBase {
     void load(std::istream &stream);
 };
 
-struct MModel {
+struct MModel : public MObjectBase {
     uint32_t mModelIdx; /* le16*100 + byte */
     uint8_t  mUnknown1;
     uint32_t mUnknown2;
@@ -67,15 +67,13 @@ struct MModel {
     uint32_t mNullValue1;
     uint32_t mNullValue2;
     int32_t  mUnknownX, mUnknownY, mUnknownZ;
-    int32_t  mXPos, mYPos, mZPos;
+    //int32_t  mXPos, mYPos, mZPos;
     uint32_t mNullValue3;
     int16_t  mYRotation;
     uint16_t mUnknown5;
     uint32_t mUnknown6;
     uint32_t mUnknown8;
     uint16_t mNullValue4;
-
-    osg::ref_ptr<osg::Group> mBaseNode;
 
     void load(std::istream &stream);
 
