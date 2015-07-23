@@ -258,4 +258,14 @@ void MBlockHeader::detachNode()
     }
 }
 
+const MFlat *MBlockHeader::getFlatByTexture(size_t texid) const
+{
+    for(const MFlat &flat : mFlats)
+    {
+        if(flat.mTexture == texid)
+            return &flat;
+    }
+    return nullptr;
+}
+
 } // namespace DF

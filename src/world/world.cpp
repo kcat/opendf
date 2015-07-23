@@ -399,9 +399,32 @@ void World::loadExterior(int regnum, int extid)
         mExterior.back().load(*stream);
     }
 
+    bool gotstart = false;
+    osg::Vec3 pos;
     osg::Group *root = mViewer->getSceneData()->asGroup();
     for(size_t i = 0;i < mExterior.size();++i)
-        mExterior[i].buildNodes(root, i%extloc.mWidth, i/extloc.mWidth);
+    {
+        int x = i%extloc.mWidth;
+        int y = i/extloc.mWidth;
+        mExterior[i].buildNodes(root, x, y);
+
+        if(gotstart) continue;
+        const MFlat *flat = mExterior[i].getFlatByTexture(Marker_EnterID);
+        if(!flat) flat = mExterior[i].getFlatByTexture(Marker_StartID);
+        if(flat)
+        {
+            gotstart = true;
+            pos = osg::Vec3f(flat->mXPos, flat->mYPos, flat->mZPos);
+            pos = osg::componentMultiply(
+                -pos - osg::Vec3f(x*4096.0f, 0.0f, y*4096.0f),
+                osg::Vec3f(1.0f, -1.0f, -1.0f)
+            );
+        }
+    }
+    if(!gotstart)
+        Log::get().message("Failed to find enter or start markers", Log::Level_Error);
+    else
+        mCameraPos = pos;
 }
 
 void World::loadDungeonByExterior(int regnum, int extid)
@@ -456,7 +479,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
                     flat = mDungeon[i].getFlatByTexture(Marker_StartID);
                 osg::Vec3f pos(flat->mXPos, flat->mYPos, flat->mZPos);
                 mCameraPos = osg::componentMultiply(
-                    -pos + osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f),
+                    -pos - osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f),
                     osg::Vec3f(1.0f, -1.0f, -1.0f)
                 );
             }

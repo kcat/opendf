@@ -152,6 +152,12 @@ struct MBlockHeader {
 
     void buildNodes(osg::Group *root, int x, int z);
     void detachNode();
+
+    /* Object types are (apparently) identified by what Texture ID they use.
+     * For instance, 0x638A (the 10th entry of TEXTURE.199) is the "Start"
+     * marker, and is used to identify where to spawn.
+     */
+    const MFlat *getFlatByTexture(size_t texid) const;
 };
 
 } // namespace DF
