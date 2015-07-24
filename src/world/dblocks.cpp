@@ -1,6 +1,7 @@
 
 #include "dblocks.hpp"
 
+#include <algorithm>
 #include <iomanip>
 
 #include <osg/MatrixTransform>
@@ -15,9 +16,103 @@
 namespace DF
 {
 
-ObjectBase::ObjectBase(uint8_t type, int x, int y, int z)
-  : mType(type), mXPos(x), mYPos(y), mZPos(z)
+void ActionMovable::load(DBlockHeader &block, const std::array<uint8_t,5> &data)
 {
+    mAxis = (Axis)data[0];
+    mDuration = data[1] | (data[2]<<8);
+    mMagnitude = data[3] | (data[4]<<8);
+}
+
+bool ActionTranslate::update(ObjectBase *target, float timediff)
+{
+    mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
+
+    if(mAxis == Axis_NegX)
+        target->setPos(target->mXPos - (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
+    else if(mAxis == Axis_X)
+        target->setPos(target->mXPos + (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
+    else if(mAxis == Axis_NegY)
+        target->setPos(target->mXPos, target->mYPos - (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
+    else if(mAxis == Axis_Y)
+        target->setPos(target->mXPos, target->mYPos + (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
+    else if(mAxis == Axis_NegZ)
+        target->setPos(target->mXPos, target->mYPos, target->mZPos - (mMagnitude*(mTimeAccum/mDuration)));
+    else if(mAxis == Axis_Z)
+        target->setPos(target->mXPos, target->mYPos, target->mZPos + (mMagnitude*(mTimeAccum/mDuration)));
+
+    return mTimeAccum >= mDuration;
+}
+
+bool ActionRotate::update(ObjectBase* target, float timediff)
+{
+    mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
+
+    // FIXME: Rotate
+
+    return mTimeAccum >= mDuration;
+}
+
+bool ActionTranslateRotate::update(ObjectBase* target, float timediff)
+{
+    mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
+
+    // FIXME: Rotate too
+    if(mAxis == Axis_NegX)
+        target->setPos(target->mXPos - (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
+    else if(mAxis == Axis_X)
+        target->setPos(target->mXPos + (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
+    else if(mAxis == Axis_NegY)
+        target->setPos(target->mXPos, target->mYPos - (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
+    else if(mAxis == Axis_Y)
+        target->setPos(target->mXPos, target->mYPos + (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
+    else if(mAxis == Axis_NegZ)
+        target->setPos(target->mXPos, target->mYPos, target->mZPos - (mMagnitude*(mTimeAccum/mDuration)));
+    else if(mAxis == Axis_Z)
+        target->setPos(target->mXPos, target->mYPos, target->mZPos + (mMagnitude*(mTimeAccum/mDuration)));
+
+    return mTimeAccum >= mDuration;
+}
+
+
+ObjectBase::ObjectBase(uint8_t type, int x, int y, int z)
+  : mType(type), mParentLink(nullptr), mActive(false), mXPos(x), mYPos(y), mZPos(z), mActionOffset(0)
+{
+}
+ObjectBase::~ObjectBase()
+{
+}
+
+void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
+{
+    if(mActionOffset <= 0)
+        return;
+
+    std::array<uint8_t,5> adata;
+    stream.seekg(mActionOffset);
+    stream.read(reinterpret_cast<char*>(adata.data()), adata.size());
+    int32_t target = VFS::read_le32(stream);
+    uint8_t type = stream.get();
+
+    ObjectBase *link = nullptr;
+    if(target > 0)
+    {
+        link = block.getObject(target);
+        if(link) link->mParentLink = this;
+    }
+    if(type == Action_Translate)
+        mAction = new ActionTranslate(link);
+    else if(type == Action_Rotate)
+        mAction = new ActionRotate(link);
+    else if(type == Action_TranslateRotate)
+        mAction = new ActionTranslateRotate(link);
+    else if(type != Action_None)
+        Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
+    if(mAction) mAction->load(block, adata);
+}
+
+void ObjectBase::setPos(float x, float y, float z)
+{
+    mBaseNode->setMatrix(osg::Matrix::translate(x, y, z));
 }
 
 void ObjectBase::print(LogStream &stream) const
@@ -73,6 +168,18 @@ void ModelObject::buildNodes(osg::Group *root, size_t objid)
     root->addChild(mBaseNode);
 }
 
+void ModelObject::setPos(float x, float y, float z)
+{
+    osg::Matrix mat;
+    mat.makeRotate(
+        mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+       -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+        mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+    );
+    mat.postMultTranslate(osg::Vec3(x, y, z));
+    mBaseNode->setMatrix(mat);
+}
+
 void ModelObject::print(LogStream &stream) const
 {
     ObjectBase::print(stream);
@@ -107,7 +214,7 @@ void FlatObject::load(std::istream &stream)
     mGender = VFS::read_le16(stream);
     mFactionId = VFS::read_le16(stream);
     mActionOffset = VFS::read_le32(stream);
-    stream.read(reinterpret_cast<char*>(&mUnknown), sizeof(mUnknown));
+    mUnknown = stream.get();
 }
 
 void FlatObject::buildNodes(osg::Group *root, size_t objid)
@@ -213,6 +320,9 @@ void DBlockHeader::load(std::istream &stream)
             offset = next;
         }
     }
+
+    for(ref_ptr<ObjectBase> &obj : mObjects)
+        obj->loadAction(stream, *this);
 }
 
 
@@ -265,6 +375,36 @@ FlatObject *DBlockHeader::getFlatByTexture(size_t texid) const
     std::stringstream sstr;
     sstr<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
     throw std::runtime_error(sstr.str());
+}
+
+
+void DBlockHeader::activate(size_t id)
+{
+    ObjectBase *base = getObject(id);
+    if(!base || base->mParentLink)
+        return;
+
+    while(base != nullptr && base->mAction)
+    {
+        auto iter = std::find(mActiveObjects.begin(), mActiveObjects.end(), base);
+        if(iter != mActiveObjects.end()) return;
+
+        mActiveObjects.push_back(base);
+        base = base->mAction->mLink;
+    }
+}
+
+
+void DBlockHeader::update(float timediff)
+{
+    auto iter = mActiveObjects.begin();
+    while(iter != mActiveObjects.end())
+    {
+        if(!(*iter)->updateAction(timediff))
+            iter = mActiveObjects.erase(iter);
+        else
+            ++iter;
+    }
 }
 
 
