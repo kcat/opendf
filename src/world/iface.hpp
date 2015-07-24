@@ -36,6 +36,8 @@ public:
 
     virtual void update(float timediff) = 0;
 
+    virtual void activate() = 0;
+
     virtual void dumpArea() const = 0;
     virtual void dumpBlocks() const = 0;
 

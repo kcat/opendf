@@ -16,10 +16,10 @@
 namespace DF
 {
 
-void ActionMovable::load(DBlockHeader &block, const std::array<uint8_t,5> &data)
+void ActionMovable::load(const std::array<uint8_t,5> &data)
 {
-    mAxis = (Axis)data[0];
-    mDuration = data[1] | (data[2]<<8);
+    mAxis = data[0];
+    mDuration = (data[1] | (data[2]<<8)) / 16.0f;
     mMagnitude = data[3] | (data[4]<<8);
 }
 
@@ -27,55 +27,92 @@ bool ActionTranslate::update(ObjectBase *target, float timediff)
 {
     mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
 
-    if(mAxis == Axis_NegX)
-        target->setPos(target->mXPos - (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
-    else if(mAxis == Axis_X)
-        target->setPos(target->mXPos + (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
-    else if(mAxis == Axis_NegY)
-        target->setPos(target->mXPos, target->mYPos - (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
-    else if(mAxis == Axis_Y)
-        target->setPos(target->mXPos, target->mYPos + (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
-    else if(mAxis == Axis_NegZ)
-        target->setPos(target->mXPos, target->mYPos, target->mZPos - (mMagnitude*(mTimeAccum/mDuration)));
-    else if(mAxis == Axis_Z)
-        target->setPos(target->mXPos, target->mYPos, target->mZPos + (mMagnitude*(mTimeAccum/mDuration)));
+    float delta = mTimeAccum / mDuration;
+    if(mReverse) delta = 1.0f - delta;
 
-    return mTimeAccum >= mDuration;
+    if(mAxis == Axis_X)
+        target->setPos(target->mXPos + (mMagnitude*delta), target->mYPos, target->mZPos);
+    else if(mAxis == Axis_NegX)
+        target->setPos(target->mXPos - (mMagnitude*delta), target->mYPos, target->mZPos);
+    else if(mAxis == Axis_Y)
+        target->setPos(target->mXPos, target->mYPos + (mMagnitude*delta), target->mZPos);
+    else if(mAxis == Axis_NegY)
+        target->setPos(target->mXPos, target->mYPos - (mMagnitude*delta), target->mZPos);
+    else if(mAxis == Axis_Z)
+        target->setPos(target->mXPos, target->mYPos, target->mZPos + (mMagnitude*delta));
+    else if(mAxis == Axis_NegZ)
+        target->setPos(target->mXPos, target->mYPos, target->mZPos - (mMagnitude*delta));
+
+    if(mTimeAccum >= mDuration)
+    {
+        mReverse = !mReverse;
+        mTimeAccum = 0.0f;
+        return false;
+    }
+    return true;
 }
 
-bool ActionRotate::update(ObjectBase* target, float timediff)
+bool ActionRotate::update(ObjectBase *target, float timediff)
 {
     mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
 
-    // FIXME: Rotate
+    float delta = mTimeAccum / mDuration;
+    if(mReverse) delta = 1.0f - delta;
 
-    return mTimeAccum >= mDuration;
+    if(mAxis == Axis_X)
+        target->setRotate(target->mXRot + (mMagnitude*delta), target->mYRot, target->mZRot);
+    else if(mAxis == Axis_NegX)
+        target->setRotate(target->mXRot - (mMagnitude*delta), target->mYRot, target->mZRot);
+    else if(mAxis == Axis_Y)
+        target->setRotate(target->mXRot, target->mYRot + (mMagnitude*delta), target->mZRot);
+    else if(mAxis == Axis_NegY)
+        target->setRotate(target->mXRot, target->mYRot - (mMagnitude*delta), target->mZRot);
+    else if(mAxis == Axis_Z)
+        target->setRotate(target->mXRot, target->mYRot, target->mZRot + (mMagnitude*delta));
+    else if(mAxis == Axis_NegZ)
+        target->setRotate(target->mXRot, target->mYRot, target->mZRot - (mMagnitude*delta));
+
+    if(mTimeAccum >= mDuration)
+    {
+        mReverse = !mReverse;
+        mTimeAccum = 0.0f;
+        return false;
+    }
+    return true;
 }
 
-bool ActionTranslateRotate::update(ObjectBase* target, float timediff)
+void ActionLinker::load(const std::array<uint8_t,5>& /*data*/)
 {
-    mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
+}
 
-    // FIXME: Rotate too
-    if(mAxis == Axis_NegX)
-        target->setPos(target->mXPos - (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
-    else if(mAxis == Axis_X)
-        target->setPos(target->mXPos + (mMagnitude*(mTimeAccum/mDuration)), target->mYPos, target->mZPos);
-    else if(mAxis == Axis_NegY)
-        target->setPos(target->mXPos, target->mYPos - (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
-    else if(mAxis == Axis_Y)
-        target->setPos(target->mXPos, target->mYPos + (mMagnitude*(mTimeAccum/mDuration)), target->mZPos);
-    else if(mAxis == Axis_NegZ)
-        target->setPos(target->mXPos, target->mYPos, target->mZPos - (mMagnitude*(mTimeAccum/mDuration)));
-    else if(mAxis == Axis_Z)
-        target->setPos(target->mXPos, target->mYPos, target->mZPos + (mMagnitude*(mTimeAccum/mDuration)));
+bool ActionLinker::update(ObjectBase *target, float timediff)
+{
+    return false;
+}
 
-    return mTimeAccum >= mDuration;
+void ActionUnknown::load(const std::array<uint8_t,5> &data)
+{
+    Log::get().stream(Log::Level_Error)<< "Unhandled action "<<this<<" data:"
+                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[0]
+                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[1]
+                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[2]
+                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[3]
+                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[4];
+}
+
+bool ActionUnknown::update(ObjectBase *target, float timediff)
+{
+    Log::get().stream(Log::Level_Error)<< "Unhandled action on "<<this;
+    return false;
 }
 
 
 ObjectBase::ObjectBase(uint8_t type, int x, int y, int z)
-  : mType(type), mParentLink(nullptr), mActive(false), mXPos(x), mYPos(y), mZPos(z), mActionOffset(0)
+  : mType(type), mActive(false)
+  , mXPos(x), mYPos(y), mZPos(z)
+  , mXRot(0), mYRot(0), mZRot(0)
+  , mActionFlags(0)
+  , mActionOffset(0)
 {
 }
 ObjectBase::~ObjectBase()
@@ -95,23 +132,25 @@ void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
 
     ObjectBase *link = nullptr;
     if(target > 0)
-    {
         link = block.getObject(target);
-        if(link) link->mParentLink = this;
-    }
+
     if(type == Action_Translate)
         mAction = new ActionTranslate(link);
     else if(type == Action_Rotate)
         mAction = new ActionRotate(link);
-    else if(type == Action_TranslateRotate)
-        mAction = new ActionTranslateRotate(link);
-    else if(type != Action_None)
+    else if(type == Action_Linker)
+        mAction = new ActionLinker(link);
+    else
+    {
         Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
-    if(mAction) mAction->load(block, adata);
+        mAction = new ActionUnknown(link);
+    }
+    mAction->load(adata);
 }
 
 void ObjectBase::setPos(float x, float y, float z)
 {
+    mBaseNode->setDataVariance(osg::Node::DYNAMIC);
     mBaseNode->setMatrix(osg::Matrix::translate(x, y, z));
 }
 
@@ -137,8 +176,8 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     mZRot = VFS::read_le32(stream);
 
     mModelIdx = VFS::read_le16(stream);
-    mUnknown1 = VFS::read_le32(stream);
-    mUnknown2 = stream.get();
+    mActionFlags = VFS::read_le32(stream);
+    mUnknown = stream.get();
     mActionOffset = VFS::read_le32(stream);
 
     mModelData = mdldata.at(mModelIdx);
@@ -151,9 +190,9 @@ void ModelObject::buildNodes(osg::Group *root, size_t objid)
 
     osg::Matrix mat;
     mat.makeRotate(
-        mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-       -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-        mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+        -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
     );
     mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
 
@@ -172,11 +211,30 @@ void ModelObject::setPos(float x, float y, float z)
 {
     osg::Matrix mat;
     mat.makeRotate(
-        mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-       -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-        mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+        -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
     );
     mat.postMultTranslate(osg::Vec3(x, y, z));
+    mBaseNode->setDataVariance(osg::Node::DYNAMIC);
+    mBaseNode->setMatrix(mat);
+}
+
+void ModelObject::setRotate(float x, float y, float z)
+{
+    osg::Matrix mat;
+    mat.makeRotate(
+         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+        -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+    );
+    mat.postMultRotate(osg::Quat(
+         (x-mXRot)*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
+        -(y-mYRot)*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+         (z-mZRot)*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
+    ));
+    mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
+    mBaseNode->setDataVariance(osg::Node::DYNAMIC);
     mBaseNode->setMatrix(mat);
 }
 
@@ -187,8 +245,8 @@ void ModelObject::print(LogStream &stream) const
     stream<<std::setfill('0');
     stream<< "   Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
     stream<< "   ModelIdx: "<<mModelIdx<<"\n";
-    stream<< "   Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::dec<<std::setw(0)<<"\n";
     stream<< "   ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
     stream<<std::setfill(' ');
 }
@@ -202,8 +260,8 @@ void ModelObject::print(std::ostream &stream) const
 
     stream<< "Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
     stream<< "ModelIdx: "<<mModelIdx<<" ("<<id.data()<<")\n";
-    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
-    stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::dec<<std::setw(0)<<"\n";
     stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
 }
 
@@ -381,15 +439,27 @@ FlatObject *DBlockHeader::getFlatByTexture(size_t texid) const
 void DBlockHeader::activate(size_t id)
 {
     ObjectBase *base = getObject(id);
-    if(!base || base->mParentLink)
+    if(!base || !(base->mActionFlags&ActionFlag_Activatable))
+        return;
+
+    // Make sure no object in this chain is still active
+    ObjectBase *check = base;
+    while(check != nullptr)
+    {
+        if(check->mActive)
+            break;
+        if(check->mAction)
+            check = check->mAction->mLink;
+        else
+            check = nullptr;
+    }
+    if(check != nullptr)
         return;
 
     while(base != nullptr && base->mAction)
     {
-        auto iter = std::find(mActiveObjects.begin(), mActiveObjects.end(), base);
-        if(iter != mActiveObjects.end()) return;
-
         mActiveObjects.push_back(base);
+        base->mActive = true;
         base = base->mAction->mLink;
     }
 }
@@ -401,7 +471,10 @@ void DBlockHeader::update(float timediff)
     while(iter != mActiveObjects.end())
     {
         if(!(*iter)->updateAction(timediff))
+        {
+            (*iter)->mActive = false;
             iter = mActiveObjects.erase(iter);
+        }
         else
             ++iter;
     }

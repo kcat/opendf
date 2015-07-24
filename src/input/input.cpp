@@ -143,6 +143,11 @@ void Input::handleKeyboardEvent(const SDL_KeyboardEvent &evt)
                 }
             }
         }
+        else if(evt.keysym.sym == SDLK_e)
+        {
+            if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+                WorldIface::get().activate();
+        }
         else if(evt.keysym.sym == SDLK_F3)
             mViewer->getEventQueue()->keyPress(osgGA::GUIEventAdapter::KEY_F3);
 

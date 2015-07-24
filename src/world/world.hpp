@@ -62,6 +62,8 @@ class World : public WorldIface {
     const ExteriorLocation *mCurrentExterior;
     const DungeonInterior *mCurrentDungeon;
 
+    size_t mCurrentSelection;
+
     std::vector<MBlockHeader> mExterior;
     std::vector<DBlockHeader> mDungeon;
 
@@ -88,6 +90,8 @@ public:
     virtual void rotate(/*int objid,*/ float xrel, float yrel) final;
 
     virtual void update(float timediff) final;
+
+    virtual void activate() final;
 
     virtual void dumpArea() const final;
     virtual void dumpBlocks() const final;

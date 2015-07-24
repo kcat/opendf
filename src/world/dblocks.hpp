@@ -29,10 +29,9 @@ struct DBlockHeader;
 
 enum ActionType {
     // Maybe flags?
-    Action_None = 0,
-    Action_Translate = 1<<0,
-    Action_Rotate =    1<<7,
-    Action_TranslateRotate = Action_Translate | Action_Rotate
+    Action_Translate = 0x01,
+    Action_Rotate    = 0x08,
+    Action_Linker    = 0x1e
 };
 
 struct ActionBase : public Referenceable {
@@ -40,41 +39,64 @@ struct ActionBase : public Referenceable {
     ObjectBase *mLink; // Linked object's action updates with this action
 
     float mTimeAccum;
+    bool mReverse;
 
-    ActionBase(ActionType type, ObjectBase *link) : mType(type), mLink(link), mTimeAccum(0.0f) { }
+    ActionBase(ActionType type, ObjectBase *link)
+      : mType(type), mLink(link), mTimeAccum(0.0f), mReverse(false)
+    { }
 
-    virtual void load(DBlockHeader &block, const std::array<uint8_t,5> &data) = 0;
+    virtual void load(const std::array<uint8_t,5> &data) = 0;
     virtual bool update(ObjectBase *target, float timediff) = 0;
 };
 
 struct ActionMovable : public ActionBase {
+    uint8_t mAxis;
+    float mDuration;
+    uint16_t mMagnitude;
+
+    ActionMovable(ActionType type, ObjectBase *link) : ActionBase(type, link) { }
+    virtual void load(const std::array<uint8_t,5> &data) final;
+};
+
+struct ActionTranslate : public ActionMovable {
     enum Axis {
-        Axis_NegX = 0x01,
-        Axis_X    = 0x02,
+        Axis_X    = 0x01,
+        Axis_NegX = 0x02,
+        Axis_Y    = 0x03,
+        Axis_NegY = 0x04,
+        Axis_Z    = 0x05,
+        Axis_NegZ = 0x06
+    };
+
+    ActionTranslate(ObjectBase *link) : ActionMovable(Action_Translate, link) { }
+    virtual bool update(ObjectBase *target, float timediff) final;
+};
+struct ActionRotate : public ActionMovable {
+    enum Axis {
+        Axis_X    = 0x01,
+        Axis_NegX = 0x02,
         Axis_NegY = 0x03,
         Axis_Y    = 0x04,
         Axis_NegZ = 0x05,
         Axis_Z    = 0x06
     };
 
-    Axis mAxis;
-    uint16_t mDuration;
-    uint16_t mMagnitude;
-
-    ActionMovable(ActionType type, ObjectBase *link) : ActionBase(type, link) { }
-    virtual void load(DBlockHeader &block, const std::array<uint8_t,5> &data) final;
-};
-
-struct ActionTranslate : public ActionMovable {
-    ActionTranslate(ObjectBase *link) : ActionMovable(Action_Translate, link) { }
-    virtual bool update(ObjectBase *target, float timediff) final;
-};
-struct ActionRotate : public ActionMovable {
     ActionRotate(ObjectBase *link) : ActionMovable(Action_Rotate, link) { }
     virtual bool update(ObjectBase *target, float timediff) final;
 };
-struct ActionTranslateRotate : public ActionMovable {
-    ActionTranslateRotate(ObjectBase *link) : ActionMovable(Action_TranslateRotate, link) { }
+
+/* Linker actions are used for actions that don't directly affect the object
+ * it's attached to, but still trigger linked object actions.
+ */
+struct ActionLinker : public ActionBase {
+    ActionLinker(ObjectBase *link) : ActionBase(Action_Linker, link) { }
+    virtual void load(const std::array<uint8_t,5> &data) final;
+    virtual bool update(ObjectBase *target, float timediff) final;
+};
+
+struct ActionUnknown : public ActionBase {
+    ActionUnknown(ObjectBase *link) : ActionBase(Action_Linker, link) { }
+    virtual void load(const std::array<uint8_t,5> &data) final;
     virtual bool update(ObjectBase *target, float timediff) final;
 };
 
@@ -85,16 +107,22 @@ enum ObjectType {
     ObjectType_Flat = 0x03,
 };
 
+enum ActionFlags {
+    // Specifies if the object can be directly activated (otherwise only via an action link)
+    ActionFlag_Activatable = 0x02,
+};
+
 struct ObjectBase : public Referenceable {
     osg::ref_ptr<osg::MatrixTransform> mBaseNode;
 
     uint8_t mType;
 
     ref_ptr<ActionBase> mAction;
-    ObjectBase *mParentLink;
     bool mActive;
 
     int32_t mXPos, mYPos, mZPos;
+    int32_t mXRot, mYRot, mZRot;
+    uint32_t mActionFlags;
     int32_t mActionOffset;
 
     ObjectBase(uint8_t type, int x, int y, int z);
@@ -106,17 +134,18 @@ struct ObjectBase : public Referenceable {
     virtual void buildNodes(osg::Group *root, size_t objid) = 0;
 
     virtual void setPos(float x, float y, float z);
+    virtual void setRotate(float x, float y, float z) { }
 
     virtual void print(LogStream &stream) const;
     virtual void print(std::ostream &stream) const;
 };
 
 struct ModelObject : public ObjectBase {
-    int32_t mXRot, mYRot, mZRot;
+    //int32_t mXRot, mYRot, mZRot;
 
     uint16_t mModelIdx;
-    uint32_t mUnknown1;
-    uint8_t  mUnknown2;
+    //uint32_t mActionFlags;
+    uint8_t mUnknown;
     //int32_t  mActionOffset;
 
     std::array<char,8> mModelData;
@@ -127,6 +156,7 @@ struct ModelObject : public ObjectBase {
     virtual void buildNodes(osg::Group *root, size_t objid) final;
 
     virtual void setPos(float x, float y, float z) final;
+    virtual void setRotate(float x, float y, float z) final;
 
     virtual void print(LogStream &stream) const final;
     virtual void print(std::ostream &stream) const final;

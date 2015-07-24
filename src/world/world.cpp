@@ -224,6 +224,7 @@ World::World()
   : mCurrentRegion(nullptr)
   , mCurrentExterior(nullptr)
   , mCurrentDungeon(nullptr)
+  , mCurrentSelection(~static_cast<size_t>(0))
   , mFirstStart(true)
 {
     mCameraRot.makeRotate(
@@ -376,6 +377,7 @@ void World::loadExterior(int regnum, int extid)
     mCurrentRegion = &region;
     mCurrentExterior = &extloc;
     mCurrentDungeon = nullptr;
+    mCurrentSelection = ~static_cast<size_t>(0);
 
     Log::get().stream()<< "Entering "<<extloc.mLocationName;
     size_t count = extloc.mWidth * extloc.mHeight;
@@ -441,6 +443,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
         mCurrentRegion = &region;
         mCurrentExterior = &extloc;
         mCurrentDungeon = &dinfo;
+        mCurrentSelection = ~static_cast<size_t>(0);
 
         Log::get().stream()<< "Entering "<<dinfo.mLocationName;
         for(const DungeonBlock &block : dinfo.mBlocks)
@@ -516,26 +519,26 @@ void World::update(float timediff)
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
 
-    size_t result;
-    if(GuiIface::get().getMode() == GuiIface::Mode_Game)
-        result = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
+    bool ingame = (GuiIface::get().getMode() == GuiIface::Mode_Game);
+    if(ingame)
+        mCurrentSelection = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
     else
     {
         float x, y;
         GuiIface::get().getMousePosition(x, y);
-        result = castCameraToViewportRay(x, y, 1024.0f, false);
+        mCurrentSelection = castCameraToViewportRay(x, y, 1024.0f, false);
     }
-    if(result == ~static_cast<size_t>(0) || !*g_introspect)
+    if(mCurrentSelection == ~static_cast<size_t>(0) || !*g_introspect)
         GuiIface::get().updateStatus(std::string());
     else
     {
         std::stringstream sstr;
         if(!mExterior.empty())
         {
-            MBlockHeader &block = mExterior.at(result>>24);
-            const MObjectBase *obj = block.getObject(result&0x00ffffff);
+            MBlockHeader &block = mExterior.at(mCurrentSelection>>24);
+            const MObjectBase *obj = block.getObject(mCurrentSelection&0x00ffffff);
             if(!obj)
-                sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<result;
+                sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<mCurrentSelection;
             else
             {
                 sstr<<std::setfill('0');
@@ -544,10 +547,10 @@ void World::update(float timediff)
         }
         else
         {
-            DBlockHeader &block = mDungeon.at(result>>24);
-            const ObjectBase *obj = block.getObject(result&0x00ffffff);
+            DBlockHeader &block = mDungeon.at(mCurrentSelection>>24);
+            const ObjectBase *obj = block.getObject(mCurrentSelection&0x00ffffff);
             if(!obj)
-                sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<result;
+                sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<mCurrentSelection;
             else
             {
                 sstr<<std::setfill('0');
@@ -555,6 +558,24 @@ void World::update(float timediff)
             }
         }
         GuiIface::get().updateStatus(sstr.str());
+    }
+
+    if(ingame)
+    {
+        for(DBlockHeader &block : mDungeon)
+            block.update(timediff);
+    }
+}
+
+void World::activate()
+{
+    if(mCurrentSelection != ~static_cast<size_t>(0))
+    {
+        if(mExterior.empty())
+        {
+            DBlockHeader &block = mDungeon.at(mCurrentSelection>>24);
+            block.activate(mCurrentSelection&0x00ffffff);
+        }
     }
 }
 
