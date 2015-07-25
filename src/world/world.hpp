@@ -53,10 +53,13 @@ struct MapRegion {
     std::vector<DungeonInterior> mDungeons;
 };
 
+typedef std::vector<std::pair<uint16_t,uint8_t>> PakArray;
+
 class World : public WorldIface {
     osg::ref_ptr<osgViewer::Viewer> mViewer;
 
     std::vector<MapRegion> mRegions;
+    std::vector<PakArray> mClimates;
 
     const MapRegion *mCurrentRegion;
     const ExteriorLocation *mCurrentExterior;
@@ -74,6 +77,8 @@ class World : public WorldIface {
 
     World();
     ~World();
+
+    uint8_t getClimateValue(size_t x, size_t y) const;
 
 public:
     static World sWorld;

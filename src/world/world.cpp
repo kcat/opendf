@@ -244,6 +244,7 @@ void World::initialize(osgViewer::Viewer *viewer)
     std::set<std::string> names = VFS::Manager::get().list("MAPNAMES.[0-9]*");
     if(names.empty()) throw std::runtime_error("Failed to find any regions");
 
+    VFS::IStreamPtr stream;
     for(const std::string &name : names)
     {
         size_t pos = name.rfind('.');
@@ -253,7 +254,7 @@ void World::initialize(osgViewer::Viewer *viewer)
         unsigned long regnum = std::stoul(regstr, nullptr, 10);
 
         /* Get names */
-        VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
+        stream = VFS::Manager::get().open(name.c_str());
         if(!stream) throw std::runtime_error("Failed to open "+name);
 
         uint32_t mapcount = VFS::read_le32(*stream);
@@ -336,6 +337,40 @@ void World::initialize(osgViewer::Viewer *viewer)
         mRegions[regnum] = std::move(region);
     }
 
+    {
+        stream = VFS::Manager::get().open("CLIMATE.PAK");
+        if(!stream) throw std::runtime_error("Failed to open CLIMATE.PAK");
+
+        size_t rownum = 0;
+        std::map<size_t,size_t> offsets_rows;
+        offsets_rows[VFS::read_le32(*stream)] = rownum++;
+        while(stream->tellg() < offsets_rows.begin()->first)
+            offsets_rows[VFS::read_le32(*stream)] = rownum++;
+
+        auto iter = offsets_rows.begin();
+        while(iter != offsets_rows.end())
+        {
+            auto next = std::next(iter);
+
+            PakArray pak;
+            while((next != offsets_rows.end() && stream->tellg() < next->first) ||
+                  (next == offsets_rows.end() && stream->peek() != std::istream::traits_type::eof()))
+            {
+                uint16_t count = VFS::read_le16(*stream);
+                uint8_t val = stream->get();
+                pak.push_back(std::make_pair(count, val));
+            }
+
+            if(iter->second >= mClimates.size())
+                mClimates.resize(iter->second+1);
+            mClimates[iter->second] = std::move(pak);
+
+            iter = next;
+        }
+
+        stream = nullptr;
+    }
+
     mViewer = viewer;
 
     mViewer->setLightingMode(osg::View::HEADLIGHT);
@@ -349,6 +384,27 @@ void World::deinitialize()
     mExterior.clear();
     mDungeon.clear();
     mViewer = nullptr;
+}
+
+
+uint8_t World::getClimateValue(size_t x, size_t y) const
+{
+    x = x/32768 + 2;
+
+    y /= 32768;
+    if(y >= 499) y = 1;
+    else y = 499 - y;
+
+    uint8_t value = 0;
+    const PakArray &pak = mClimates[std::min(y, mClimates.size()-1)];
+    for(const auto &entry : pak)
+    {
+        value = entry.second;
+        if(x < entry.first)
+            break;
+        x -= entry.first;
+    }
+    return value;
 }
 
 
@@ -378,6 +434,9 @@ void World::loadExterior(int regnum, int extid)
     mCurrentExterior = &extloc;
     mCurrentDungeon = nullptr;
     mCurrentSelection = ~static_cast<size_t>(0);
+
+    uint8_t climate = getClimateValue(extloc.mX, extloc.mY);
+    Log::get().stream()<< "Climate "<<(int)climate;
 
     Log::get().stream()<< "Entering "<<extloc.mLocationName;
     size_t count = extloc.mWidth * extloc.mHeight;
@@ -444,6 +503,9 @@ void World::loadDungeonByExterior(int regnum, int extid)
         mCurrentExterior = &extloc;
         mCurrentDungeon = &dinfo;
         mCurrentSelection = ~static_cast<size_t>(0);
+
+        uint8_t climate = getClimateValue(extloc.mX, extloc.mY);
+        Log::get().stream()<< "Climate "<<(int)climate;
 
         Log::get().stream()<< "Entering "<<dinfo.mLocationName;
         for(const DungeonBlock &block : dinfo.mBlocks)
@@ -596,6 +658,8 @@ void World::dumpArea() const
     {
         int regnum = std::distance(mRegions.data(), mCurrentRegion);
         stream<< "Current region index: "<<regnum<<"\n";
+        int mapnum = std::distance(mCurrentRegion->mExteriors.data(), mCurrentExterior);
+        stream<< "Current exterior index: "<<mapnum<<"\n";
         stream<< "Current Exterior:\n";
         stream<< static_cast<const LocationHeader&>(*mCurrentExterior);
     }
