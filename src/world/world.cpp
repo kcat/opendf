@@ -337,39 +337,8 @@ void World::initialize(osgViewer::Viewer *viewer)
         mRegions[regnum] = std::move(region);
     }
 
-    {
-        stream = VFS::Manager::get().open("CLIMATE.PAK");
-        if(!stream) throw std::runtime_error("Failed to open CLIMATE.PAK");
-
-        size_t rownum = 0;
-        std::map<size_t,size_t> offsets_rows;
-        offsets_rows[VFS::read_le32(*stream)] = rownum++;
-        while(stream->tellg() < offsets_rows.begin()->first)
-            offsets_rows[VFS::read_le32(*stream)] = rownum++;
-
-        auto iter = offsets_rows.begin();
-        while(iter != offsets_rows.end())
-        {
-            auto next = std::next(iter);
-
-            PakArray pak;
-            while((next != offsets_rows.end() && stream->tellg() < next->first) ||
-                  (next == offsets_rows.end() && stream->peek() != std::istream::traits_type::eof()))
-            {
-                uint16_t count = VFS::read_le16(*stream);
-                uint8_t val = stream->get();
-                pak.push_back(std::make_pair(count, val));
-            }
-
-            if(iter->second >= mClimates.size())
-                mClimates.resize(iter->second+1);
-            mClimates[iter->second] = std::move(pak);
-
-            iter = next;
-        }
-
-        stream = nullptr;
-    }
+    loadPakList("CLIMATE.PAK", mClimates);
+    loadPakList("POLITIC.PAK", mPolitics);
 
     mViewer = viewer;
 
@@ -387,7 +356,40 @@ void World::deinitialize()
 }
 
 
-uint8_t World::getClimateValue(size_t x, size_t y) const
+void World::loadPakList(std::string&& fname, std::vector<PakArray> &paklist)
+{
+    VFS::IStreamPtr stream = VFS::Manager::get().open(fname.c_str());
+    if(!stream) throw std::runtime_error("Failed to open "+fname);
+
+    size_t rownum = 0;
+    std::map<size_t,size_t> offsets_rows;
+    offsets_rows[VFS::read_le32(*stream)] = rownum++;
+    while(stream->tellg() < offsets_rows.begin()->first)
+        offsets_rows[VFS::read_le32(*stream)] = rownum++;
+
+    auto iter = offsets_rows.begin();
+    while(iter != offsets_rows.end())
+    {
+        auto next = std::next(iter);
+
+        PakArray pak;
+        while((next != offsets_rows.end() && stream->tellg() < next->first) ||
+              (next == offsets_rows.end() && stream->peek() != std::istream::traits_type::eof()))
+        {
+            uint16_t count = VFS::read_le16(*stream);
+            uint8_t val = stream->get();
+            pak.push_back(std::make_pair(count, val));
+        }
+
+        if(iter->second >= paklist.size())
+            paklist.resize(iter->second+1);
+        paklist[iter->second] = std::move(pak);
+
+        iter = next;
+    }
+}
+
+uint8_t World::getPakListValue(const std::vector<PakArray> &paklist, size_t x, size_t y)
 {
     x = x/32768 + 2;
 
@@ -396,7 +398,7 @@ uint8_t World::getClimateValue(size_t x, size_t y) const
     else y = 499 - y;
 
     uint8_t value = 0;
-    const PakArray &pak = mClimates[std::min(y, mClimates.size()-1)];
+    const PakArray &pak = paklist[std::min(y, paklist.size()-1)];
     for(const auto &entry : pak)
     {
         value = entry.second;

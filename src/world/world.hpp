@@ -60,6 +60,7 @@ class World : public WorldIface {
 
     std::vector<MapRegion> mRegions;
     std::vector<PakArray> mClimates;
+    std::vector<PakArray> mPolitics;
 
     const MapRegion *mCurrentRegion;
     const ExteriorLocation *mCurrentExterior;
@@ -78,7 +79,12 @@ class World : public WorldIface {
     World();
     ~World();
 
-    uint8_t getClimateValue(size_t x, size_t y) const;
+    static void loadPakList(std::string&& fname, std::vector<PakArray> &paklist);
+
+    static uint8_t getPakListValue(const std::vector<PakArray> &paklist, size_t x, size_t y);
+
+    uint8_t getClimateValue(size_t x, size_t y) const { return getPakListValue(mClimates, x, y); }
+    uint8_t getPoliticValue(size_t x, size_t y) const { return getPakListValue(mPolitics, x, y); }
 
 public:
     static World sWorld;
