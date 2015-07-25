@@ -47,6 +47,8 @@ struct ActionBase : public Referenceable {
 
     virtual void load(const std::array<uint8_t,5> &data) = 0;
     virtual bool update(ObjectBase *target, float timediff) = 0;
+
+    virtual void print(std::ostream &stream) const;
 };
 
 struct ActionMovable : public ActionBase {
@@ -56,6 +58,8 @@ struct ActionMovable : public ActionBase {
 
     ActionMovable(ActionType type, ObjectBase *link) : ActionBase(type, link) { }
     virtual void load(const std::array<uint8_t,5> &data) final;
+
+    virtual void print(std::ostream &stream) const final;
 };
 
 struct ActionTranslate : public ActionMovable {
@@ -95,9 +99,13 @@ struct ActionLinker : public ActionBase {
 };
 
 struct ActionUnknown : public ActionBase {
-    ActionUnknown(ObjectBase *link) : ActionBase(Action_Linker, link) { }
+    std::array<uint8_t,5> mData;
+
+    ActionUnknown(uint8_t type, ObjectBase *link) : ActionBase((ActionType)type, link) { }
     virtual void load(const std::array<uint8_t,5> &data) final;
     virtual bool update(ObjectBase *target, float timediff) final;
+
+    virtual void print(std::ostream &stream) const final;
 };
 
 

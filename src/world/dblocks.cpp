@@ -16,12 +16,30 @@
 namespace DF
 {
 
+void ActionBase::print(std::ostream &stream) const
+{
+    stream<< "Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
+    stream<< "TimeAccum: "<<mTimeAccum<<"\n";
+    stream<< "Reverse: "<<(mReverse?"true":"false")<<"\n";
+}
+
+
 void ActionMovable::load(const std::array<uint8_t,5> &data)
 {
     mAxis = data[0];
     mDuration = (data[1] | (data[2]<<8)) / 16.0f;
     mMagnitude = data[3] | (data[4]<<8);
 }
+
+void ActionMovable::print(std::ostream& stream) const
+{
+    DF::ActionBase::print(stream);
+
+    stream<< "Axis: 0x"<<std::hex<<std::setw(2)<<(int)mAxis<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Duration: "<<mDuration<<"\n";
+    stream<< "Magnitude: "<<mMagnitude<<"\n";
+}
+
 
 bool ActionTranslate::update(ObjectBase *target, float timediff)
 {
@@ -92,18 +110,29 @@ bool ActionLinker::update(ObjectBase *target, float timediff)
 
 void ActionUnknown::load(const std::array<uint8_t,5> &data)
 {
-    Log::get().stream(Log::Level_Error)<< "Unhandled action "<<this<<" data:"
-                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[0]
-                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[1]
-                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[2]
-                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[3]
-                                       << " 0x"<<std::setfill('0')<<std::hex<<std::setw(2)<<(int)data[4];
+    mData = data;
+
+    LogStream stream(Log::get().stream(Log::Level_Error));
+    stream<<std::setfill('0');
+    stream<< "Unhandled action "<<this<<" data:"
+          << " 0x"<<std::hex<<std::setw(2)<<(int)data[0]<<" 0x"<<std::hex<<std::setw(2)<<(int)data[1]
+          << " 0x"<<std::hex<<std::setw(2)<<(int)data[2]<<" 0x"<<std::hex<<std::setw(2)<<(int)data[3]
+          << " 0x"<<std::hex<<std::setw(2)<<(int)data[4];
 }
 
 bool ActionUnknown::update(ObjectBase *target, float timediff)
 {
     Log::get().stream(Log::Level_Error)<< "Unhandled action on "<<this;
     return false;
+}
+
+void ActionUnknown::print(std::ostream& stream) const
+{
+    DF::ActionBase::print(stream);
+    stream<< "Data:"
+          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[0]<<" 0x"<<std::hex<<std::setw(2)<<(int)mData[1]
+          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[2]<<" 0x"<<std::hex<<std::setw(2)<<(int)mData[3]
+          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[4];
 }
 
 
@@ -143,7 +172,7 @@ void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
     else
     {
         Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
-        mAction = new ActionUnknown(link);
+        mAction = new ActionUnknown(type, link);
     }
     mAction->load(adata);
 }
@@ -262,7 +291,11 @@ void ModelObject::print(std::ostream &stream) const
     stream<< "ModelIdx: "<<mModelIdx<<" ("<<id.data()<<")\n";
     stream<< "ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
     stream<< "SoundId: "<<(int)mSoundId<<"\n";
-    stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
+    if(mAction)
+    {
+        stream<< "** Action **\n";
+        mAction->print(stream);
+    }
 }
 
 
@@ -304,8 +337,12 @@ void FlatObject::print(std::ostream &stream) const
     stream<< "Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
     stream<< "Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
     stream<< "FactionId: "<<mFactionId<<"\n";
-    stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
     stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::setw(0)<<std::dec<<"\n";
+    if(mAction)
+    {
+        stream<< "** Action **\n";
+        mAction->print(stream);
+    }
 }
 
 
