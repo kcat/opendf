@@ -13,15 +13,6 @@
 #include "components/dfosg/texloader.hpp"
 
 
-namespace
-{
-
-Resource::Palette gCurrentPalette;
-static_assert(sizeof(gCurrentPalette)==768, "Palette is not 768 bytes");
-
-} // namespace
-
-
 namespace Resource
 {
 
@@ -54,10 +45,10 @@ void TextureManager::initialize()
         stream->ignore(8);
     }
 
-    if(len != sizeof(gCurrentPalette))
+    if(len != sizeof(mCurrentPalette))
         throw std::runtime_error("Invalid palette size (expected 768 or 776 bytes)");
 
-    stream->read(reinterpret_cast<char*>(gCurrentPalette.data()), sizeof(gCurrentPalette));
+    stream->read(reinterpret_cast<char*>(mCurrentPalette.data()), sizeof(mCurrentPalette));
 }
 
 
@@ -78,8 +69,9 @@ osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx, int16_t *xoffset, int
     }
 
     int16_t x_offset, y_offset, x_scale, y_scale;
-    std::vector<osg::ref_ptr<osg::Image>> images = DFOSG::TexLoader::get().load(idx, &x_offset, &y_offset, &x_scale, &y_scale,
-                                                                                gCurrentPalette);
+    std::vector<osg::ref_ptr<osg::Image>> images = DFOSG::TexLoader::get().load(
+        idx, &x_offset, &y_offset, &x_scale, &y_scale, mCurrentPalette
+    );
     *xoffset = x_offset;
     *yoffset = y_offset;
     *xscale = 1.0f + x_scale/256.0f;

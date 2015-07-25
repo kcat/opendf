@@ -32,6 +32,9 @@ struct TextureInfo {
 class TextureManager {
     static TextureManager sManager;
 
+    Palette mCurrentPalette;
+    static_assert(sizeof(mCurrentPalette)==768, "Palette is not 768 bytes");
+
     std::map<size_t,TextureInfo> mTexCache;
 
     TextureManager(const TextureManager&) = delete;
@@ -42,6 +45,8 @@ class TextureManager {
 
 public:
     void initialize();
+
+    const Palette &getCurrentPalette() const { return mCurrentPalette; }
 
     // The index has the TEXTURE.??? file number in the upper nine bits, and
     // the image index in the lower 7 bits.
