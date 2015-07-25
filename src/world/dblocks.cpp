@@ -177,7 +177,7 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
 
     mModelIdx = VFS::read_le16(stream);
     mActionFlags = VFS::read_le32(stream);
-    mUnknown = stream.get();
+    mSoundId = stream.get();
     mActionOffset = VFS::read_le32(stream);
 
     mModelData = mdldata.at(mModelIdx);
@@ -246,7 +246,7 @@ void ModelObject::print(LogStream &stream) const
     stream<< "   Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
     stream<< "   ModelIdx: "<<mModelIdx<<"\n";
     stream<< "   ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::dec<<std::setw(0)<<"\n";
+    stream<< "   SoundId: "<<(int)mSoundId<<"\n";
     stream<< "   ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
     stream<<std::setfill(' ');
 }
@@ -261,7 +261,7 @@ void ModelObject::print(std::ostream &stream) const
     stream<< "Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
     stream<< "ModelIdx: "<<mModelIdx<<" ("<<id.data()<<")\n";
     stream<< "ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
-    stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::dec<<std::setw(0)<<"\n";
+    stream<< "SoundId: "<<(int)mSoundId<<"\n";
     stream<< "ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
 }
 

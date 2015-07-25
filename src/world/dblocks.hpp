@@ -145,7 +145,7 @@ struct ModelObject : public ObjectBase {
 
     uint16_t mModelIdx;
     //uint32_t mActionFlags;
-    uint8_t mUnknown;
+    uint8_t mSoundId; // Played when activated
     //int32_t  mActionOffset;
 
     std::array<char,8> mModelData;
