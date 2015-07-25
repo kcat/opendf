@@ -16,6 +16,8 @@ namespace osg
 namespace DFOSG
 {
 
+typedef std::vector<osg::ref_ptr<osg::Image>> ImagePtrArray;
+
 class TexLoader {
     static TexLoader sLoader;
 
@@ -34,9 +36,9 @@ class TexLoader {
                                std::istream &stream);
 
 public:
-    std::vector<osg::ref_ptr<osg::Image>> load(size_t idx, int16_t *xoffset, int16_t *yoffset, int16_t *xscale, int16_t *yscale, const Resource::Palette &palette);
+    ImagePtrArray load(size_t idx, int16_t *xoffset, int16_t *yoffset, int16_t *xscale, int16_t *yscale, const Resource::Palette &palette);
 
-    std::vector<osg::ref_ptr<osg::Image>> load(size_t idx, const Resource::Palette &palette)
+    ImagePtrArray load(size_t idx, const Resource::Palette &palette)
     {
         int16_t xoffset, yoffset, xscale, yscale;
         return load(idx, &xoffset, &yoffset, &xscale, &yscale, palette);

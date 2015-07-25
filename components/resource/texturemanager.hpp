@@ -50,8 +50,8 @@ public:
 
     // The index has the TEXTURE.??? file number in the upper nine bits, and
     // the image index in the lower 7 bits.
-    osg::ref_ptr<osg::Texture> get(size_t idx, int16_t *xoffset, int16_t *yoffset, float *xscale, float *yscale);
-    osg::ref_ptr<osg::Texture> get(size_t idx);
+    osg::ref_ptr<osg::Texture> getTexture(size_t idx, int16_t *xoffset, int16_t *yoffset, float *xscale, float *yscale);
+    osg::ref_ptr<osg::Texture> getTexture(size_t idx);
 
     static TextureManager &get() { return sManager; }
 };

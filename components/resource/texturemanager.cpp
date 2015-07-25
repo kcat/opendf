@@ -52,7 +52,7 @@ void TextureManager::initialize()
 }
 
 
-osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx, int16_t *xoffset, int16_t *yoffset, float *xscale, float *yscale)
+osg::ref_ptr<osg::Texture> TextureManager::getTexture(size_t idx, int16_t *xoffset, int16_t *yoffset, float *xscale, float *yscale)
 {
     auto iter = mTexCache.find(idx);
     if(iter != mTexCache.end())
@@ -119,11 +119,11 @@ osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx, int16_t *xoffset, int
     return tex;
 }
 
-osg::ref_ptr<osg::Texture> TextureManager::get(size_t idx)
+osg::ref_ptr<osg::Texture> TextureManager::getTexture(size_t idx)
 {
     int16_t xoffset, yoffset;
     float xscale, yscale;
-    return get(idx, &xoffset, &yoffset, &xscale, &yscale);
+    return getTexture(idx, &xoffset, &yoffset, &xscale, &yscale);
 }
 
 

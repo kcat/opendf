@@ -64,7 +64,7 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
         osg::ref_ptr<osg::DrawElementsUShort> idxs(new osg::DrawElementsUShort(osg::PrimitiveSet::TRIANGLES));
         uint16_t texid = iter->getTextureId();
 
-        osg::ref_ptr<osg::Texture> tex = TextureManager::get().get(texid);
+        osg::ref_ptr<osg::Texture> tex = TextureManager::get().getTexture(texid);
         float width = tex->getTextureWidth();
         float height = tex->getTextureHeight();
 
@@ -161,7 +161,7 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames)
         {
             if(num_frames)
             {
-                osg::ref_ptr<osg::Texture> tex = TextureManager::get().get(texid);
+                osg::ref_ptr<osg::Texture> tex = TextureManager::get().getTexture(texid);
                 *num_frames = tex->getTextureDepth();
             }
             return node;
@@ -170,7 +170,7 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames)
 
     int16_t xoffset, yoffset;
     float xscale, yscale;
-    osg::ref_ptr<osg::Texture> tex = TextureManager::get().get(
+    osg::ref_ptr<osg::Texture> tex = TextureManager::get().getTexture(
         texid, &xoffset, &yoffset, &xscale, &yscale
     );
     if(num_frames)

@@ -216,9 +216,8 @@ void TexLoader::loadUncompressedMulti(osg::Image *image, const Resource::Palette
 }
 
 
-std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, int16_t *xoffset, int16_t *yoffset,
-                                                      int16_t *xscale, int16_t *yscale,
-                                                      const Resource::Palette& palette)
+ImagePtrArray TexLoader::load(size_t idx, int16_t *xoffset, int16_t *yoffset, int16_t *xscale, int16_t *yscale,
+                              const Resource::Palette& palette)
 {
     std::stringstream sstr; sstr.fill('0');
     sstr<<"TEXTURE."<<std::setw(3)<<(idx>>7);
@@ -260,7 +259,7 @@ std::vector<osg::ref_ptr<osg::Image>> TexLoader::load(size_t idx, int16_t *xoffs
     // Would be nice to load a multiframe texture as a 3D Image, but such an
     // image can't be properly loaded into a Texture2DArray (it wants to load
     // a 2D Image for each individual layer).
-    std::vector<osg::ref_ptr<osg::Image>> images;
+    ImagePtrArray images;
     if(texhdr.getFrameCount() == 0)
     {
         // Allocate a dummy image
