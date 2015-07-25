@@ -38,6 +38,8 @@ public:
     virtual bool exists(const char *name) const;
 
     virtual const std::set<std::string> &list() const final { return mLookupName; };
+
+    const std::set<size_t> &getIds() const { return mLookupId; };
 };
 
 } // namespace Archives

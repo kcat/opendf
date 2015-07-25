@@ -3,7 +3,9 @@
 #include <sys/types.h>
 
 #include <stdexcept>
+#include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <cstring>
 #include <array>
 
@@ -56,6 +58,49 @@ int main(int argc, char *argv[])
 
     if(mkdir(dirname.c_str(), S_IRWXU) != 0 && errno != EEXIST)
         throw std::runtime_error("Failed to create output dir "+dirname);
+
+    std::set<size_t> ids = archive.getIds();
+    for(size_t id : ids)
+    {
+        Archives::IStreamPtr instream = archive.open(id);
+        if(!instream)
+        {
+            std::cerr<< "Failed to open ID "<<id<<" in archive" <<std::endl;
+            continue;
+        }
+
+        std::stringstream sstr;
+        sstr<< dirname<<"/"<<std::setfill('0')<<std::setw(5)<<id;
+        std::string ofname = sstr.str();
+        std::cout<< "Writing "<<ofname<<"... ";
+        std::cout.flush();
+
+        std::ofstream outstream(ofname.c_str(), std::ios_base::binary);
+        if(!outstream.is_open())
+        {
+            std::cerr<< "Failed to open for writing" <<std::endl;
+            continue;
+        }
+
+        size_t total = 0;
+        while(!instream->eof())
+        {
+            std::array<char,4096> buf;
+            instream->read(buf.data(), buf.size());
+            size_t got = instream->gcount();
+
+            if(got > 0)
+            {
+                if(!outstream.write(buf.data(), got))
+                    break;
+                total += got;
+            }
+        }
+        if(!outstream.good())
+            std::cerr<< "failed after writing "<<outstream.tellp()<<" bytes" <<std::endl;
+        else
+            std::cout<< "wrote "<<total<<" bytes" <<std::endl;
+    }
 
     std::set<std::string> files = archive.list();
     for(const std::string &name : files)
