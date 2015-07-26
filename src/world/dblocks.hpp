@@ -194,7 +194,7 @@ struct DBlockHeader {
     uint32_t mUnknown1;
     uint32_t mWidth;
     uint32_t mHeight;
-    uint32_t mobjectRootOffset;
+    uint32_t mObjectRootOffset;
     uint32_t mUnknown2;
 
     std::array<std::array<char,8>,750> mModelData;

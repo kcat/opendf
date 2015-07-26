@@ -357,13 +357,13 @@ void DBlockHeader::load(std::istream &stream)
     mUnknown1 = VFS::read_le32(stream);
     mWidth = VFS::read_le32(stream);
     mHeight = VFS::read_le32(stream);
-    mobjectRootOffset = VFS::read_le32(stream);
+    mObjectRootOffset = VFS::read_le32(stream);
     mUnknown2 = VFS::read_le32(stream);
     stream.read(mModelData[0].data(), sizeof(mModelData));
     for(uint32_t &val : mUnknown3)
         val = VFS::read_le32(stream);
 
-    stream.seekg(mobjectRootOffset);
+    stream.seekg(mObjectRootOffset);
 
     std::vector<int32_t> rootoffsets(mWidth*mHeight);
     for(int32_t &val : rootoffsets)
@@ -524,7 +524,7 @@ void DBlockHeader::print(LogStream &stream, int objtype) const
     stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
     stream<< "  Width: "<<mWidth<<"\n";
     stream<< "  Height: "<<mHeight<<"\n";
-    stream<< "  ObjectRootOffset: 0x"<<std::hex<<std::setw(8)<<mobjectRootOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<< "  ObjectRootOffset: 0x"<<std::hex<<std::setw(8)<<mObjectRootOffset<<std::dec<<std::setw(0)<<"\n";
     stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown2<<std::dec<<std::setw(0)<<"\n";
     stream<< "  ModelData:"<<"\n";
     const uint32_t *unknown = mUnknown3.data();
