@@ -676,14 +676,18 @@ void World::dumpArea() const
 
 void World::dumpBlocks() const
 {
-    LogStream stream(Log::get().stream());
+    std::stringstream sstr;
+    sstr.fill('0');
+
     int i = 0;
     for(const DBlockHeader &block : mDungeon)
     {
-        stream<< "Block "<<i<<":\n";
-        block.print(stream);
+        sstr<< "****** Block "<<i<<" ******\n";
+        block.print(sstr);
         ++i;
     }
+
+    Log::get().message(sstr.str());
 }
 
 

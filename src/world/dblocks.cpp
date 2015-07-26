@@ -132,7 +132,7 @@ void ActionUnknown::print(std::ostream& stream) const
     stream<< "Data:"
           << " 0x"<<std::hex<<std::setw(2)<<(int)mData[0]<<" 0x"<<std::hex<<std::setw(2)<<(int)mData[1]
           << " 0x"<<std::hex<<std::setw(2)<<(int)mData[2]<<" 0x"<<std::hex<<std::setw(2)<<(int)mData[3]
-          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[4];
+          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[4]<<"\n";
 }
 
 
@@ -181,14 +181,6 @@ void ObjectBase::setPos(float x, float y, float z)
 {
     mBaseNode->setDataVariance(osg::Node::DYNAMIC);
     mBaseNode->setMatrix(osg::Matrix::translate(x, y, z));
-}
-
-void ObjectBase::print(LogStream &stream) const
-{
-    stream<<std::setfill('0');
-    stream<< "   Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   Pos: "<<mXPos<<" "<<mYPos<<" "<<mZPos<<"\n";
-    stream<<std::setfill(' ');
 }
 
 void ObjectBase::print(std::ostream &stream) const
@@ -267,19 +259,6 @@ void ModelObject::setRotate(float x, float y, float z)
     mBaseNode->setMatrix(mat);
 }
 
-void ModelObject::print(LogStream &stream) const
-{
-    ObjectBase::print(stream);
-
-    stream<<std::setfill('0');
-    stream<< "   Rotation: "<<mXRot<<" "<<mYRot<<" "<<mZRot<<"\n";
-    stream<< "   ModelIdx: "<<mModelIdx<<"\n";
-    stream<< "   ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   SoundId: "<<(int)mSoundId<<"\n";
-    stream<< "   ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
-    stream<<std::setfill(' ');
-}
-
 void ModelObject::print(std::ostream &stream) const
 {
     DF::ObjectBase::print(stream);
@@ -315,19 +294,6 @@ void FlatObject::buildNodes(osg::Group *root, size_t objid)
     mBaseNode->setUserData(new ObjectRef(objid));
     mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture));
     root->addChild(mBaseNode);
-}
-
-void FlatObject::print(LogStream &stream) const
-{
-    ObjectBase::print(stream);
-
-    stream<<std::setfill('0');
-    stream<< "   Texture: 0x"<<std::hex<<std::setw(4)<<mTexture<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   FactionId: "<<mFactionId<<"\n";
-    stream<< "   ActionOffset: 0x"<<std::hex<<std::setw(8)<<mActionOffset<<std::dec<<std::setw(0)<<"\n";
-    stream<< "   Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::setw(0)<<std::dec<<"\n";
-    stream<<std::setfill(' ');
 }
 
 void FlatObject::print(std::ostream &stream) const
@@ -518,15 +484,14 @@ void DBlockHeader::update(float timediff)
 }
 
 
-void DBlockHeader::print(LogStream &stream, int objtype) const
+void DBlockHeader::print(std::ostream &stream, int objtype) const
 {
-    stream<<std::setfill('0');
-    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
-    stream<< "  Width: "<<mWidth<<"\n";
-    stream<< "  Height: "<<mHeight<<"\n";
-    stream<< "  ObjectRootOffset: 0x"<<std::hex<<std::setw(8)<<mObjectRootOffset<<std::dec<<std::setw(0)<<"\n";
-    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown2<<std::dec<<std::setw(0)<<"\n";
-    stream<< "  ModelData:"<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown1<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Width: "<<mWidth<<"\n";
+    stream<< "Height: "<<mHeight<<"\n";
+    stream<< "ObjectRootOffset: 0x"<<std::hex<<std::setw(8)<<mObjectRootOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown2<<std::dec<<std::setw(0)<<"\n";
+    stream<< "ModelData:"<<"\n";
     const uint32_t *unknown = mUnknown3.data();
     int idx = 0;
     for(const auto &id : mModelData)
@@ -534,21 +499,19 @@ void DBlockHeader::print(LogStream &stream, int objtype) const
         if(id[0] != -1)
         {
             std::array<char,9> disp{{id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7], 0}};
-            stream<< "   "<<idx<<": "<<disp.data()<<" 0x"<<std::hex<<std::setw(8)<<*unknown<<std::dec<<std::setw(0)<<"\n";
+            stream<< " "<<idx<<": "<<disp.data()<<" 0x"<<std::hex<<std::setw(8)<<*unknown<<std::setw(0)<<std::dec<<"\n";
         }
         ++unknown;
         ++idx;
     }
-    stream<<std::setfill(' ');
 
     auto iditer = mObjectIds.begin();
     for(ref_ptr<ObjectBase> obj : mObjects)
     {
-        stream<< "  Object 0x"<<std::setfill('0')<<std::hex<<std::setw(8)<<*iditer<<std::dec<<std::setw(0)<<std::setfill(' ')<<"\n";
+        stream<< "**** Object 0x"<<std::hex<<std::setw(8)<<*iditer<<std::setw(0)<<std::dec<<" ****\n";
         obj->print(stream);
         ++iditer;
     }
 }
-
 
 } // namespace DF

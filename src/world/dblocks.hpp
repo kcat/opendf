@@ -21,8 +21,6 @@ namespace osg
 namespace DF
 {
 
-class LogStream;
-
 struct ObjectBase;
 struct DBlockHeader;
 
@@ -144,7 +142,6 @@ struct ObjectBase : public Referenceable {
     virtual void setPos(float x, float y, float z);
     virtual void setRotate(float x, float y, float z) { }
 
-    virtual void print(LogStream &stream) const;
     virtual void print(std::ostream &stream) const;
 };
 
@@ -166,7 +163,6 @@ struct ModelObject : public ObjectBase {
     virtual void setPos(float x, float y, float z) final;
     virtual void setRotate(float x, float y, float z) final;
 
-    virtual void print(LogStream &stream) const final;
     virtual void print(std::ostream &stream) const final;
 };
 
@@ -182,7 +178,6 @@ struct FlatObject : public ObjectBase {
 
     virtual void buildNodes(osg::Group *root, size_t objid) final;
 
-    virtual void print(LogStream &stream) const final;
     virtual void print(std::ostream &stream) const final;
 };
 enum {
@@ -232,7 +227,7 @@ struct DBlockHeader {
 
     void update(float timediff);
 
-    void print(LogStream &stream, int objtype=0) const;
+    void print(std::ostream &stream, int objtype=0) const;
 };
 
 
