@@ -2,6 +2,7 @@
 #define WORLD_MBLOCKS_HPP
 
 #include <iostream>
+#include <vector>
 #include <array>
 
 #include <osg/ref_ptr>

@@ -3,6 +3,7 @@
 
 #include "iface.hpp"
 
+#include <memory>
 #include <vector>
 #include <string>
 
@@ -68,8 +69,8 @@ class World : public WorldIface {
 
     size_t mCurrentSelection;
 
-    std::vector<MBlockHeader> mExterior;
-    std::vector<DBlockHeader> mDungeon;
+    std::vector<std::unique_ptr<MBlockHeader>> mExterior;
+    std::vector<std::unique_ptr<DBlockHeader>> mDungeon;
 
     osg::Vec3f mCameraPos;
     osg::Quat mCameraRot;

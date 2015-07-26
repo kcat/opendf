@@ -442,6 +442,7 @@ void World::loadExterior(int regnum, int extid)
 
     Log::get().stream()<< "Entering "<<extloc.mLocationName;
     size_t count = extloc.mWidth * extloc.mHeight;
+    mExterior.reserve(count);
     for(size_t i = 0;i < count;++i)
     {
         std::string name = extloc.getMapBlockName(i, regnum);
@@ -458,8 +459,8 @@ void World::loadExterior(int regnum, int extid)
         VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
         if(!stream) throw std::runtime_error("Failed to open "+name);
 
-        mExterior.push_back(MBlockHeader());
-        mExterior.back().load(*stream);
+        mExterior.push_back(std::unique_ptr<MBlockHeader>(new MBlockHeader()));
+        mExterior.back()->load(*stream);
     }
 
     bool gotstart = false;
@@ -469,11 +470,11 @@ void World::loadExterior(int regnum, int extid)
     {
         int x = i%extloc.mWidth;
         int y = i/extloc.mWidth;
-        mExterior[i].buildNodes(root, i, x, y);
+        mExterior[i]->buildNodes(root, i, x, y);
 
         if(gotstart) continue;
-        const MFlat *flat = mExterior[i].getFlatByTexture(Marker_EnterID);
-        if(!flat) flat = mExterior[i].getFlatByTexture(Marker_StartID);
+        const MFlat *flat = mExterior[i]->getFlatByTexture(Marker_EnterID);
+        if(!flat) flat = mExterior[i]->getFlatByTexture(Marker_StartID);
         if(flat)
         {
             gotstart = true;
@@ -510,6 +511,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
         Log::get().stream()<< "Climate "<<(int)climate;
 
         Log::get().stream()<< "Entering "<<dinfo.mLocationName;
+        mDungeon.reserve(dinfo.mBlocks.size());
         for(const DungeonBlock &block : dinfo.mBlocks)
         {
             std::stringstream sstr;
@@ -520,14 +522,14 @@ void World::loadDungeonByExterior(int regnum, int extid)
             VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
             if(!stream) throw std::runtime_error("Failed to open "+name);
 
-            mDungeon.push_back(DBlockHeader());
-            mDungeon.back().load(*stream);
+            mDungeon.push_back(std::unique_ptr<DBlockHeader>(new DBlockHeader()));
+            mDungeon.back()->load(*stream);
         }
 
         osg::Group *root = mViewer->getSceneData()->asGroup();
         for(size_t i = 0;i < mDungeon.size();++i)
         {
-            mDungeon[i].buildNodes(root, i, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
+            mDungeon[i]->buildNodes(root, i, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
 
             if(dinfo.mBlocks[i].mStartBlock)
             {
@@ -536,14 +538,14 @@ void World::loadDungeonByExterior(int regnum, int extid)
                 {
                     mFirstStart = false;
                     try {
-                        flat = mDungeon[i].getFlatByTexture(Marker_EnterID);
+                        flat = mDungeon[i]->getFlatByTexture(Marker_EnterID);
                     }
                     catch(std::exception &e) {
                         Log::get().stream(Log::Level_Error)<< "Exception looking for Enter marker: "<<e.what();
                     }
                 }
                 if(!flat)
-                    flat = mDungeon[i].getFlatByTexture(Marker_StartID);
+                    flat = mDungeon[i]->getFlatByTexture(Marker_StartID);
                 osg::Vec3f pos(flat->mXPos, flat->mYPos, flat->mZPos);
                 mCameraPos = osg::componentMultiply(
                     -pos - osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f),
@@ -599,8 +601,8 @@ void World::update(float timediff)
         std::stringstream sstr;
         if(!mExterior.empty())
         {
-            MBlockHeader &block = mExterior.at(mCurrentSelection>>24);
-            const MObjectBase *obj = block.getObject(mCurrentSelection&0x00ffffff);
+            MBlockHeader *block = mExterior.at(mCurrentSelection>>24).get();
+            const MObjectBase *obj = block->getObject(mCurrentSelection&0x00ffffff);
             if(!obj)
                 sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<mCurrentSelection;
             else
@@ -611,8 +613,8 @@ void World::update(float timediff)
         }
         else
         {
-            DBlockHeader &block = mDungeon.at(mCurrentSelection>>24);
-            const ObjectBase *obj = block.getObject(mCurrentSelection&0x00ffffff);
+            DBlockHeader *block = mDungeon.at(mCurrentSelection>>24).get();
+            const ObjectBase *obj = block->getObject(mCurrentSelection&0x00ffffff);
             if(!obj)
                 sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<mCurrentSelection;
             else
@@ -626,8 +628,8 @@ void World::update(float timediff)
 
     if(ingame)
     {
-        for(DBlockHeader &block : mDungeon)
-            block.update(timediff);
+        for(std::unique_ptr<DBlockHeader> &block : mDungeon)
+            block->update(timediff);
     }
 }
 
@@ -637,8 +639,8 @@ void World::activate()
     {
         if(mExterior.empty())
         {
-            DBlockHeader &block = mDungeon.at(mCurrentSelection>>24);
-            block.activate(mCurrentSelection&0x00ffffff);
+            DBlockHeader *block = mDungeon.at(mCurrentSelection>>24).get();
+            block->activate(mCurrentSelection&0x00ffffff);
         }
     }
 }
@@ -680,10 +682,10 @@ void World::dumpBlocks() const
     sstr.fill('0');
 
     int i = 0;
-    for(const DBlockHeader &block : mDungeon)
+    for(const std::unique_ptr<DBlockHeader> &block : mDungeon)
     {
         sstr<< "****** Block "<<i<<" ******\n";
-        block.print(sstr);
+        block->print(sstr);
         ++i;
     }
 
