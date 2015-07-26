@@ -37,10 +37,8 @@ struct ActionBase : public Referenceable {
     ObjectBase *mLink; // Linked object's action updates with this action
 
     float mTimeAccum;
-    bool mReverse;
 
-    ActionBase(ActionType type, ObjectBase *link)
-      : mType(type), mLink(link), mTimeAccum(0.0f), mReverse(false)
+    ActionBase(ActionType type, ObjectBase *link) : mType(type), mLink(link), mTimeAccum(0.0f)
     { }
 
     virtual void load(const std::array<uint8_t,5> &data) = 0;
@@ -125,6 +123,7 @@ struct ObjectBase : public Referenceable {
 
     ref_ptr<ActionBase> mAction;
     bool mActive;
+    bool mReverse;
 
     int32_t mXPos, mYPos, mZPos;
     int32_t mXRot, mYRot, mZRot;
@@ -206,7 +205,7 @@ struct DBlockHeader {
 
     osg::ref_ptr<osg::Group> mBaseNode;
 
-    std::vector<ObjectBase*> mActiveObjects;
+    std::vector<std::pair<ref_ptr<ActionBase>,ObjectBase*>> mActiveObjects;
 
     ~DBlockHeader();
 

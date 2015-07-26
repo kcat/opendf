@@ -20,7 +20,6 @@ void ActionBase::print(std::ostream &stream) const
 {
     stream<< "Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
     stream<< "TimeAccum: "<<mTimeAccum<<"\n";
-    stream<< "Reverse: "<<(mReverse?"true":"false")<<"\n";
 }
 
 
@@ -46,7 +45,7 @@ bool ActionTranslate::update(ObjectBase *target, float timediff)
     mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
 
     float delta = mTimeAccum / mDuration;
-    if(mReverse) delta = 1.0f - delta;
+    if(target->mReverse) delta = 1.0f - delta;
 
     if(mAxis == Axis_X)
         target->setPos(target->mXPos + (mMagnitude*delta), target->mYPos, target->mZPos);
@@ -63,7 +62,7 @@ bool ActionTranslate::update(ObjectBase *target, float timediff)
 
     if(mTimeAccum >= mDuration)
     {
-        mReverse = !mReverse;
+        target->mReverse = !target->mReverse;
         mTimeAccum = 0.0f;
         return false;
     }
@@ -75,7 +74,7 @@ bool ActionRotate::update(ObjectBase *target, float timediff)
     mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
 
     float delta = mTimeAccum / mDuration;
-    if(mReverse) delta = 1.0f - delta;
+    if(target->mReverse) delta = 1.0f - delta;
 
     if(mAxis == Axis_X)
         target->setRotate(target->mXRot + (mMagnitude*delta), target->mYRot, target->mZRot);
@@ -92,7 +91,7 @@ bool ActionRotate::update(ObjectBase *target, float timediff)
 
     if(mTimeAccum >= mDuration)
     {
-        mReverse = !mReverse;
+        target->mReverse = !target->mReverse;
         mTimeAccum = 0.0f;
         return false;
     }
@@ -137,7 +136,7 @@ void ActionUnknown::print(std::ostream& stream) const
 
 
 ObjectBase::ObjectBase(uint8_t type, int x, int y, int z)
-  : mType(type), mActive(false)
+  : mType(type), mActive(false), mReverse(false)
   , mXPos(x), mYPos(y), mZPos(z)
   , mXRot(0), mYRot(0), mZRot(0)
   , mActionFlags(0)
@@ -443,7 +442,24 @@ void DBlockHeader::activate(size_t id)
 {
     ObjectBase *base = getObject(id);
     if(!base || !(base->mActionFlags&ActionFlag_Activatable))
+    {
+        if(!base->mActive && base->mType == ObjectType_Model)
+        {
+            ModelObject *model = static_cast<ModelObject*>(base);
+            // TODO: There's likely a flag on the object that specifies a door
+            // that can't be directly activated, e.g. the protected door in
+            // Shedungent.
+            if(model->mModelData[5] == 'D' && model->mModelData[6] == 'O' && model->mModelData[7] == 'R')
+            {
+                ref_ptr<ActionRotate> action(new ActionRotate(nullptr));
+                action->load({{ActionRotate::Axis_Y, 24, 0, 0, 2}});
+
+                mActiveObjects.push_back(std::make_pair(action, base));
+                base->mActive = true;
+            }
+        }
         return;
+    }
 
     // Make sure no object in this chain is still active
     ObjectBase *check = base;
@@ -461,7 +477,7 @@ void DBlockHeader::activate(size_t id)
 
     while(base != nullptr && base->mAction)
     {
-        mActiveObjects.push_back(base);
+        mActiveObjects.push_back(std::make_pair(base->mAction, base));
         base->mActive = true;
         base = base->mAction->mLink;
     }
@@ -473,9 +489,9 @@ void DBlockHeader::update(float timediff)
     auto iter = mActiveObjects.begin();
     while(iter != mActiveObjects.end())
     {
-        if(!(*iter)->updateAction(timediff))
+        if(!iter->first->update(iter->second, timediff))
         {
-            (*iter)->mActive = false;
+            iter->second->mActive = false;
             iter = mActiveObjects.erase(iter);
         }
         else
