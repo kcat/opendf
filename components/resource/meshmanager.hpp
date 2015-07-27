@@ -21,6 +21,7 @@ class MeshManager {
 
     std::map<size_t,osg::observer_ptr<osg::Node>> mModelCache;
     std::map<size_t,osg::observer_ptr<osg::StateSet>> mStateSetCache;
+    std::map<std::pair<size_t,bool>,osg::observer_ptr<osg::Node>> mFlatCache;
 
     MeshManager();
     ~MeshManager();
@@ -31,11 +32,11 @@ public:
 
     osg::ref_ptr<osg::Node> get(size_t idx);
 
-    /* Loads a billboard flat for the given texture (see TextureManager::get).
-     * Optionally returns the number of frames in the loaded texture, and a
-     * scale+translate matrix with its X/Y scale and offset.
+    /* Loads a billboard flat for the given texture (see TextureManager::get),
+     * with either a centered billboard or one rooted on its bottom. Optionally
+     * returns the number of frames in the loaded texture.
      */
-    osg::ref_ptr<osg::Node> loadFlat(size_t texid, size_t *num_frames=nullptr);
+    osg::ref_ptr<osg::Node> loadFlat(size_t texid, bool centered, size_t *num_frames=nullptr);
 
     static MeshManager &get() { return sManager; }
 };

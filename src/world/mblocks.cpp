@@ -62,7 +62,7 @@ void MFlat::buildNodes(osg::Group *root, size_t objid)
     mBaseNode = new osg::MatrixTransform(mat);
     mBaseNode->setNodeMask(WorldIface::Mask_Flat);
     mBaseNode->setUserData(new ObjectRef(objid));
-    mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture));
+    mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture, false));
     root->addChild(mBaseNode);
 }
 

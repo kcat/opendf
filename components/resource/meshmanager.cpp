@@ -149,12 +149,12 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
     return geode;
 }
 
-osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames)
+osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_t *num_frames)
 {
     /* Nodes for flats are stored with an inverted texid as a lookup, to avoid
      * clashes with ARCH3D indices. */
-    auto iter = mModelCache.find(~texid);
-    if(iter != mModelCache.end())
+    auto iter = mFlatCache.find(std::make_pair(texid, centered));
+    if(iter != mFlatCache.end())
     {
         osg::ref_ptr<osg::Node> node;
         if(iter->second.lock(node))
@@ -221,10 +221,13 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, size_t *num_frames)
     ss->setTextureAttributeAndModes(0, tex);
     ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::GREATER, 0.5f));
 
-    bb->addDrawable(geometry);
+    if(centered)
+        bb->addDrawable(geometry);
+    else
+        bb->addDrawable(geometry, osg::Vec3(0.0f, height*-0.5f, 0.0f));
     base->addChild(bb);
 
-    mModelCache[~texid] = osg::ref_ptr<osg::Node>(base);
+    mFlatCache[std::make_pair(texid, centered)] = osg::ref_ptr<osg::Node>(base);
     return base;
 }
 
