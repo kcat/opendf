@@ -8,6 +8,7 @@
 #include <osg/ref_ptr>
 #include <osg/Referenced>
 
+#include "misc/sparsearray.hpp"
 #include "referenceable.hpp"
 
 
@@ -200,8 +201,7 @@ struct DBlockHeader {
      * offset is used as an ID lookup for Action records that specify targets
      * as a byte offset.
      */
-    std::set<int32_t> mObjectIds;
-    std::vector<ref_ptr<ObjectBase>> mObjects;
+    Misc::SparseArray<ref_ptr<ObjectBase>> mObjects;
 
     osg::ref_ptr<osg::Group> mBaseNode;
 

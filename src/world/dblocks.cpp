@@ -354,13 +354,7 @@ void DBlockHeader::load(std::istream &stream)
                 ref_ptr<ModelObject> mdl(new ModelObject(x, y, z));
                 mdl->load(stream, mModelData);
 
-                auto ret = mObjectIds.insert(offset);
-                if(ret.second)
-                {
-                    size_t pos = std::distance(mObjectIds.begin(), ret.first);
-                    mObjects.resize(mObjectIds.size()-1);
-                    mObjects.insert(mObjects.begin()+pos, mdl);
-                }
+                mObjects.insert(offset, mdl);
             }
             else if(type == ObjectType_Flat)
             {
@@ -368,13 +362,7 @@ void DBlockHeader::load(std::istream &stream)
                 ref_ptr<FlatObject> flat(new FlatObject(x, y, z));
                 flat->load(stream);
 
-                auto ret = mObjectIds.insert(offset);
-                if(ret.second)
-                {
-                    size_t pos = std::distance(mObjectIds.begin(), ret.first);
-                    mObjects.resize(mObjectIds.size()-1);
-                    mObjects.insert(mObjects.begin()+pos, flat);
-                }
+                mObjects.insert(offset, flat);
             }
 
             offset = next;
@@ -394,7 +382,7 @@ void DBlockHeader::buildNodes(osg::Group *root, size_t blockid, int x, int z)
         base->setMatrix(osg::Matrix::translate(x*2048.0f, 0.0f, z*2048.0f));
         mBaseNode = base;
 
-        auto iditer = mObjectIds.begin();
+        auto iditer = mObjects.getIdList();
         for(ref_ptr<ObjectBase> &obj : mObjects)
             obj->buildNodes(mBaseNode.get(), (blockid<<24) | *(iditer++));
     }
@@ -415,10 +403,10 @@ void DBlockHeader::detachNode()
 
 ObjectBase *DBlockHeader::getObject(size_t id)
 {
-    auto iter = mObjectIds.find(id);
-    if(iter == mObjectIds.end())
+    auto iter = mObjects.find(id);
+    if(iter == mObjects.end())
         return nullptr;
-    return mObjects[std::distance(mObjectIds.begin(), iter)].get();
+    return *iter;
 }
 
 
@@ -521,7 +509,7 @@ void DBlockHeader::print(std::ostream &stream, int objtype) const
         ++idx;
     }
 
-    auto iditer = mObjectIds.begin();
+    auto iditer = mObjects.getIdList();
     for(ref_ptr<ObjectBase> obj : mObjects)
     {
         stream<< "**** Object 0x"<<std::hex<<std::setw(8)<<*iditer<<std::setw(0)<<std::dec<<" ****\n";

@@ -49,7 +49,8 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          src/engine.cpp
          main.cpp
 )
-set(HDRS components/sdlutil/graphicswindow.hpp
+set(HDRS misc/sparsearray.hpp
+         components/sdlutil/graphicswindow.hpp
          components/settings/configfile.hpp
          components/archives/archive.hpp
          components/archives/bsaarchive.hpp
