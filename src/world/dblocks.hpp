@@ -118,8 +118,7 @@ enum ActionFlags {
 };
 
 struct ObjectBase : public Referenceable {
-    osg::ref_ptr<osg::MatrixTransform> mBaseNode;
-
+    size_t mId;
     uint8_t mType;
 
     ref_ptr<ActionBase> mAction;
@@ -131,16 +130,13 @@ struct ObjectBase : public Referenceable {
     uint32_t mActionFlags;
     int32_t mActionOffset;
 
-    ObjectBase(uint8_t type, int x, int y, int z);
+    ObjectBase(size_t id, uint8_t type, int x, int y, int z);
     virtual ~ObjectBase();
 
     void loadAction(std::istream &stream, DBlockHeader &block);
     bool updateAction(float timediff) { return mAction->update(this, timediff); }
 
-    virtual void buildNodes(osg::Group *root, size_t objid) = 0;
-
-    virtual void setPos(float x, float y, float z);
-    virtual void setRotate(float x, float y, float z) { }
+    virtual void buildNodes(osg::Group *root) = 0;
 
     virtual void print(std::ostream &stream) const;
 };
@@ -155,13 +151,10 @@ struct ModelObject : public ObjectBase {
 
     std::array<char,8> mModelData;
 
-    ModelObject(int x, int y, int z) : ObjectBase(ObjectType_Model, x, y, z) { }
+    ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
     void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata);
 
-    virtual void buildNodes(osg::Group *root, size_t objid) final;
-
-    virtual void setPos(float x, float y, float z) final;
-    virtual void setRotate(float x, float y, float z) final;
+    virtual void buildNodes(osg::Group *root) final;
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -173,10 +166,10 @@ struct FlatObject : public ObjectBase {
     //int32_t mActionOffset; // Maybe?
     uint8_t mUnknown;
 
-    FlatObject(int x, int y, int z) : ObjectBase(ObjectType_Flat, x, y, z) { }
+    FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
     void load(std::istream &stream);
 
-    virtual void buildNodes(osg::Group *root, size_t objid) final;
+    virtual void buildNodes(osg::Group *root) final;
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -209,9 +202,9 @@ struct DBlockHeader {
 
     ~DBlockHeader();
 
-    void load(std::istream &stream);
+    void load(std::istream &stream, size_t blockid);
 
-    void buildNodes(osg::Group *root, size_t blockid, int x, int z);
+    void buildNodes(osg::Group *root, int x, int z);
     void detachNode();
 
     ObjectBase *getObject(size_t id);
@@ -220,7 +213,7 @@ struct DBlockHeader {
      * For instance, 0x638A (the 10th entry of TEXTURE.199) is the "Start"
      * marker, and is used to identify where to spawn when entering a dungeon.
      */
-    FlatObject *getFlatByTexture(size_t texid) const;
+    size_t getObjectByTexture(size_t texid) const;
 
     void activate(size_t id);
 

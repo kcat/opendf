@@ -12,6 +12,9 @@
 #include "components/vfs/manager.hpp"
 #include "components/resource/meshmanager.hpp"
 
+#include "render/renderer.hpp"
+#include "class/placeable.hpp"
+
 
 namespace DF
 {
@@ -47,18 +50,20 @@ bool ActionTranslate::update(ObjectBase *target, float timediff)
     float delta = mTimeAccum / mDuration;
     if(target->mReverse) delta = 1.0f - delta;
 
+    osg::Vec3f pos(target->mXPos, target->mYPos, target->mZPos);
     if(mAxis == Axis_X)
-        target->setPos(target->mXPos + (mMagnitude*delta), target->mYPos, target->mZPos);
+        pos.x() += (mMagnitude*delta);
     else if(mAxis == Axis_NegX)
-        target->setPos(target->mXPos - (mMagnitude*delta), target->mYPos, target->mZPos);
+        pos.x() -= (mMagnitude*delta);
     else if(mAxis == Axis_Y)
-        target->setPos(target->mXPos, target->mYPos + (mMagnitude*delta), target->mZPos);
+        pos.y() += (mMagnitude*delta);
     else if(mAxis == Axis_NegY)
-        target->setPos(target->mXPos, target->mYPos - (mMagnitude*delta), target->mZPos);
+        pos.y() -= (mMagnitude*delta);
     else if(mAxis == Axis_Z)
-        target->setPos(target->mXPos, target->mYPos, target->mZPos + (mMagnitude*delta));
+        pos.z() += (mMagnitude*delta);
     else if(mAxis == Axis_NegZ)
-        target->setPos(target->mXPos, target->mYPos, target->mZPos - (mMagnitude*delta));
+        pos.z() -= (mMagnitude*delta);
+    Placeable::get().setPoint(target->mId, pos);
 
     if(mTimeAccum >= mDuration)
     {
@@ -76,18 +81,20 @@ bool ActionRotate::update(ObjectBase *target, float timediff)
     float delta = mTimeAccum / mDuration;
     if(target->mReverse) delta = 1.0f - delta;
 
+    osg::Vec3f rot(target->mXRot, target->mYRot, target->mZRot);
     if(mAxis == Axis_X)
-        target->setRotate(target->mXRot + (mMagnitude*delta), target->mYRot, target->mZRot);
+        rot.x() += (mMagnitude*delta);
     else if(mAxis == Axis_NegX)
-        target->setRotate(target->mXRot - (mMagnitude*delta), target->mYRot, target->mZRot);
+        rot.x() -= (mMagnitude*delta);
     else if(mAxis == Axis_Y)
-        target->setRotate(target->mXRot, target->mYRot + (mMagnitude*delta), target->mZRot);
+        rot.y() += (mMagnitude*delta);
     else if(mAxis == Axis_NegY)
-        target->setRotate(target->mXRot, target->mYRot - (mMagnitude*delta), target->mZRot);
+        rot.y() -= (mMagnitude*delta);
     else if(mAxis == Axis_Z)
-        target->setRotate(target->mXRot, target->mYRot, target->mZRot + (mMagnitude*delta));
+        rot.z() += (mMagnitude*delta);
     else if(mAxis == Axis_NegZ)
-        target->setRotate(target->mXRot, target->mYRot, target->mZRot - (mMagnitude*delta));
+        rot.z() -= (mMagnitude*delta);
+    Placeable::get().setRotate(target->mId, rot);
 
     if(mTimeAccum >= mDuration)
     {
@@ -135,8 +142,8 @@ void ActionUnknown::print(std::ostream& stream) const
 }
 
 
-ObjectBase::ObjectBase(uint8_t type, int x, int y, int z)
-  : mType(type), mActive(false), mReverse(false)
+ObjectBase::ObjectBase(size_t id, uint8_t type, int x, int y, int z)
+  : mId(id), mType(type), mActive(false), mReverse(false)
   , mXPos(x), mYPos(y), mZPos(z)
   , mXRot(0), mYRot(0), mZRot(0)
   , mActionFlags(0)
@@ -160,7 +167,10 @@ void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
 
     ObjectBase *link = nullptr;
     if(target > 0)
+    {
+        target |= mId&0xff000000;
         link = block.getObject(target);
+    }
 
     if(type == Action_Translate)
         mAction = new ActionTranslate(link);
@@ -174,12 +184,6 @@ void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
         mAction = new ActionUnknown(type, link);
     }
     mAction->load(adata);
-}
-
-void ObjectBase::setPos(float x, float y, float z)
-{
-    mBaseNode->setDataVariance(osg::Node::DYNAMIC);
-    mBaseNode->setMatrix(osg::Matrix::translate(x, y, z));
 }
 
 void ObjectBase::print(std::ostream &stream) const
@@ -203,59 +207,23 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     mModelData = mdldata.at(mModelIdx);
 }
 
-void ModelObject::buildNodes(osg::Group *root, size_t objid)
+void ModelObject::buildNodes(osg::Group *root)
 {
     if(mModelData[0] == -1)
         return;
-
-    osg::Matrix mat;
-    mat.makeRotate(
-         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-        -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-    );
-    mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
 
     std::array<char,6> id{{ mModelData[0], mModelData[1], mModelData[2],
                             mModelData[3], mModelData[4], 0 }};
     size_t mdlidx = strtol(id.data(), nullptr, 10);
 
-    mBaseNode = new osg::MatrixTransform(mat);
-    mBaseNode->setNodeMask(WorldIface::Mask_Static);
-    mBaseNode->setUserData(new ObjectRef(objid));
-    mBaseNode->addChild(Resource::MeshManager::get().get(mdlidx));
-    root->addChild(mBaseNode);
-}
+    osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
+    node->setNodeMask(WorldIface::Mask_Static);
+    node->setUserData(new ObjectRef(mId));
+    node->addChild(Resource::MeshManager::get().get(mdlidx));
+    root->addChild(node);
 
-void ModelObject::setPos(float x, float y, float z)
-{
-    osg::Matrix mat;
-    mat.makeRotate(
-         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-        -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-    );
-    mat.postMultTranslate(osg::Vec3(x, y, z));
-    mBaseNode->setDataVariance(osg::Node::DYNAMIC);
-    mBaseNode->setMatrix(mat);
-}
-
-void ModelObject::setRotate(float x, float y, float z)
-{
-    osg::Matrix mat;
-    mat.makeRotate(
-         mXRot*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-        -mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-         mZRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-    );
-    mat.postMultRotate(osg::Quat(
-         (x-mXRot)*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-        -(y-mYRot)*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-         (z-mZRot)*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-    ));
-    mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
-    mBaseNode->setDataVariance(osg::Node::DYNAMIC);
-    mBaseNode->setMatrix(mat);
+    Renderer::get().setNode(mId, node);
+    Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(mXRot, mYRot, mZRot));
 }
 
 void ModelObject::print(std::ostream &stream) const
@@ -286,13 +254,16 @@ void FlatObject::load(std::istream &stream)
     mUnknown = stream.get();
 }
 
-void FlatObject::buildNodes(osg::Group *root, size_t objid)
+void FlatObject::buildNodes(osg::Group *root)
 {
-    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(mXPos, mYPos, mZPos));
-    mBaseNode->setNodeMask(WorldIface::Mask_Flat);
-    mBaseNode->setUserData(new ObjectRef(objid));
-    mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture, true));
-    root->addChild(mBaseNode);
+    osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
+    node->setNodeMask(WorldIface::Mask_Flat);
+    node->setUserData(new ObjectRef(mId));
+    node->addChild(Resource::MeshManager::get().loadFlat(mTexture, true));
+    root->addChild(node);
+
+    Renderer::get().setNode(mId, node);
+    Placeable::get().setPoint(mId, osg::Vec3f(mXPos, mYPos, mZPos));
 }
 
 void FlatObject::print(std::ostream &stream) const
@@ -314,10 +285,17 @@ void FlatObject::print(std::ostream &stream) const
 DBlockHeader::~DBlockHeader()
 {
     detachNode();
+    if(!mObjects.empty())
+    {
+        Renderer::get().remove(&*mObjects.getIdList(),
+                               mObjects.size());
+        Placeable::get().deallocate(&*mObjects.getIdList(),
+                                    mObjects.size());
+    }
 }
 
 
-void DBlockHeader::load(std::istream &stream)
+void DBlockHeader::load(std::istream &stream, size_t blockid)
 {
     mUnknown1 = VFS::read_le32(stream);
     mWidth = VFS::read_le32(stream);
@@ -351,18 +329,18 @@ void DBlockHeader::load(std::istream &stream)
             if(type == ObjectType_Model)
             {
                 stream.seekg(objoffset);
-                ref_ptr<ModelObject> mdl(new ModelObject(x, y, z));
+                ref_ptr<ModelObject> mdl(new ModelObject(blockid|offset, x, y, z));
                 mdl->load(stream, mModelData);
 
-                mObjects.insert(offset, mdl);
+                mObjects.insert(blockid|offset, mdl);
             }
             else if(type == ObjectType_Flat)
             {
                 stream.seekg(objoffset);
-                ref_ptr<FlatObject> flat(new FlatObject(x, y, z));
+                ref_ptr<FlatObject> flat(new FlatObject(blockid|offset, x, y, z));
                 flat->load(stream);
 
-                mObjects.insert(offset, flat);
+                mObjects.insert(blockid|offset, flat);
             }
 
             offset = next;
@@ -374,7 +352,7 @@ void DBlockHeader::load(std::istream &stream)
 }
 
 
-void DBlockHeader::buildNodes(osg::Group *root, size_t blockid, int x, int z)
+void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
 {
     if(!mBaseNode)
     {
@@ -382,9 +360,8 @@ void DBlockHeader::buildNodes(osg::Group *root, size_t blockid, int x, int z)
         base->setMatrix(osg::Matrix::translate(x*2048.0f, 0.0f, z*2048.0f));
         mBaseNode = base;
 
-        auto iditer = mObjects.getIdList();
         for(ref_ptr<ObjectBase> &obj : mObjects)
-            obj->buildNodes(mBaseNode.get(), (blockid<<24) | *(iditer++));
+            obj->buildNodes(mBaseNode.get());
     }
 
     root->addChild(mBaseNode);
@@ -410,19 +387,18 @@ ObjectBase *DBlockHeader::getObject(size_t id)
 }
 
 
-FlatObject *DBlockHeader::getFlatByTexture(size_t texid) const
+size_t DBlockHeader::getObjectByTexture(size_t texid) const
 {
-    for(ref_ptr<ObjectBase> obj : mObjects)
+    for(const ref_ptr<ObjectBase> &obj : mObjects)
     {
         if(obj->mType == ObjectType_Flat)
         {
             FlatObject *flat = static_cast<FlatObject*>(obj.get());
-            if(flat->mTexture == texid) return flat;
+            if(flat->mTexture == texid) return flat->mId;
         }
     }
-    std::stringstream sstr;
-    sstr<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
-    throw std::runtime_error(sstr.str());
+    Log::get().stream(Log::Log::Level_Error)<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
+    return ~static_cast<size_t>(0);
 }
 
 

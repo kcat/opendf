@@ -2,6 +2,8 @@
 #define MISC_SPARSEARRAY_HPP
 
 #include <vector>
+#include <cstddef>
+
 
 namespace Misc
 {
@@ -89,14 +91,18 @@ public:
     typedef typename datalist_type::reverse_iterator reverse_iterator;
     typedef typename datalist_type::const_reverse_iterator const_reverse_iterator;
 
-    SparseArray() { }
-    ~SparseArray() { }
+    SparseArray() = default;
+    SparseArray(SparseArray<value_type>&&) = default;
+    SparseArray<value_type>& operator=(SparseArray<value_type>&&) = default;
 
     void reserve(size_t size)
     {
         mIdxLookup.reserve(size);
         mData.reserve(size);
     }
+
+    bool empty() const { return mData.empty(); }
+    size_t size() const { return mData.size(); }
 
     bool exists(size_t idx) const
     { return lookupKey(idx) != mIdxLookup.end(); }
@@ -150,7 +156,7 @@ public:
         if(iter == mIdxLookup.cend())
             return;
 
-        mData.erase(std::distance(mIdxLookup.cbegin(), iter));
+        mData.erase(std::next(mData.cbegin(), std::distance(mIdxLookup.cbegin(), iter)));
         mIdxLookup.erase(iter);
     }
 

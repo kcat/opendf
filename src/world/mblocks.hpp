@@ -7,6 +7,8 @@
 
 #include <osg/ref_ptr>
 
+#include "misc/sparsearray.hpp"
+
 #include "pitems.hpp"
 
 
@@ -19,9 +21,9 @@ namespace DF
 {
 
 struct MObjectBase {
-    int32_t mXPos, mYPos, mZPos;
+    size_t mId;
 
-    osg::ref_ptr<osg::Group> mBaseNode;
+    int32_t mXPos, mYPos, mZPos;
 
     void load(std::istream &stream);
 
@@ -51,7 +53,7 @@ struct MFlat : public MObjectBase {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root, size_t objid);
+    void buildNodes(osg::Group *root);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -82,7 +84,7 @@ struct MModel : public MObjectBase {
 
     void load(std::istream &stream);
 
-    void buildNodes(osg::Group *root, size_t objid);
+    void buildNodes(osg::Group *root);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -100,17 +102,26 @@ struct MBlock {
     uint16_t mUnknown5;
     uint16_t mUnknown6;
 
-    std::vector<MModel>    mModels;
-    std::vector<MFlat>     mFlats;
+    Misc::SparseArray<MModel> mModels;
+    Misc::SparseArray<MFlat>  mFlats;
     std::vector<MSection3> mSection3s;
     std::vector<MPerson>   mNpcs;
     std::vector<MDoor>     mDoors;
 
     osg::ref_ptr<osg::Group> mBaseNode;
 
-    void load(std::istream &stream);
+    MBlock() = default;
+    MBlock(MBlock&&) = default;
+    ~MBlock();
 
-    void buildNodes(osg::Group *root, size_t objid, int x, int z, int yrot);
+    MBlock& operator=(MBlock&&) = default;
+
+    MBlock(const MBlock&) = delete;
+    MBlock& operator=(const MBlock&) = delete;
+
+    void load(std::istream &stream, size_t blockid);
+
+    void buildNodes(osg::Group *root, int x, int z, int yrot);
 
     MObjectBase *getObject(size_t id);
 };
@@ -148,16 +159,16 @@ struct MBlockHeader {
     std::vector<MBlock> mExteriorBlocks;
     std::vector<MBlock> mInteriorBlocks;
 
-    std::vector<MModel> mModels;
-    std::vector<MFlat> mFlats;
+    Misc::SparseArray<MModel> mModels;
+    Misc::SparseArray<MFlat> mFlats;
 
     osg::ref_ptr<osg::Group> mBaseNode;
 
     ~MBlockHeader();
 
-    void load(std::istream &stream);
+    void load(std::istream &stream, size_t blockid);
 
-    void buildNodes(osg::Group *root, size_t objid, int x, int z);
+    void buildNodes(osg::Group *root, int x, int z);
     void detachNode();
 
     MObjectBase *getObject(size_t id);
@@ -166,7 +177,7 @@ struct MBlockHeader {
      * For instance, 0x638A (the 10th entry of TEXTURE.199) is the "Start"
      * marker, and is used to identify where to spawn.
      */
-    const MFlat *getFlatByTexture(size_t texid) const;
+    size_t getObjectByTexture(size_t texid) const;
 };
 
 } // namespace DF

@@ -7,9 +7,12 @@
 
 #include <osgViewer/Viewer>
 #include <osg/Light>
+#include <osg/Quat>
 
 #include "components/vfs/manager.hpp"
 
+#include "render/renderer.hpp"
+#include "class/placeable.hpp"
 #include "gui/iface.hpp"
 #include "mblocks.hpp"
 #include "dblocks.hpp"
@@ -227,11 +230,6 @@ World::World()
   , mCurrentSelection(~static_cast<size_t>(0))
   , mFirstStart(true)
 {
-    mCameraRot.makeRotate(
-            0.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-        3.14159f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-            0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-    );
 }
 
 World::~World()
@@ -460,35 +458,40 @@ void World::loadExterior(int regnum, int extid)
         if(!stream) throw std::runtime_error("Failed to open "+name);
 
         mExterior.push_back(std::unique_ptr<MBlockHeader>(new MBlockHeader()));
-        mExterior.back()->load(*stream);
+        mExterior.back()->load(*stream, i<<24);
     }
 
-    bool gotstart = false;
+    size_t startobj = ~static_cast<size_t>(0);
     osg::Vec3 pos;
     osg::Group *root = mViewer->getSceneData()->asGroup();
     for(size_t i = 0;i < mExterior.size();++i)
     {
         int x = i%extloc.mWidth;
         int y = i/extloc.mWidth;
-        mExterior[i]->buildNodes(root, i, x, y);
+        mExterior[i]->buildNodes(root, x, y);
 
-        if(gotstart) continue;
-        const MFlat *flat = mExterior[i]->getFlatByTexture(Marker_EnterID);
-        if(!flat) flat = mExterior[i]->getFlatByTexture(Marker_StartID);
-        if(flat)
+        if(startobj != ~static_cast<size_t>(0))
+            continue;
+
+        startobj = mExterior[i]->getObjectByTexture(Marker_EnterID);
+        if(startobj == ~static_cast<size_t>(0))
+            startobj = mExterior[i]->getObjectByTexture(Marker_StartID);
+
+        if(startobj != ~static_cast<size_t>(0))
         {
-            gotstart = true;
-            pos = osg::Vec3f(flat->mXPos, flat->mYPos, flat->mZPos);
-            pos = osg::componentMultiply(
-                -pos - osg::Vec3f(x*4096.0f, 0.0f, y*4096.0f),
+            Position pos = Placeable::get().getPos(startobj);
+            mCameraPos = osg::componentMultiply(
+                -(pos.mPoint + osg::Vec3f(x*4096.0f, 0.0f, y*4096.0f)),
                 osg::Vec3f(1.0f, -1.0f, -1.0f)
             );
         }
     }
-    if(!gotstart)
+    if(startobj == ~static_cast<size_t>(0))
+    {
         Log::get().message("Failed to find enter or start markers", Log::Level_Error);
-    else
-        mCameraPos = pos;
+        mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
+    }
+    mCameraRot = osg::Vec3f(0.0f, 180.0f, 0.0f);
 }
 
 void World::loadDungeonByExterior(int regnum, int extid)
@@ -523,34 +526,36 @@ void World::loadDungeonByExterior(int regnum, int extid)
             if(!stream) throw std::runtime_error("Failed to open "+name);
 
             mDungeon.push_back(std::unique_ptr<DBlockHeader>(new DBlockHeader()));
-            mDungeon.back()->load(*stream);
+            mDungeon.back()->load(*stream, std::distance(dinfo.mBlocks.data(), &block)<<24);
         }
 
         osg::Group *root = mViewer->getSceneData()->asGroup();
         for(size_t i = 0;i < mDungeon.size();++i)
         {
-            mDungeon[i]->buildNodes(root, i, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
+            mDungeon[i]->buildNodes(root, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
 
             if(dinfo.mBlocks[i].mStartBlock)
             {
-                FlatObject *flat = nullptr;
+                size_t startobj = ~static_cast<size_t>(0);
                 if(mFirstStart)
                 {
                     mFirstStart = false;
-                    try {
-                        flat = mDungeon[i]->getFlatByTexture(Marker_EnterID);
-                    }
-                    catch(std::exception &e) {
-                        Log::get().stream(Log::Level_Error)<< "Exception looking for Enter marker: "<<e.what();
-                    }
+                    startobj = mDungeon[i]->getObjectByTexture(Marker_EnterID);
                 }
-                if(!flat)
-                    flat = mDungeon[i]->getFlatByTexture(Marker_StartID);
-                osg::Vec3f pos(flat->mXPos, flat->mYPos, flat->mZPos);
-                mCameraPos = osg::componentMultiply(
-                    -pos - osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f),
-                    osg::Vec3f(1.0f, -1.0f, -1.0f)
-                );
+                if(startobj == ~static_cast<size_t>(0))
+                    startobj = mDungeon[i]->getObjectByTexture(Marker_StartID);
+
+                if(startobj == ~static_cast<size_t>(0))
+                    mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
+                else
+                {
+                    Position pos = Placeable::get().getPos(startobj);
+                    mCameraPos = osg::componentMultiply(
+                        -(pos.mPoint + osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f)),
+                        osg::Vec3f(1.0f, -1.0f, -1.0f)
+                    );
+                }
+                mCameraRot = osg::Vec3f(0.0f, 180.0f, 0.0f);
             }
         }
         break;
@@ -560,28 +565,30 @@ void World::loadDungeonByExterior(int regnum, int extid)
 
 void World::move(float xrel, float yrel, float zrel)
 {
-    mCameraPos += mCameraRot*osg::Vec3f(xrel, yrel, zrel);
+    osg::Matrixf matf(osg::Matrixf::rotate(
+                                   0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f),
+         mCameraRot.y()*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+        -mCameraRot.x()*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f)
+    ));
+    mCameraPos += matf*osg::Vec3f(xrel, yrel, zrel);
 }
 
 void World::rotate(float xrel, float yrel)
 {
-    /* HACK: rotate the camera around */
-    static float x=0.0f, y=180.0f;
-
-    x = std::min(std::max(x+xrel, -89.0f), 89.0f);
-    y += yrel;
-
-    mCameraRot.makeRotate(
-        x*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-       -y*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-                     0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-    );
+    mCameraRot.x() = std::min(std::max(mCameraRot.x()+xrel, -89.0f), 89.0f);
+    mCameraRot.y() += yrel;
 }
 
 
 void World::update(float timediff)
 {
-    osg::Matrixf matf(mCameraRot.inverse());
+    Renderer::get().update();
+
+    osg::Matrixf matf(osg::Matrixf::rotate(
+                                   0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f),
+         mCameraRot.y()*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+        -mCameraRot.x()*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f)
+    ));
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
 
@@ -602,7 +609,7 @@ void World::update(float timediff)
         if(!mExterior.empty())
         {
             MBlockHeader *block = mExterior.at(mCurrentSelection>>24).get();
-            const MObjectBase *obj = block->getObject(mCurrentSelection&0x00ffffff);
+            const MObjectBase *obj = block->getObject(mCurrentSelection);
             if(!obj)
                 sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<mCurrentSelection;
             else
@@ -614,7 +621,7 @@ void World::update(float timediff)
         else
         {
             DBlockHeader *block = mDungeon.at(mCurrentSelection>>24).get();
-            const ObjectBase *obj = block->getObject(mCurrentSelection&0x00ffffff);
+            const ObjectBase *obj = block->getObject(mCurrentSelection);
             if(!obj)
                 sstr<< "Failed to lookup object 0x"<<std::hex<<std::setfill('0')<<std::setw(8)<<mCurrentSelection;
             else
@@ -640,7 +647,7 @@ void World::activate()
         if(mExterior.empty())
         {
             DBlockHeader *block = mDungeon.at(mCurrentSelection>>24).get();
-            block->activate(mCurrentSelection&0x00ffffff);
+            block->activate(mCurrentSelection);
         }
     }
 }

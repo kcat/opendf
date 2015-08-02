@@ -10,7 +10,9 @@
 #include "components/vfs/manager.hpp"
 #include "components/resource/meshmanager.hpp"
 
+#include "render/renderer.hpp"
 #include "world.hpp"
+#include "log.hpp"
 
 
 namespace DF
@@ -53,17 +55,16 @@ void MFlat::load(std::istream &stream)
     mFlags = stream.get();
 }
 
-void MFlat::buildNodes(osg::Group *root, size_t objid)
+void MFlat::buildNodes(osg::Group *root)
 {
-    osg::Matrix mat(osg::Matrix::translate(
-        osg::Vec3(mXPos, mYPos, mZPos)
-    ));
+    osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
+    node->setNodeMask(WorldIface::Mask_Flat);
+    node->setUserData(new ObjectRef(mId));
+    node->addChild(Resource::MeshManager::get().loadFlat(mTexture, false));
+    root->addChild(node);
 
-    mBaseNode = new osg::MatrixTransform(mat);
-    mBaseNode->setNodeMask(WorldIface::Mask_Flat);
-    mBaseNode->setUserData(new ObjectRef(objid));
-    mBaseNode->addChild(Resource::MeshManager::get().loadFlat(mTexture, false));
-    root->addChild(mBaseNode);
+    Renderer::get().setNode(mId, node);
+    Placeable::get().setPoint(mId, osg::Vec3f(mXPos, mYPos, mZPos));
 }
 
 void MFlat::print(std::ostream &stream) const
@@ -107,18 +108,16 @@ void MModel::load(std::istream &stream)
     mNullValue4 = VFS::read_le16(stream);
 }
 
-void MModel::buildNodes(osg::Group *root, size_t objid)
+void MModel::buildNodes(osg::Group *root)
 {
-    osg::Matrix mat(osg::Matrix::rotate(
-        -mYRotation*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f)
-    ));
-    mat.postMultTranslate(osg::Vec3(mXPos, mYPos, mZPos));
+    osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
+    node->setNodeMask(WorldIface::Mask_Static);
+    node->setUserData(new ObjectRef(mId));
+    node->addChild(Resource::MeshManager::get().get(mModelIdx));
+    root->addChild(node);
 
-    mBaseNode = new osg::MatrixTransform(mat);
-    mBaseNode->setNodeMask(WorldIface::Mask_Static);
-    mBaseNode->setUserData(new ObjectRef(objid));
-    mBaseNode->addChild(Resource::MeshManager::get().get(mModelIdx));
-    root->addChild(mBaseNode);
+    Renderer::get().setNode(mId, node);
+    Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(0.0f, mYRotation, 0.0f));
 }
 
 void MModel::print(std::ostream &stream) const
@@ -141,7 +140,21 @@ void MModel::print(std::ostream &stream) const
 }
 
 
-void MBlock::load(std::istream &stream)
+MBlock::~MBlock()
+{
+    if(!mModels.empty())
+    {
+        Renderer::get().remove(&*mModels.getIdList(), mModels.size());
+        Placeable::get().deallocate(&*mModels.getIdList(), mModels.size());
+    }
+    if(!mFlats.empty())
+    {
+        Renderer::get().remove(&*mFlats.getIdList(), mFlats.size());
+        Placeable::get().deallocate(&*mFlats.getIdList(), mFlats.size());
+    }
+}
+
+void MBlock::load(std::istream &stream, size_t blockid)
 {
     mModelCount = stream.get();
     mFlatCount = stream.get();
@@ -155,12 +168,20 @@ void MBlock::load(std::istream &stream)
     mUnknown5 = VFS::read_le16(stream);
     mUnknown6 = VFS::read_le16(stream);
 
-    mModels.resize(mModelCount);
-    for(MModel &model : mModels)
+    mModels.reserve(mModelCount);
+    for(size_t i = 0;i < mModelCount;++i)
+    {
+        MModel &model = mModels[blockid | i];
+        model.mId = blockid | i;
         model.load(stream);
-    mFlats.resize(mFlatCount);
-    for(MFlat &flat : mFlats)
+    }
+    mFlats.reserve(mFlatCount);
+    for(size_t i = 0;i < mFlatCount;++i)
+    {
+        MFlat &flat = mFlats[blockid | (mModelCount+i)];
+        flat.mId = blockid | (mModelCount+i);
         flat.load(stream);
+    }
     mSection3s.resize(mSection3Count);
     for(MSection3 &sec3 : mSection3s)
         sec3.load(stream);
@@ -172,7 +193,7 @@ void MBlock::load(std::istream &stream)
         door.load(stream);
 }
 
-void MBlock::buildNodes(osg::Group *root, size_t objid, int x, int z, int yrot)
+void MBlock::buildNodes(osg::Group *root, int x, int z, int yrot)
 {
     if(!mBaseNode)
     {
@@ -182,10 +203,10 @@ void MBlock::buildNodes(osg::Group *root, size_t objid, int x, int z, int yrot)
         mat.postMultTranslate(osg::Vec3(x, 0.0f, -z));
 
         mBaseNode = new osg::MatrixTransform(mat);
-        for(size_t i = 0;i < mModelCount;++i)
-            mModels[i].buildNodes(mBaseNode, (objid<<16)|i);
-        for(size_t i = 0;i < mFlatCount;++i)
-            mFlats[i].buildNodes(mBaseNode, (objid<<16)|(mModelCount+i));
+        for(MModel &model : mModels)
+            model.buildNodes(mBaseNode);
+        for(MFlat &flat : mFlats)
+            flat.buildNodes(mBaseNode);
     }
 
     root->addChild(mBaseNode);
@@ -193,10 +214,9 @@ void MBlock::buildNodes(osg::Group *root, size_t objid, int x, int z, int yrot)
 
 MObjectBase *MBlock::getObject(size_t id)
 {
-    if(id < mModelCount)
+    if(mModels.exists(id))
         return &mModels[id];
-    id -= mModelCount;
-    return &mFlats.at(id);
+    return &mFlats[id];
 }
 
 
@@ -213,9 +233,19 @@ void MBlockPosition::load(std::istream &stream)
 MBlockHeader::~MBlockHeader()
 {
     detachNode();
+    if(!mModels.empty())
+    {
+        Renderer::get().remove(&*mModels.getIdList(), mModels.size());
+        Placeable::get().deallocate(&*mModels.getIdList(), mModels.size());
+    }
+    if(!mFlats.empty())
+    {
+        Renderer::get().remove(&*mFlats.getIdList(), mFlats.size());
+        Placeable::get().deallocate(&*mFlats.getIdList(), mFlats.size());
+    }
 }
 
-void MBlockHeader::load(std::istream &stream)
+void MBlockHeader::load(std::istream &stream, size_t blockid)
 {
     mBlockCount = stream.get();
     mModelCount = stream.get();
@@ -254,20 +284,28 @@ void MBlockHeader::load(std::istream &stream)
     for(size_t i = 0;i < mBlockCount;++i)
     {
         size_t pos = stream.tellg();
-        mExteriorBlocks[i].load(stream);
-        mInteriorBlocks[i].load(stream);
+        mExteriorBlocks[i].load(stream, blockid | (i<<17) | 0x00000);
+        mInteriorBlocks[i].load(stream, blockid | (i<<17) | 0x10000);
         stream.seekg(pos + mBlockSizes[i]);
     }
 
-    mModels.resize(mModelCount);
-    for(MModel &model : mModels)
+    mModels.reserve(mModelCount);
+    for(size_t i = 0;i < mModelCount;++i)
+    {
+        MModel &model = mModels[blockid | 0x00ff0000 | i];
+        model.mId = blockid | 0x00ff0000 | i;
         model.load(stream);
-    mFlats.resize(mFlatCount);
-    for(MFlat &flat : mFlats)
+    }
+    mFlats.reserve(mFlatCount);
+    for(size_t i = 0;i < mFlatCount;++i)
+    {
+        MFlat &flat = mFlats[blockid | 0x00ff0000 | (mModelCount+i)];
+        flat.mId = blockid | 0x00ff0000 | (mModelCount+i);
         flat.load(stream);
+    }
 }
 
-void MBlockHeader::buildNodes(osg::Group *root, size_t objid, int x, int z)
+void MBlockHeader::buildNodes(osg::Group *root, int x, int z)
 {
     if(!mBaseNode)
     {
@@ -279,15 +317,14 @@ void MBlockHeader::buildNodes(osg::Group *root, size_t objid, int x, int z)
         for(size_t i = 0;i < mBlockCount;++i)
         {
             MBlock &block = mExteriorBlocks[i];
-            block.buildNodes(mBaseNode, (objid<<8)|i, mBlockPositions[i].mX, mBlockPositions[i].mZ,
+            block.buildNodes(mBaseNode, mBlockPositions[i].mX, mBlockPositions[i].mZ,
                              mBlockPositions[i].mYRot);
         }
 
-        size_t idbase = (objid<<8)|0xff;
-        for(size_t i = 0;i < mModelCount;++i)
-            mModels[i].buildNodes(mBaseNode, (idbase<<16)|i);
-        for(size_t i = 0;i < mFlatCount;++i)
-            mFlats[i].buildNodes(mBaseNode, (idbase<<16)|(mModelCount+i));
+        for(MModel &model : mModels)
+            model.buildNodes(mBaseNode);
+        for(MFlat &flat : mFlats)
+            flat.buildNodes(mBaseNode);
     }
 
     root->addChild(mBaseNode);
@@ -305,25 +342,27 @@ void MBlockHeader::detachNode()
 
 MObjectBase *MBlockHeader::getObject(size_t id)
 {
-    if((id>>16) == 0xff)
+    if(((id>>16)&0xff) == 0xff)
     {
-        id &= 0xffff;
-        if(id < mModelCount)
+        if(mModels.exists(id))
             return &mModels[id];
-        id -= mModelCount;
-        return &mFlats.at(id);
+        return &mFlats[id];
     }
-    return mExteriorBlocks.at(id>>16).getObject(id&0xffff);
+    if(!(id&0x10000))
+        return mExteriorBlocks.at((id>>17)&0x7f).getObject(id);
+    else
+        return mInteriorBlocks.at((id>>17)&0x7f).getObject(id);
 }
 
-const MFlat *MBlockHeader::getFlatByTexture(size_t texid) const
+size_t MBlockHeader::getObjectByTexture(size_t texid) const
 {
     for(const MFlat &flat : mFlats)
     {
         if(flat.mTexture == texid)
-            return &flat;
+            return flat.mId;
     }
-    return nullptr;
+    Log::get().stream(Log::Log::Level_Error)<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
+    return ~static_cast<size_t>(0);
 }
 
 } // namespace DF

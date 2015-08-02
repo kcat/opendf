@@ -10,7 +10,6 @@
 #include <osg/Referenced>
 #include <osg/ref_ptr>
 #include <osg/Vec3>
-#include <osg/Quat>
 
 #include "itembase.hpp"
 #include "pitems.hpp"
@@ -73,7 +72,7 @@ class World : public WorldIface {
     std::vector<std::unique_ptr<DBlockHeader>> mDungeon;
 
     osg::Vec3f mCameraPos;
-    osg::Quat mCameraRot;
+    osg::Vec3f mCameraRot;
 
     bool mFirstStart;
 
