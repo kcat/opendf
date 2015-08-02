@@ -152,6 +152,8 @@ struct ModelObject : public ObjectBase {
     std::array<char,8> mModelData;
 
     ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
+    virtual ~ModelObject();
+
     void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata);
 
     virtual void buildNodes(osg::Group *root) final;

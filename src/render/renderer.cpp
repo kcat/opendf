@@ -43,12 +43,12 @@ void Renderer::update()
             -pos.mRotation.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
              pos.mRotation.z()*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
         );
-        mat.postMultTranslate(osg::Vec3(pos.mPoint.x(), pos.mPoint.y(), pos.mPoint.z()));
         mat.postMultRotate(osg::Quat(
              pos.mLocalRotation.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
             -pos.mLocalRotation.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
              pos.mLocalRotation.z()*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
         ));
+        mat.postMultTranslate(osg::Vec3(pos.mPoint.x(), pos.mPoint.y(), pos.mPoint.z()));
 
         osg::MatrixTransform *node = nodepos.mNode;
         //node->setDataVariance(osg::Node::DYNAMIC);

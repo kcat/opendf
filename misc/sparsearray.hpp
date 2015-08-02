@@ -160,6 +160,13 @@ public:
         mIdxLookup.erase(iter);
     }
 
+    iterator erase(iterator iter)
+    {
+        size_t idx = std::distance(mData.begin(), iter);
+        mIdxLookup.erase(mIdxLookup.begin()+idx);
+        return mData.erase(iter);
+    }
+
     iterator find(size_t idx)
     {
         auto iter = lookupKey(idx);

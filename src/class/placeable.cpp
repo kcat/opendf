@@ -32,17 +32,17 @@ void Placeable::setRotate(size_t idx, const osg::Vec3f &rot)
     Renderer::get().markDirty(idx, pos);
 }
 
-void Placeable::setPoint(size_t idx, const osg::Vec3f &pt)
-{
-    Position &pos = mPositions[idx];
-    pos.mPoint = pt;
-    Renderer::get().markDirty(idx, pos);
-}
-
 void Placeable::setLocalRot(size_t idx, const osg::Vec3f &rot)
 {
     Position &pos = mPositions[idx];
     pos.mLocalRotation = rot;
+    Renderer::get().markDirty(idx, pos);
+}
+
+void Placeable::setPoint(size_t idx, const osg::Vec3f &pt)
+{
+    Position &pos = mPositions[idx];
+    pos.mPoint = pt;
     Renderer::get().markDirty(idx, pos);
 }
 

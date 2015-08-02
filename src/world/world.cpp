@@ -13,6 +13,7 @@
 
 #include "render/renderer.hpp"
 #include "class/placeable.hpp"
+#include "class/door.hpp"
 #include "gui/iface.hpp"
 #include "mblocks.hpp"
 #include "dblocks.hpp"
@@ -582,6 +583,8 @@ void World::rotate(float xrel, float yrel)
 
 void World::update(float timediff)
 {
+    Door::get().update(timediff);
+
     Renderer::get().update();
 
     osg::Matrixf matf(osg::Matrixf::rotate(

@@ -41,6 +41,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          src/render/renderer.cpp
          src/gui/gui.cpp
          src/class/placeable.cpp
+         src/class/door.cpp
          src/world/world.cpp
          src/world/pitems.cpp
          src/world/ditems.cpp
@@ -72,6 +73,7 @@ set(HDRS misc/sparsearray.hpp
          src/gui/iface.hpp
          src/gui/gui.hpp
          src/class/placeable.hpp
+         src/class/door.hpp
          src/world/iface.hpp
          src/world/world.hpp
          src/world/itembase.hpp

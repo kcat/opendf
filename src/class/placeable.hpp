@@ -12,8 +12,8 @@ namespace DF
 // Should probably be somewhere else...
 struct Position {
     osg::Vec3f mRotation;
-    osg::Vec3f mPoint;
     osg::Vec3f mLocalRotation;
+    osg::Vec3f mPoint;
 };
 
 class Placeable {
@@ -27,8 +27,8 @@ public:
 
     void setPos(size_t idx, const osg::Vec3f &pt, const osg::Vec3f &rot);
     void setRotate(size_t idx, const osg::Vec3f &rot);
-    void setPoint(size_t idx, const osg::Vec3f &pt);
     void setLocalRot(size_t idx, const osg::Vec3f &rot);
+    void setPoint(size_t idx, const osg::Vec3f &pt);
 
     const Position &getPos(size_t idx)
     {

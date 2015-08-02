@@ -14,6 +14,7 @@
 
 #include "render/renderer.hpp"
 #include "class/placeable.hpp"
+#include "class/door.hpp"
 
 
 namespace DF
@@ -81,7 +82,7 @@ bool ActionRotate::update(ObjectBase *target, float timediff)
     float delta = mTimeAccum / mDuration;
     if(target->mReverse) delta = 1.0f - delta;
 
-    osg::Vec3f rot(target->mXRot, target->mYRot, target->mZRot);
+    osg::Vec3f rot;
     if(mAxis == Axis_X)
         rot.x() += (mMagnitude*delta);
     else if(mAxis == Axis_NegX)
@@ -94,7 +95,7 @@ bool ActionRotate::update(ObjectBase *target, float timediff)
         rot.z() += (mMagnitude*delta);
     else if(mAxis == Axis_NegZ)
         rot.z() -= (mMagnitude*delta);
-    Placeable::get().setRotate(target->mId, rot);
+    Placeable::get().setLocalRot(target->mId, rot);
 
     if(mTimeAccum >= mDuration)
     {
@@ -193,6 +194,12 @@ void ObjectBase::print(std::ostream &stream) const
 }
 
 
+ModelObject::~ModelObject()
+{
+    if(mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
+        Door::get().deallocate(mId);
+}
+
 void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata)
 {
     mXRot = VFS::read_le32(stream);
@@ -222,6 +229,9 @@ void ModelObject::buildNodes(osg::Group *root)
     node->addChild(Resource::MeshManager::get().get(mdlidx));
     root->addChild(node);
 
+    // Is this how doors are specified, or is it determined by the model index?
+    if(mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
+        Door::get().allocate(mId, 0.0f);
     Renderer::get().setNode(mId, node);
     Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(mXRot, mYRot, mZRot));
 }
@@ -389,11 +399,11 @@ ObjectBase *DBlockHeader::getObject(size_t id)
 
 size_t DBlockHeader::getObjectByTexture(size_t texid) const
 {
-    for(const ref_ptr<ObjectBase> &obj : mObjects)
+    for(const ObjectBase *obj : mObjects)
     {
         if(obj->mType == ObjectType_Flat)
         {
-            FlatObject *flat = static_cast<FlatObject*>(obj.get());
+            const FlatObject *flat = static_cast<const FlatObject*>(obj);
             if(flat->mTexture == texid) return flat->mId;
         }
     }
@@ -407,20 +417,14 @@ void DBlockHeader::activate(size_t id)
     ObjectBase *base = getObject(id);
     if(!base || !(base->mActionFlags&ActionFlag_Activatable))
     {
-        if(!base->mActive && base->mType == ObjectType_Model)
+        if(base && base->mType == ObjectType_Model)
         {
             ModelObject *model = static_cast<ModelObject*>(base);
             // TODO: There's likely a flag on the object that specifies a door
             // that can't be directly activated, e.g. the protected door in
             // Shedungent.
             if(model->mModelData[5] == 'D' && model->mModelData[6] == 'O' && model->mModelData[7] == 'R')
-            {
-                ref_ptr<ActionRotate> action(new ActionRotate(nullptr));
-                action->load({{ActionRotate::Axis_Y, 24, 0, 0, 2}});
-
-                mActiveObjects.push_back(std::make_pair(action, base));
-                base->mActive = true;
-            }
+                Door::get().activate(model->mId);
         }
         return;
     }
