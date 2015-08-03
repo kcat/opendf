@@ -39,7 +39,7 @@ public:
         int c;
         mStream->clear();
         std::string().swap(_source);
-        while((c=mStream->get()) != std::istream::traits_type::eof() && c != _delim)
+        while((c=mStream->get()) != std::istream::traits_type::eof() && (MyGUI::Char)c != _delim)
             _source += (char)c;
     }
 

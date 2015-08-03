@@ -362,7 +362,7 @@ void World::loadPakList(std::string&& fname, std::vector<PakArray> &paklist)
     size_t rownum = 0;
     std::map<size_t,size_t> offsets_rows;
     offsets_rows[VFS::read_le32(*stream)] = rownum++;
-    while(stream->tellg() < offsets_rows.begin()->first)
+    while((size_t)stream->tellg() < offsets_rows.begin()->first)
         offsets_rows[VFS::read_le32(*stream)] = rownum++;
 
     auto iter = offsets_rows.begin();
@@ -371,7 +371,7 @@ void World::loadPakList(std::string&& fname, std::vector<PakArray> &paklist)
         auto next = std::next(iter);
 
         PakArray pak;
-        while((next != offsets_rows.end() && stream->tellg() < next->first) ||
+        while((next != offsets_rows.end() && (size_t)stream->tellg() < next->first) ||
               (next == offsets_rows.end() && stream->peek() != std::istream::traits_type::eof()))
         {
             uint16_t count = VFS::read_le16(*stream);
