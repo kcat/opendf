@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <locale>
+#include <cctype>
 
 
 namespace
