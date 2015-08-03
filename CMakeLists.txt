@@ -38,6 +38,7 @@ set(SRCS components/sdlutil/graphicswindow.cpp
          components/dfosg/texloader.cpp
          components/dfosg/meshloader.cpp
          src/input/input.cpp
+         src/render/pipeline.cpp
          src/render/renderer.cpp
          src/gui/gui.cpp
          src/class/placeable.cpp
@@ -72,6 +73,7 @@ set(HDRS misc/sparsearray.hpp
          components/dfosg/texloader.hpp
          components/dfosg/meshloader.hpp
          src/input/input.hpp
+         src/render/pipeline.hpp
          src/render/renderer.hpp
          src/gui/iface.hpp
          src/gui/gui.hpp

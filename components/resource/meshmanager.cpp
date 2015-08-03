@@ -7,6 +7,7 @@
 #include <osg/Geometry>
 #include <osg/Texture>
 #include <osg/AlphaFunc>
+#include <osgDB/ReadFile>
 
 #include "components/dfosg/meshloader.hpp"
 
@@ -198,28 +199,45 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
     (*texcrds)[1] = osg::Vec2(0.0f, 0.0f);
     (*texcrds)[2] = osg::Vec2(0.0f, 1.0f);
     (*texcrds)[3] = osg::Vec2(1.0f, 1.0f);
-    osg::ref_ptr<osg::Vec3Array> nrms(new osg::Vec3Array());
-    nrms->push_back(osg::Vec3(0.0f, 0.0f, -1.0f));
-    osg::ref_ptr<osg::Vec4ubArray> colors(new osg::Vec4ubArray());
-    colors->push_back(osg::Vec4ub(255, 255, 255, 255));
+    osg::ref_ptr<osg::Vec3Array> nrms(new osg::Vec3Array(4));
+    (*nrms)[0] = osg::Vec3(0.0f, 0.0f, -1.0f);
+    (*nrms)[1] = osg::Vec3(0.0f, 0.0f, -1.0f);
+    (*nrms)[2] = osg::Vec3(0.0f, 0.0f, -1.0f);
+    (*nrms)[3] = osg::Vec3(0.0f, 0.0f, -1.0f);
+    osg::ref_ptr<osg::Vec4ubArray> colors(new osg::Vec4ubArray(4));
+    (*colors)[0] = osg::Vec4ub(255, 255, 255, 255);
+    (*colors)[1] = osg::Vec4ub(255, 255, 255, 255);
+    (*colors)[2] = osg::Vec4ub(255, 255, 255, 255);
+    (*colors)[3] = osg::Vec4ub(255, 255, 255, 255);
     colors->setNormalize(true);
 
     osg::ref_ptr<osg::VertexBufferObject> vbo(new osg::VertexBufferObject());
     vtxs->setVertexBufferObject(vbo);
     texcrds->setVertexBufferObject(vbo);
+    nrms->setVertexBufferObject(vbo);
+    colors->setVertexBufferObject(vbo);
 
     osg::ref_ptr<osg::Geometry> geometry(new osg::Geometry);
     geometry->setVertexArray(vtxs);
     geometry->setTexCoordArray(0, texcrds, osg::Array::BIND_PER_VERTEX);
-    geometry->setNormalArray(nrms, osg::Array::BIND_OVERALL);
-    geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
+    geometry->setNormalArray(nrms, osg::Array::BIND_PER_VERTEX);
+    geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
     geometry->setUseDisplayList(false);
     geometry->setUseVertexBufferObjects(true);
     geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4));
 
     osg::StateSet *ss = geometry->getOrCreateStateSet();
     ss->setTextureAttributeAndModes(0, tex);
-    ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::GREATER, 0.5f));
+    // Alpha test is reversed, because the shader will set alpha=0 for texels
+    // that should be kept, and consequently have no specular, and alpha=1 for
+    // texels that should be dropped.
+    ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::LESS, 0.5f));
+
+    osg::ref_ptr<osg::Program> program = new osg::Program();
+    program->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/sprite.vert"));
+    program->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/sprite.frag"));
+
+    ss->setAttributeAndModes(program.get());
 
     if(centered)
         bb->addDrawable(geometry);

@@ -57,6 +57,7 @@ typedef std::vector<std::pair<uint16_t,uint8_t>> PakArray;
 
 class World : public WorldIface {
     osg::ref_ptr<osgViewer::Viewer> mViewer;
+    osg::ref_ptr<osg::Group> mSceneRoot;
 
     std::vector<MapRegion> mRegions;
     std::vector<PakArray> mClimates;
@@ -89,7 +90,7 @@ class World : public WorldIface {
 public:
     static World sWorld;
 
-    virtual void initialize(osgViewer::Viewer *viewer) final;
+    virtual void initialize(osgViewer::Viewer *viewer, osg::Group *sceneroot) final;
     virtual void deinitialize() final;
 
     virtual bool getExteriorByName(const std::string &name, size_t &regnum, size_t &mapnum) const final;

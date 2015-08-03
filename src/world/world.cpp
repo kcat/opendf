@@ -12,6 +12,7 @@
 #include "components/vfs/manager.hpp"
 
 #include "render/renderer.hpp"
+#include "render/pipeline.hpp"
 #include "class/placeable.hpp"
 #include "class/activator.hpp"
 #include "class/linker.hpp"
@@ -26,6 +27,8 @@
 
 namespace
 {
+
+static const size_t InvalidHandle = ~static_cast<size_t>(0);
 
 static const std::array<char,6> gBlockIndexLabel{{ 'N', 'W', 'L', 'S', 'B', 'M' }};
 
@@ -231,7 +234,7 @@ World::World()
   : mCurrentRegion(nullptr)
   , mCurrentExterior(nullptr)
   , mCurrentDungeon(nullptr)
-  , mCurrentSelection(~static_cast<size_t>(0))
+  , mCurrentSelection(InvalidHandle)
   , mFirstStart(true)
 {
 }
@@ -241,7 +244,7 @@ World::~World()
 }
 
 
-void World::initialize(osgViewer::Viewer *viewer)
+void World::initialize(osgViewer::Viewer *viewer, osg::Group *sceneroot)
 {
     std::set<std::string> names = VFS::Manager::get().list("MAPNAMES.[0-9]*");
     if(names.empty()) throw std::runtime_error("Failed to find any regions");
@@ -343,17 +346,14 @@ void World::initialize(osgViewer::Viewer *viewer)
     loadPakList("POLITIC.PAK", mPolitics);
 
     mViewer = viewer;
-
-    mViewer->setLightingMode(osg::View::HEADLIGHT);
-    osg::ref_ptr<osg::Light> light(new osg::Light());
-    light->setAmbient(osg::Vec4(0.5f, 0.5f, 0.5f, 1.0f));
-    mViewer->setLight(light);
+    mSceneRoot = sceneroot;
 }
 
 void World::deinitialize()
 {
     mExterior.clear();
     mDungeon.clear();
+    mSceneRoot = nullptr;
     mViewer = nullptr;
 }
 
@@ -437,7 +437,7 @@ void World::loadExterior(int regnum, int extid)
     mCurrentRegion = &region;
     mCurrentExterior = &extloc;
     mCurrentDungeon = nullptr;
-    mCurrentSelection = ~static_cast<size_t>(0);
+    mCurrentSelection = InvalidHandle;
 
     uint8_t climate = getClimateValue(extloc.mX, extloc.mY);
     Log::get().stream()<< "Climate "<<(int)climate;
@@ -465,22 +465,21 @@ void World::loadExterior(int regnum, int extid)
         mExterior.back()->load(*stream, i<<24);
     }
 
-    size_t startobj = ~static_cast<size_t>(0);
-    osg::Group *root = mViewer->getSceneData()->asGroup();
+    size_t startobj = InvalidHandle;
     for(size_t i = 0;i < mExterior.size();++i)
     {
         int x = i%extloc.mWidth;
         int y = i/extloc.mWidth;
-        mExterior[i]->buildNodes(root, x, y);
+        mExterior[i]->buildNodes(mSceneRoot, x, y);
 
-        if(startobj != ~static_cast<size_t>(0))
+        if(startobj != InvalidHandle)
             continue;
 
         startobj = mExterior[i]->getObjectByTexture(Marker_EnterID);
-        if(startobj == ~static_cast<size_t>(0))
+        if(startobj == InvalidHandle)
             startobj = mExterior[i]->getObjectByTexture(Marker_StartID);
 
-        if(startobj != ~static_cast<size_t>(0))
+        if(startobj != InvalidHandle)
         {
             Position pos = Placeable::get().getPos(startobj);
             mCameraPos = osg::componentMultiply(
@@ -489,7 +488,7 @@ void World::loadExterior(int regnum, int extid)
             );
         }
     }
-    if(startobj == ~static_cast<size_t>(0))
+    if(startobj == InvalidHandle)
     {
         Log::get().message("Failed to find enter or start markers", Log::Level_Error);
         mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
@@ -511,7 +510,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
         mCurrentRegion = &region;
         mCurrentExterior = &extloc;
         mCurrentDungeon = &dinfo;
-        mCurrentSelection = ~static_cast<size_t>(0);
+        mCurrentSelection = InvalidHandle;
 
         uint8_t climate = getClimateValue(extloc.mX, extloc.mY);
         Log::get().stream()<< "Climate "<<(int)climate;
@@ -532,23 +531,22 @@ void World::loadDungeonByExterior(int regnum, int extid)
             mDungeon.back()->load(*stream, std::distance(dinfo.mBlocks.data(), &block)<<24);
         }
 
-        osg::Group *root = mViewer->getSceneData()->asGroup();
         for(size_t i = 0;i < mDungeon.size();++i)
         {
-            mDungeon[i]->buildNodes(root, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
+            mDungeon[i]->buildNodes(mSceneRoot, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
 
             if(dinfo.mBlocks[i].mStartBlock)
             {
-                size_t startobj = ~static_cast<size_t>(0);
+                size_t startobj = InvalidHandle;
                 if(mFirstStart)
                 {
                     mFirstStart = false;
                     startobj = mDungeon[i]->getObjectByTexture(Marker_EnterID);
                 }
-                if(startobj == ~static_cast<size_t>(0))
+                if(startobj == InvalidHandle)
                     startobj = mDungeon[i]->getObjectByTexture(Marker_StartID);
 
-                if(startobj == ~static_cast<size_t>(0))
+                if(startobj == InvalidHandle)
                     mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
                 else
                 {
@@ -612,7 +610,7 @@ void World::update(float timediff)
         GuiIface::get().getMousePosition(x, y);
         mCurrentSelection = castCameraToViewportRay(x, y, 1024.0f, false);
     }
-    if(mCurrentSelection == ~static_cast<size_t>(0) || !*g_introspect)
+    if(mCurrentSelection == InvalidHandle || !*g_introspect)
         GuiIface::get().updateStatus(std::string());
     else
     {
@@ -647,7 +645,7 @@ void World::update(float timediff)
 
 void World::activate()
 {
-    if(mCurrentSelection != ~static_cast<size_t>(0))
+    if(mCurrentSelection != InvalidHandle)
         Activator::get().activate(mCurrentSelection);
 }
 
@@ -706,7 +704,7 @@ size_t World::castCameraToViewportRay(const float vpX, const float vpY, float ma
     ));
 
     osg::Vec3d dist = osg::Vec3d(0.0f,0.0f,-maxDistance) *
-                      mViewer->getCamera()->getProjectionMatrix();
+                      RenderPipeline::get().getProjectionMatrix();
 
     osg::Vec3d end = intersector->getEnd();
     end.z() = dist.z();
@@ -715,15 +713,14 @@ size_t World::castCameraToViewportRay(const float vpX, const float vpY, float ma
 
     osgUtil::IntersectionVisitor intersectionVisitor(intersector);
     int mask = intersectionVisitor.getTraversalMask();
-    mask &= ~(Mask_UI | Mask_Light);
-    if(ignoreFlats)
-        mask &= ~(Mask_Flat);
+    mask &= ~(Renderer::Mask_RTT | Renderer::Mask_UI | Renderer::Mask_Light);
+    if(ignoreFlats) mask &= ~(Renderer::Mask_Flat);
 
     intersectionVisitor.setTraversalMask(mask);
 
     mViewer->getCamera()->accept(intersectionVisitor);
 
-    size_t result = ~static_cast<size_t>(0);
+    size_t result = InvalidHandle;
     if(intersector->containsIntersections())
     {
         osgUtil::LineSegmentIntersector::Intersection intersection = intersector->getFirstIntersection();

@@ -9,6 +9,12 @@ namespace osgViewer
     class Viewer;
 }
 
+namespace osg
+{
+    class Group;
+}
+
+
 namespace DF
 {
 
@@ -16,14 +22,7 @@ class WorldIface {
     static WorldIface &sInstance;
 
 public:
-    enum {
-        Mask_UI     = 1<<0,
-        Mask_Static = 1<<1,
-        Mask_Light  = 1<<2,
-        Mask_Flat   = 1<<3,
-    };
-
-    virtual void initialize(osgViewer::Viewer *viewer) = 0;
+    virtual void initialize(osgViewer::Viewer *viewer, osg::Group *sceneroot) = 0;
     virtual void deinitialize() = 0;
 
     virtual bool getExteriorByName(const std::string &name, size_t &regnum, size_t &mapnum) const = 0;

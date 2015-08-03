@@ -68,7 +68,7 @@ public:
 osg::StateSet *setShaderProgram(osg::Node *node, const std::string &vert, const std::string &frag)
 {
     osg::StateSet *ss = node->getOrCreateStateSet();
-    if(0)
+    if(1)
     {
         osg::ref_ptr<osg::Program> program = new osg::Program();
         program->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, vert));
@@ -143,7 +143,7 @@ void RenderManager::initialise()
     camera->setViewMatrix(osg::Matrix::identity());
     camera->setRenderOrder(osg::Camera::POST_RENDER);
     camera->setClearMask(GL_NONE);
-    osg::StateSet *state = setShaderProgram(camera.get(), "shaders/quad_2d.vert", "shaders/quad_2d.frag");
+    osg::StateSet *state = setShaderProgram(camera.get(), "shaders/quad_ui.vert", "shaders/quad_ui.frag");
     state->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
     state->setMode(GL_CULL_FACE, osg::StateAttribute::OFF);
     state->setAttributeAndModes(new osg::PolygonMode(osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::FILL));

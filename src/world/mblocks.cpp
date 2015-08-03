@@ -58,7 +58,7 @@ void MFlat::load(std::istream &stream)
 void MFlat::buildNodes(osg::Group *root)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
-    node->setNodeMask(WorldIface::Mask_Flat);
+    node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().loadFlat(mTexture, false));
     root->addChild(node);
@@ -111,7 +111,7 @@ void MModel::load(std::istream &stream)
 void MModel::buildNodes(osg::Group *root)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
-    node->setNodeMask(WorldIface::Mask_Static);
+    node->setNodeMask(Renderer::Mask_Static);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().get(mModelIdx));
     root->addChild(node);

@@ -29,6 +29,7 @@
 #include "components/resource/meshmanager.hpp"
 #include "components/dfosg/meshloader.hpp"
 
+#include "render/pipeline.hpp"
 #include "gui/iface.hpp"
 #include "input/input.hpp"
 #include "world/iface.hpp"
@@ -161,6 +162,8 @@ Engine::Engine(void)
 
 Engine::~Engine(void)
 {
+    RenderPipeline::get().deinitialize();
+
     Resource::MeshManager::get().deinitialize();
 
     WorldIface::get().deinitialize();
@@ -425,16 +428,14 @@ bool Engine::go(void)
 
         osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
         if(!gc.valid()) throw std::runtime_error("Failed to create GraphicsContext");
-        //gc->getState()->setUseModelViewAndProjectionUniforms(true);
-        //gc->getState()->setUseVertexAttributeAliasing(true);
+        gc->getState()->setUseModelViewAndProjectionUniforms(true);
+        gc->getState()->setUseVertexAttributeAliasing(true);
 
         mCamera = new osg::Camera();
         mCamera->setGraphicsContext(gc.get());
         mCamera->setViewport(0, 0, width, height);
         mCamera->setProjectionResizePolicy(osg::Camera::FIXED);
-        mCamera->setProjectionMatrix(osg::Matrix::perspective(65.0, double(width)/double(height), 1.0, 10000.0));
-        mCamera->setClearColor(osg::Vec4());
-        mCamera->setClearDepth(1.0);
+        mCamera->setProjectionMatrix(osg::Matrix::identity());
 
         viewer = new osgViewer::Viewer();
         viewer->setCamera(mCamera.get());
@@ -456,6 +457,35 @@ bool Engine::go(void)
         ss->setAttributeAndModes(new osg::Depth(osg::Depth::LESS, 0.0, 1.0, true));
         ss->setAttributeAndModes(new osg::CullFace(osg::CullFace::BACK));
         ss->setMode(GL_BLEND, osg::StateAttribute::OFF);
+
+        osg::ref_ptr<osg::Program> program = new osg::Program();
+        program->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/object.vert"));
+        program->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/object.frag"));
+
+        ss->setAttributeAndModes(program.get());
+        ss->addUniform(new osg::Uniform("diffuseTex", 0));
+    }
+
+    {
+        int screen_width = mCamera->getViewport()->width();
+        int screen_height = mCamera->getViewport()->height();
+        RenderPipeline &pipeline = RenderPipeline::get();
+        pipeline.initialize(mSceneRoot.get(), screen_width, screen_height);
+        pipeline.setProjectionMatrix(osg::Matrix::perspective(
+            *r_fov, pipeline.getAspectRatio(), 1.0, 10000.0
+        ));
+
+        // Add a light so we can see
+        osg::Vec3f lightDir(70.f, -100.f, 10.f);
+        lightDir.normalize();
+        osg::ref_ptr<osg::Node> light = pipeline.createDirectionalLight();
+        osg::StateSet *ss = light->getOrCreateStateSet();
+        ss->addUniform(new osg::Uniform("light_direction", lightDir));
+        ss->addUniform(new osg::Uniform("diffuse_color", osg::Vec4f(1.0f, 0.988f, 0.933f, 1.0f)));
+        ss->addUniform(new osg::Uniform("specular_color", osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f)));
+        pipeline.getLightingStateSet()->getUniform("ambient_color")->set(
+            osg::Vec4f(0.537f, 0.549f, 0.627f, 1.0f)
+        );
     }
 
     {
@@ -463,17 +493,19 @@ bool Engine::go(void)
         statshandler->setKeyEventTogglesOnScreenStats(osgGA::GUIEventAdapter::KEY_F3);
         viewer->addEventHandler(statshandler);
     }
-    viewer->setSceneData(mSceneRoot);
+
+    viewer->setSceneData(RenderPipeline::get().getGraphRoot());
     viewer->requestContinuousUpdate();
+    viewer->setLightingMode(osg::View::NO_LIGHT);
     viewer->realize();
 
     Log::get().message("Initializing GUI...");
-    GuiIface::get().initialize(viewer, mSceneRoot.get());
+    GuiIface::get().initialize(viewer, viewer->getSceneData()->asGroup());
     Log::get().setGuiIface(&GuiIface::get());
 
     CVar::registerAll();
 
-    WorldIface::get().initialize(viewer);
+    WorldIface::get().initialize(viewer, mSceneRoot);
 
     // Region: Daggerfall, Location: Privateer's Hold
     WorldIface::get().loadDungeonByExterior(17, 179);

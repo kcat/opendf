@@ -33,6 +33,14 @@ class Renderer {
     std::priority_queue<NodePosPair> mDirtyNodes;
 
 public:
+    enum {
+        Mask_RTT    = 1<<0,
+        Mask_UI     = 1<<1,
+        Mask_Static = 1<<2,
+        Mask_Light  = 1<<3,
+        Mask_Flat   = 1<<4,
+    };
+
     void setNode(size_t idx, osg::MatrixTransform *node);
 
     void remove(const size_t *ids, size_t count);

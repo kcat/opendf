@@ -137,7 +137,7 @@ void ModelObject::buildNodes(osg::Group *root)
     size_t mdlidx = strtol(id.data(), nullptr, 10);
 
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
-    node->setNodeMask(WorldIface::Mask_Static);
+    node->setNodeMask(Renderer::Mask_Static);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().get(mdlidx));
     root->addChild(node);
@@ -179,7 +179,7 @@ void FlatObject::load(std::istream &stream)
 void FlatObject::buildNodes(osg::Group *root)
 {
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
-    node->setNodeMask(WorldIface::Mask_Flat);
+    node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().loadFlat(mTexture, true));
     root->addChild(node);

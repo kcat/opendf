@@ -14,7 +14,7 @@
 #include "components/mygui_osg/rendermanager.h"
 #include "components/mygui_osg/datamanager.h"
 
-#include "world/iface.hpp"
+#include "render/renderer.hpp"
 #include "delegates.hpp"
 #include "log.hpp"
 
@@ -373,7 +373,7 @@ Gui::~Gui()
 void Gui::initialize(osgViewer::Viewer *viewer, osg::Group *sceneroot)
 {
     osg::ref_ptr<osg::Group> uiroot(new osg::Group());
-    uiroot->setNodeMask(WorldIface::Mask_UI);
+    uiroot->setNodeMask(Renderer::Mask_UI);
     sceneroot->addChild(uiroot);
 
     MyGUI::DataManager *dataMgr = new MyGUI_OSG::DataManager();
