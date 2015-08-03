@@ -34,7 +34,7 @@ class TextureManager {
     static TextureManager sManager;
 
     Palette mCurrentPalette;
-    static_assert(sizeof(mCurrentPalette)==768, "Palette is not 768 bytes");
+    static_assert(sizeof(Palette)==768, "Palette is not 768 bytes");
 
     std::map<size_t,TextureInfo> mTexCache;
 
