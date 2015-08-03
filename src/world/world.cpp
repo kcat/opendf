@@ -13,6 +13,9 @@
 
 #include "render/renderer.hpp"
 #include "class/placeable.hpp"
+#include "class/activator.hpp"
+#include "class/linker.hpp"
+#include "class/mover.hpp"
 #include "class/door.hpp"
 #include "gui/iface.hpp"
 #include "mblocks.hpp"
@@ -463,7 +466,6 @@ void World::loadExterior(int regnum, int extid)
     }
 
     size_t startobj = ~static_cast<size_t>(0);
-    osg::Vec3 pos;
     osg::Group *root = mViewer->getSceneData()->asGroup();
     for(size_t i = 0;i < mExterior.size();++i)
     {
@@ -583,7 +585,14 @@ void World::rotate(float xrel, float yrel)
 
 void World::update(float timediff)
 {
-    Door::get().update(timediff);
+    bool ingame = (GuiIface::get().getMode() == GuiIface::Mode_Game);
+
+    if(ingame)
+    {
+        Linker::get().update();
+        Mover::get().update(timediff);
+        Door::get().update(timediff);
+    }
 
     Renderer::get().update();
 
@@ -595,7 +604,6 @@ void World::update(float timediff)
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
 
-    bool ingame = (GuiIface::get().getMode() == GuiIface::Mode_Game);
     if(ingame)
         mCurrentSelection = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
     else
@@ -635,24 +643,12 @@ void World::update(float timediff)
         }
         GuiIface::get().updateStatus(sstr.str());
     }
-
-    if(ingame)
-    {
-        for(std::unique_ptr<DBlockHeader> &block : mDungeon)
-            block->update(timediff);
-    }
 }
 
 void World::activate()
 {
     if(mCurrentSelection != ~static_cast<size_t>(0))
-    {
-        if(mExterior.empty())
-        {
-            DBlockHeader *block = mDungeon.at(mCurrentSelection>>24).get();
-            block->activate(mCurrentSelection);
-        }
-    }
+        Activator::get().activate(mCurrentSelection);
 }
 
 

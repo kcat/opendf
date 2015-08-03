@@ -10,6 +10,10 @@ namespace DF
 typedef std::pair<size_t,float> DoorData;
 typedef std::pair<DoorData,float> DoorActiveData;
 
+/* This duplicates a fair amount of the Mover class's rotate activator type,
+ * but special handling is currently needed for the activate and deactivate
+ * steps (physics and sound handling is different).
+ */
 class Door {
     static Door sDoors;
 
@@ -26,6 +30,8 @@ public:
 
     void update(float timediff);
 
+    static void activateFunc(size_t idx) { sDoors.activate(idx); }
+    static void deallocateFunc(size_t idx) { sDoors.deallocate(idx); }
     static Door &get() { return sDoors; }
 };
 

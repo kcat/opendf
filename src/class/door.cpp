@@ -1,6 +1,7 @@
 
 #include "door.hpp"
 #include "placeable.hpp"
+#include "activator.hpp"
 
 
 namespace DF
@@ -55,6 +56,7 @@ void Door::update(float timediff)
         else
         {
             mOpened[iter->first.first] = iter->first;
+            Activator::get().deactivate(iter->first.first);
             iter = mOpening.erase(iter);
         }
     }
@@ -69,6 +71,7 @@ void Door::update(float timediff)
         else
         {
             mClosed[iter->first.first] = iter->first;
+            Activator::get().deactivate(iter->first.first);
             iter = mClosing.erase(iter);
         }
     }

@@ -14,137 +14,17 @@
 
 #include "render/renderer.hpp"
 #include "class/placeable.hpp"
+#include "class/activator.hpp"
+#include "class/linker.hpp"
+#include "class/mover.hpp"
 #include "class/door.hpp"
 
 
 namespace DF
 {
 
-void ActionBase::print(std::ostream &stream) const
-{
-    stream<< "Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
-    stream<< "TimeAccum: "<<mTimeAccum<<"\n";
-}
-
-
-void ActionMovable::load(const std::array<uint8_t,5> &data)
-{
-    mAxis = data[0];
-    mDuration = (data[1] | (data[2]<<8)) / 16.0f;
-    mMagnitude = data[3] | (data[4]<<8);
-}
-
-void ActionMovable::print(std::ostream& stream) const
-{
-    DF::ActionBase::print(stream);
-
-    stream<< "Axis: 0x"<<std::hex<<std::setw(2)<<(int)mAxis<<std::dec<<std::setw(0)<<"\n";
-    stream<< "Duration: "<<mDuration<<"\n";
-    stream<< "Magnitude: "<<mMagnitude<<"\n";
-}
-
-
-bool ActionTranslate::update(ObjectBase *target, float timediff)
-{
-    mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
-
-    float delta = mTimeAccum / mDuration;
-    if(target->mReverse) delta = 1.0f - delta;
-
-    osg::Vec3f pos(target->mXPos, target->mYPos, target->mZPos);
-    if(mAxis == Axis_X)
-        pos.x() += (mMagnitude*delta);
-    else if(mAxis == Axis_NegX)
-        pos.x() -= (mMagnitude*delta);
-    else if(mAxis == Axis_Y)
-        pos.y() += (mMagnitude*delta);
-    else if(mAxis == Axis_NegY)
-        pos.y() -= (mMagnitude*delta);
-    else if(mAxis == Axis_Z)
-        pos.z() += (mMagnitude*delta);
-    else if(mAxis == Axis_NegZ)
-        pos.z() -= (mMagnitude*delta);
-    Placeable::get().setPoint(target->mId, pos);
-
-    if(mTimeAccum >= mDuration)
-    {
-        target->mReverse = !target->mReverse;
-        mTimeAccum = 0.0f;
-        return false;
-    }
-    return true;
-}
-
-bool ActionRotate::update(ObjectBase *target, float timediff)
-{
-    mTimeAccum = std::min<float>(mTimeAccum+timediff, mDuration);
-
-    float delta = mTimeAccum / mDuration;
-    if(target->mReverse) delta = 1.0f - delta;
-
-    osg::Vec3f rot;
-    if(mAxis == Axis_X)
-        rot.x() += (mMagnitude*delta);
-    else if(mAxis == Axis_NegX)
-        rot.x() -= (mMagnitude*delta);
-    else if(mAxis == Axis_Y)
-        rot.y() += (mMagnitude*delta);
-    else if(mAxis == Axis_NegY)
-        rot.y() -= (mMagnitude*delta);
-    else if(mAxis == Axis_Z)
-        rot.z() += (mMagnitude*delta);
-    else if(mAxis == Axis_NegZ)
-        rot.z() -= (mMagnitude*delta);
-    Placeable::get().setLocalRot(target->mId, rot);
-
-    if(mTimeAccum >= mDuration)
-    {
-        target->mReverse = !target->mReverse;
-        mTimeAccum = 0.0f;
-        return false;
-    }
-    return true;
-}
-
-void ActionLinker::load(const std::array<uint8_t,5>& /*data*/)
-{
-}
-
-bool ActionLinker::update(ObjectBase *target, float timediff)
-{
-    return false;
-}
-
-void ActionUnknown::load(const std::array<uint8_t,5> &data)
-{
-    mData = data;
-
-    LogStream stream(Log::get().stream(Log::Level_Error));
-    stream<<std::setfill('0');
-    stream<< "Unhandled action "<<this<<" data:"
-          << " 0x"<<std::hex<<std::setw(2)<<(int)data[0]<<" 0x"<<std::hex<<std::setw(2)<<(int)data[1]
-          << " 0x"<<std::hex<<std::setw(2)<<(int)data[2]<<" 0x"<<std::hex<<std::setw(2)<<(int)data[3]
-          << " 0x"<<std::hex<<std::setw(2)<<(int)data[4];
-}
-
-bool ActionUnknown::update(ObjectBase *target, float timediff)
-{
-    Log::get().stream(Log::Level_Error)<< "Unhandled action on "<<this;
-    return false;
-}
-
-void ActionUnknown::print(std::ostream& stream) const
-{
-    DF::ActionBase::print(stream);
-    stream<< "Data:"
-          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[0]<<" 0x"<<std::hex<<std::setw(2)<<(int)mData[1]
-          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[2]<<" 0x"<<std::hex<<std::setw(2)<<(int)mData[3]
-          << " 0x"<<std::hex<<std::setw(2)<<(int)mData[4]<<"\n";
-}
-
-
 ObjectBase::ObjectBase(size_t id, uint8_t type, int x, int y, int z)
-  : mId(id), mType(type), mActive(false), mReverse(false)
+  : mId(id), mType(type)
   , mXPos(x), mYPos(y), mZPos(z)
   , mXRot(0), mYRot(0), mZRot(0)
   , mActionFlags(0)
@@ -153,6 +33,7 @@ ObjectBase::ObjectBase(size_t id, uint8_t type, int x, int y, int z)
 }
 ObjectBase::~ObjectBase()
 {
+    Activator::get().deallocate(mId);
 }
 
 void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
@@ -166,25 +47,63 @@ void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
     int32_t target = VFS::read_le32(stream);
     uint8_t type = stream.get();
 
-    ObjectBase *link = nullptr;
     if(target > 0)
-    {
         target |= mId&0xff000000;
-        link = block.getObject(target);
-    }
 
     if(type == Action_Translate)
-        mAction = new ActionTranslate(link);
+    {
+        osg::Vec3 amount;
+        if(adata[0] == ActionTranslate::Axis_X)
+            amount.x() += adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionTranslate::Axis_NegX)
+            amount.x() -= adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionTranslate::Axis_Y)
+            amount.y() += adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionTranslate::Axis_NegY)
+            amount.y() -= adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionTranslate::Axis_Z)
+            amount.z() += adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionTranslate::Axis_NegZ)
+            amount.z() -= adata[3] | (adata[4]<<8);
+        float duration = (adata[1] | (adata[2]<<8)) / 16.0f;
+
+        Mover::get().allocateTranslate(mId, mSoundId, osg::Vec3f(mXPos, mYPos, mZPos), amount, duration);
+        Activator::get().allocate(mId, mActionFlags, Mover::activateTranslateFunc,
+                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
+                                  Mover::deallocateTranslateFunc);
+    }
     else if(type == Action_Rotate)
-        mAction = new ActionRotate(link);
+    {
+        osg::Vec3 amount;
+        if(adata[0] == ActionRotate::Axis_X)
+            amount.x() += adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionRotate::Axis_NegX)
+            amount.x() -= adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionRotate::Axis_Y)
+            amount.y() += adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionRotate::Axis_NegY)
+            amount.y() -= adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionRotate::Axis_Z)
+            amount.z() += adata[3] | (adata[4]<<8);
+        else if(adata[0] == ActionRotate::Axis_NegZ)
+            amount.z() -= adata[3] | (adata[4]<<8);
+        float duration = (adata[1] | (adata[2]<<8)) / 16.0f;
+
+        Mover::get().allocateRotate(mId, mSoundId, osg::Vec3f(0.0f, 0.0f, 0.0f), amount, duration);
+        Activator::get().allocate(mId, mActionFlags, Mover::activateRotateFunc,
+                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
+                                  Mover::deallocateRotateFunc);
+    }
     else if(type == Action_Linker)
-        mAction = new ActionLinker(link);
+    {
+        Activator::get().allocate(mId, mActionFlags, Linker::activateFunc,
+                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
+                                  Linker::deallocateFunc);
+    }
     else
     {
         Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
-        mAction = new ActionUnknown(type, link);
     }
-    mAction->load(adata);
 }
 
 void ObjectBase::print(std::ostream &stream) const
@@ -193,12 +112,6 @@ void ObjectBase::print(std::ostream &stream) const
     stream<< "Pos: "<<mXPos<<" "<<mYPos<<" "<<mZPos<<"\n";
 }
 
-
-ModelObject::~ModelObject()
-{
-    if(mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
-        Door::get().deallocate(mId);
-}
 
 void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata)
 {
@@ -230,8 +143,12 @@ void ModelObject::buildNodes(osg::Group *root)
     root->addChild(node);
 
     // Is this how doors are specified, or is it determined by the model index?
-    if(mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
+    // What to do if a door has an action?
+    if(mActionOffset <= 0 && mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
+    {
         Door::get().allocate(mId, 0.0f);
+        Activator::get().allocate(mId, mActionFlags|0x02, Door::activateFunc, ~static_cast<size_t>(0), Door::deallocateFunc);
+    }
     Renderer::get().setNode(mId, node);
     Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(mXRot, mYRot, mZRot));
 }
@@ -247,11 +164,6 @@ void ModelObject::print(std::ostream &stream) const
     stream<< "ModelIdx: "<<mModelIdx<<" ("<<id.data()<<")\n";
     stream<< "ActionFlags: 0x"<<std::hex<<std::setw(8)<<mActionFlags<<std::dec<<std::setw(0)<<"\n";
     stream<< "SoundId: "<<(int)mSoundId<<"\n";
-    if(mAction)
-    {
-        stream<< "** Action **\n";
-        mAction->print(stream);
-    }
 }
 
 
@@ -284,11 +196,6 @@ void FlatObject::print(std::ostream &stream) const
     stream<< "Gender: 0x"<<std::hex<<std::setw(4)<<mGender<<std::dec<<std::setw(0)<<"\n";
     stream<< "FactionId: "<<mFactionId<<"\n";
     stream<< "Unknown: 0x"<<std::hex<<std::setw(2)<<(int)mUnknown<<std::setw(0)<<std::dec<<"\n";
-    if(mAction)
-    {
-        stream<< "** Action **\n";
-        mAction->print(stream);
-    }
 }
 
 
@@ -297,10 +204,8 @@ DBlockHeader::~DBlockHeader()
     detachNode();
     if(!mObjects.empty())
     {
-        Renderer::get().remove(&*mObjects.getIdList(),
-                               mObjects.size());
-        Placeable::get().deallocate(&*mObjects.getIdList(),
-                                    mObjects.size());
+        Renderer::get().remove(&*mObjects.getIdList(), mObjects.size());
+        Placeable::get().deallocate(&*mObjects.getIdList(), mObjects.size());
     }
 }
 
@@ -396,7 +301,6 @@ ObjectBase *DBlockHeader::getObject(size_t id)
     return *iter;
 }
 
-
 size_t DBlockHeader::getObjectByTexture(size_t texid) const
 {
     for(const ObjectBase *obj : mObjects)
@@ -409,62 +313,6 @@ size_t DBlockHeader::getObjectByTexture(size_t texid) const
     }
     Log::get().stream(Log::Log::Level_Error)<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
     return ~static_cast<size_t>(0);
-}
-
-
-void DBlockHeader::activate(size_t id)
-{
-    ObjectBase *base = getObject(id);
-    if(!base || !(base->mActionFlags&ActionFlag_Activatable))
-    {
-        if(base && base->mType == ObjectType_Model)
-        {
-            ModelObject *model = static_cast<ModelObject*>(base);
-            // TODO: There's likely a flag on the object that specifies a door
-            // that can't be directly activated, e.g. the protected door in
-            // Shedungent.
-            if(model->mModelData[5] == 'D' && model->mModelData[6] == 'O' && model->mModelData[7] == 'R')
-                Door::get().activate(model->mId);
-        }
-        return;
-    }
-
-    // Make sure no object in this chain is still active
-    ObjectBase *check = base;
-    while(check != nullptr)
-    {
-        if(check->mActive)
-            break;
-        if(check->mAction)
-            check = check->mAction->mLink;
-        else
-            check = nullptr;
-    }
-    if(check != nullptr)
-        return;
-
-    while(base != nullptr && base->mAction)
-    {
-        mActiveObjects.push_back(std::make_pair(base->mAction, base));
-        base->mActive = true;
-        base = base->mAction->mLink;
-    }
-}
-
-
-void DBlockHeader::update(float timediff)
-{
-    auto iter = mActiveObjects.begin();
-    while(iter != mActiveObjects.end())
-    {
-        if(!iter->first->update(iter->second, timediff))
-        {
-            iter->second->mActive = false;
-            iter = mActiveObjects.erase(iter);
-        }
-        else
-            ++iter;
-    }
 }
 
 

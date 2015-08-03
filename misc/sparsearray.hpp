@@ -104,6 +104,12 @@ public:
     bool empty() const { return mData.empty(); }
     size_t size() const { return mData.size(); }
 
+    void clear()
+    {
+        mIdxLookup.clear();
+        mData.clear();
+    }
+
     bool exists(size_t idx) const
     { return lookupKey(idx) != mIdxLookup.end(); }
 

@@ -33,33 +33,7 @@ enum ActionType {
     Action_Linker    = 0x1e
 };
 
-struct ActionBase : public Referenceable {
-    ActionType mType;
-    ObjectBase *mLink; // Linked object's action updates with this action
-
-    float mTimeAccum;
-
-    ActionBase(ActionType type, ObjectBase *link) : mType(type), mLink(link), mTimeAccum(0.0f)
-    { }
-
-    virtual void load(const std::array<uint8_t,5> &data) = 0;
-    virtual bool update(ObjectBase *target, float timediff) = 0;
-
-    virtual void print(std::ostream &stream) const;
-};
-
-struct ActionMovable : public ActionBase {
-    uint8_t mAxis;
-    float mDuration;
-    uint16_t mMagnitude;
-
-    ActionMovable(ActionType type, ObjectBase *link) : ActionBase(type, link) { }
-    virtual void load(const std::array<uint8_t,5> &data) final;
-
-    virtual void print(std::ostream &stream) const final;
-};
-
-struct ActionTranslate : public ActionMovable {
+struct ActionTranslate {
     enum Axis {
         Axis_X    = 0x01,
         Axis_NegX = 0x02,
@@ -68,11 +42,8 @@ struct ActionTranslate : public ActionMovable {
         Axis_Z    = 0x05,
         Axis_NegZ = 0x06
     };
-
-    ActionTranslate(ObjectBase *link) : ActionMovable(Action_Translate, link) { }
-    virtual bool update(ObjectBase *target, float timediff) final;
 };
-struct ActionRotate : public ActionMovable {
+struct ActionRotate {
     enum Axis {
         Axis_X    = 0x01,
         Axis_NegX = 0x02,
@@ -81,28 +52,6 @@ struct ActionRotate : public ActionMovable {
         Axis_NegZ = 0x05,
         Axis_Z    = 0x06
     };
-
-    ActionRotate(ObjectBase *link) : ActionMovable(Action_Rotate, link) { }
-    virtual bool update(ObjectBase *target, float timediff) final;
-};
-
-/* Linker actions are used for actions that don't directly affect the object
- * it's attached to, but still trigger linked object actions.
- */
-struct ActionLinker : public ActionBase {
-    ActionLinker(ObjectBase *link) : ActionBase(Action_Linker, link) { }
-    virtual void load(const std::array<uint8_t,5> &data) final;
-    virtual bool update(ObjectBase *target, float timediff) final;
-};
-
-struct ActionUnknown : public ActionBase {
-    std::array<uint8_t,5> mData;
-
-    ActionUnknown(uint8_t type, ObjectBase *link) : ActionBase((ActionType)type, link) { }
-    virtual void load(const std::array<uint8_t,5> &data) final;
-    virtual bool update(ObjectBase *target, float timediff) final;
-
-    virtual void print(std::ostream &stream) const final;
 };
 
 
@@ -112,29 +61,20 @@ enum ObjectType {
     ObjectType_Flat = 0x03,
 };
 
-enum ActionFlags {
-    // Specifies if the object can be directly activated (otherwise only via an action link)
-    ActionFlag_Activatable = 0x02,
-};
-
 struct ObjectBase : public Referenceable {
     size_t mId;
     uint8_t mType;
 
-    ref_ptr<ActionBase> mAction;
-    bool mActive;
-    bool mReverse;
-
     int32_t mXPos, mYPos, mZPos;
     int32_t mXRot, mYRot, mZRot;
     uint32_t mActionFlags;
+    uint8_t mSoundId; // Played when activated
     int32_t mActionOffset;
 
     ObjectBase(size_t id, uint8_t type, int x, int y, int z);
     virtual ~ObjectBase();
 
     void loadAction(std::istream &stream, DBlockHeader &block);
-    bool updateAction(float timediff) { return mAction->update(this, timediff); }
 
     virtual void buildNodes(osg::Group *root) = 0;
 
@@ -146,13 +86,12 @@ struct ModelObject : public ObjectBase {
 
     uint16_t mModelIdx;
     //uint32_t mActionFlags;
-    uint8_t mSoundId; // Played when activated
+    //uint8_t mSoundId;
     //int32_t  mActionOffset;
 
     std::array<char,8> mModelData;
 
     ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
-    virtual ~ModelObject();
 
     void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata);
 
@@ -200,8 +139,6 @@ struct DBlockHeader {
 
     osg::ref_ptr<osg::Group> mBaseNode;
 
-    std::vector<std::pair<ref_ptr<ActionBase>,ObjectBase*>> mActiveObjects;
-
     ~DBlockHeader();
 
     void load(std::istream &stream, size_t blockid);
@@ -216,10 +153,6 @@ struct DBlockHeader {
      * marker, and is used to identify where to spawn when entering a dungeon.
      */
     size_t getObjectByTexture(size_t texid) const;
-
-    void activate(size_t id);
-
-    void update(float timediff);
 
     void print(std::ostream &stream, int objtype=0) const;
 };
