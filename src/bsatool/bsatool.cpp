@@ -11,6 +11,12 @@
 
 #include "components/archives/bsaarchive.hpp"
 
+#ifdef _WIN32
+#include <direct.h>
+#define mkdir(x,y) _mkdir(x)
+#define S_IRWXU 0
+#endif
+
 
 int main(int argc, char *argv[])
 {
