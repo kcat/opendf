@@ -457,13 +457,6 @@ bool Engine::go(void)
         ss->setAttributeAndModes(new osg::Depth(osg::Depth::LESS, 0.0, 1.0, true));
         ss->setAttributeAndModes(new osg::CullFace(osg::CullFace::BACK));
         ss->setMode(GL_BLEND, osg::StateAttribute::OFF);
-
-        osg::ref_ptr<osg::Program> program = new osg::Program();
-        program->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/object.vert"));
-        program->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/object.frag"));
-
-        ss->setAttributeAndModes(program.get());
-        ss->addUniform(new osg::Uniform("diffuseTex", 0));
     }
 
     {

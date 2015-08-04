@@ -35,8 +35,10 @@ void MeshManager::initialize()
 void MeshManager::deinitialize()
 {
     mStateSetCache.clear();
+    mFlatCache.clear();
     mModelCache.clear();
-    mSpriteProgram = nullptr;
+    mFlatProgram = nullptr;
+    mModelProgram = nullptr;
 }
 
 
@@ -52,6 +54,13 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
         osg::ref_ptr<osg::Node> node;
         if(iter->second.lock(node))
             return node;
+    }
+
+    if(!mModelProgram)
+    {
+        mModelProgram = new osg::Program();
+        mModelProgram->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/object.vert"));
+        mModelProgram->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/object.frag"));
     }
 
     DFOSG::Mesh *mesh = DFOSG::MeshLoader::get().load(idx);
@@ -140,6 +149,8 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
         else
         {
             ss = geometry->getOrCreateStateSet();
+            ss->setAttributeAndModes(mModelProgram);
+            ss->addUniform(new osg::Uniform("diffuseTex", 0));
             ss->setTextureAttributeAndModes(0, tex);
             stateiter = ss;
         }
@@ -168,6 +179,13 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
             }
             return node;
         }
+    }
+
+    if(!mFlatProgram)
+    {
+        mFlatProgram = new osg::Program();
+        mFlatProgram->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/sprite.vert"));
+        mFlatProgram->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/sprite.frag"));
     }
 
     int16_t xoffset, yoffset;
@@ -228,19 +246,13 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
     geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4));
 
     osg::StateSet *ss = geometry->getOrCreateStateSet();
-    ss->setTextureAttributeAndModes(0, tex);
+    ss->setAttributeAndModes(mFlatProgram);
     // Alpha test is reversed, because the shader will set alpha=0 for texels
     // that should be kept, and consequently have no specular, and alpha=1 for
     // texels that should be dropped.
     ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::LESS, 0.5f));
-
-    if(!mSpriteProgram)
-    {
-        mSpriteProgram = new osg::Program();
-        mSpriteProgram->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/sprite.vert"));
-        mSpriteProgram->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/sprite.frag"));
-    }
-    ss->setAttributeAndModes(mSpriteProgram.get());
+    ss->addUniform(new osg::Uniform("diffuseTex", 0));
+    ss->setTextureAttributeAndModes(0, tex);
 
     if(centered)
         bb->addDrawable(geometry);
