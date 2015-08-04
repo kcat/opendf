@@ -31,7 +31,7 @@ Library General Public License for more details.  */
 /* #include <ansidecl.h> */
 /* @) */
 #include <errno.h>
-#include <fnmatch.h>
+#include "fnmatch.h"
 
 #if !defined(__GNU_LIBRARY__) && !defined(STDC_HEADERS) && !defined(_MSC_VER)
 extern int errno;

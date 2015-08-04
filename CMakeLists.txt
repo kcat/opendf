@@ -63,7 +63,7 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
 )
 
 if(MSVC)
-	set(SRCS src/fnmatch.c
+	set(SRCS src/misc/fnmatch.c
 			 ${SRCS}
 	)
 endif()
@@ -107,8 +107,8 @@ set(HDRS src/misc/sparsearray.hpp
 )
 
 if(MSVC)
-	set(HDRS src/fnmatch.h
-			 ${SRCS}
+	set(HDRS src/misc/fnmatch.h
+			 ${HDRS}
 	)
 endif()
 
