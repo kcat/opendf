@@ -11,7 +11,7 @@
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 CMAKE_POLICY(PUSH)
-#include(FindPkgMacros)
+include(FindPkgMacros)
 
 # IF (MYGUI_LIBRARIES AND MYGUI_INCLUDE_DIRS)
     # SET(MYGUI_FIND_QUIETLY TRUE)

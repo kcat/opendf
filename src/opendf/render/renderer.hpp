@@ -5,15 +5,11 @@
 
 #include <osg/ref_ptr>
 
+#include <osg/MatrixTransform>
+
 #include "misc/sparsearray.hpp"
 
 #include "class/placeable.hpp"
-
-
-namespace osg
-{
-    class MatrixTransform;
-}
 
 namespace DF
 {

@@ -3,11 +3,13 @@
 
 #ifdef _WIN32
 #include "dirent.h"
+#include "misc/fnmatch.h"
 #else
 #include <dirent.h>
 #include <sys/stat.h>
-#endif
 #include <fnmatch.h>
+#endif
+
 #include <fstream>
 #include <sstream>
 #include <vector>

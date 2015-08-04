@@ -311,7 +311,7 @@ size_t DBlockHeader::getObjectByTexture(size_t texid) const
             if(flat->mTexture == texid) return flat->mId;
         }
     }
-    Log::get().stream(Log::Log::Level_Error)<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
+    Log::get().stream(Log::Level_Error)<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
     return ~static_cast<size_t>(0);
 }
 

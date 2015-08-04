@@ -12,7 +12,7 @@ void Activator::allocate(size_t idx, size_t flags, ActivatorCallback callback, s
 {
     mDeallocators[idx] = dealloc;
     mFlags[idx] = flags;
-    mInactive[idx] = (ActivatorData){ callback, link };
+    mInactive[idx] = ActivatorData{ callback, link };
 }
 
 void Activator::deallocate(size_t idx)

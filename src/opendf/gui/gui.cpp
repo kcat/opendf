@@ -239,7 +239,7 @@ class Console {
                 }
             }
 
-            if(sstr.tellp() == 0)
+            if(sstr.tellp() == std::streampos(0))
                 Log::get().stream()<< "No matches for \""<<command<<"\"";
             else
             {

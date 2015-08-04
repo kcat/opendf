@@ -21,11 +21,11 @@ public:
 
     virtual size_t size() final
     {
-        if(mSize == -1)
+        if(mSize == std::streampos(-1))
         {
             mStream->clear();
             std::streampos pos = mStream->tellg();
-            if(pos != -1 && mStream->seekg(0, std::ios_base::end))
+            if (pos != std::streampos(-1) && mStream->seekg(0, std::ios_base::end))
             {
                 mSize = mStream->tellg();
                 mStream->seekg(pos);

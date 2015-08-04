@@ -1,5 +1,8 @@
 
 #include "door.hpp"
+
+#include <algorithm>
+
 #include "placeable.hpp"
 #include "activator.hpp"
 

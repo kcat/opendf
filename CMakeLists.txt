@@ -12,8 +12,13 @@ if(HAVE_STD_CXX11)
 endif()
 
 check_cxx_compiler_flag("-Wall" HAVE_WALL_SWITCH)
-if(HAVE_WALL_SWITCH)
+if(HAVE_WALL_SWITCH AND NOT MSVC)
     add_definitions("-Wall")
+endif()
+
+if(MSVC)
+	add_definitions("-DNOMINMAX")
+	set(CMAKE_EXE_LINKER_FLAGS "/FORCE:Multiple ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
 find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA osgUtil)
@@ -56,6 +61,13 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
          src/opendf/engine.cpp
          src/opendf/main.cpp
 )
+
+if(MSVC)
+	set(SRCS src/misc/fnmatch.c
+			 ${SRCS}
+	)
+endif()
+
 set(HDRS src/misc/sparsearray.hpp
          src/components/sdlutil/graphicswindow.hpp
          src/components/settings/configfile.hpp
@@ -93,6 +105,12 @@ set(HDRS src/misc/sparsearray.hpp
          src/opendf/cvars.hpp
          src/opendf/engine.hpp
 )
+
+if(MSVC)
+	set(HDRS src/misc/fnmatch.h
+			 ${HDRS}
+	)
+endif()
 
 set(DATA_PATH "${opendf_SOURCE_DIR}")
 configure_file("${opendf_SOURCE_DIR}/settings.cfg.in"
