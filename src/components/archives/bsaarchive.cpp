@@ -51,12 +51,15 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         throw std::runtime_error("Failed to seek to archive footer ("+std::to_string(count)+" entries)");
     for(size_t i = 0;i < count;++i)
     {
-        std::array<char,12> name;
-        stream.read(name.data(), name.size());
-        names.push_back(std::string(name.data(), name.size()));
+        std::array<char,13> name;
+        stream.read(name.data(), name.size()-1);
+        name.back() = '\0'; // Ensure null termination
+        names.push_back(std::string(name.data()));
+
         int iscompressed = read_le16(stream);
         if(iscompressed != 0)
             throw std::runtime_error("Compressed entries not supported");
+
         Entry entry;
         entry.mStart = ((i == 0) ? base : entries[i-1].mEnd);
         entry.mEnd = entry.mStart + read_le32(stream);
