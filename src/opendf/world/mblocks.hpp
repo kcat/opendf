@@ -111,13 +111,17 @@ struct MBlock {
     osg::ref_ptr<osg::Group> mBaseNode;
 
     MBlock() = default;
+	//MSVC 2013 does not support default move constructors (bad MSVC!)
+	#if !(_MSC_VER && _MSC_VER < 1900)
     MBlock(MBlock&&) = default;
+	MBlock& operator=(MBlock&&) = default;
+
+	MBlock(const MBlock&) = delete;
+    MBlock& operator=(const MBlock&) = delete;
+	#endif
     ~MBlock();
 
-    MBlock& operator=(MBlock&&) = default;
 
-    MBlock(const MBlock&) = delete;
-    MBlock& operator=(const MBlock&) = delete;
 
     void load(std::istream &stream, size_t blockid);
 

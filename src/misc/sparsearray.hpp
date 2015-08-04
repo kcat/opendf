@@ -36,9 +36,12 @@ private:
     keylist_type mIdxLookup;
     datalist_type mData;
 
+	//MSVC 2013 does not support default move constructors (bad MSVC!)
+	#if !(_MSC_VER && _MSC_VER < 1900)
     // No copying, only moving
     SparseArray(const SparseArray<value_type>&) = delete;
     SparseArray<T>& operator=(const SparseArray<value_type>&) = delete;
+	#endif
 
     keylist_type::const_iterator lookupKey(size_t key) const
     {
@@ -92,8 +95,11 @@ public:
     typedef typename datalist_type::const_reverse_iterator const_reverse_iterator;
 
     SparseArray() = default;
+	//MSVC 2013 does not support defaulting copy/move constructors (bad MSVC!)
+	#if !(_MSC_VER && _MSC_VER < 1900)
     SparseArray(SparseArray<value_type>&&) = default;
     SparseArray<value_type>& operator=(SparseArray<value_type>&&) = default;
+	#endif
 
     void reserve(size_t size)
     {
