@@ -11,6 +11,7 @@ namespace osg
     class Matrixf;
     class Node;
     class StateSet;
+    class Program;
 }
 
 namespace Resource
@@ -22,6 +23,8 @@ class MeshManager {
     std::map<size_t,osg::observer_ptr<osg::Node>> mModelCache;
     std::map<size_t,osg::observer_ptr<osg::StateSet>> mStateSetCache;
     std::map<std::pair<size_t,bool>,osg::observer_ptr<osg::Node>> mFlatCache;
+
+    osg::ref_ptr<osg::Program> mSpriteProgram;
 
     MeshManager();
     ~MeshManager();

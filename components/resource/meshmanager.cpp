@@ -36,6 +36,7 @@ void MeshManager::deinitialize()
 {
     mStateSetCache.clear();
     mModelCache.clear();
+    mSpriteProgram = nullptr;
 }
 
 
@@ -233,11 +234,13 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
     // texels that should be dropped.
     ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::LESS, 0.5f));
 
-    osg::ref_ptr<osg::Program> program = new osg::Program();
-    program->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/sprite.vert"));
-    program->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/sprite.frag"));
-
-    ss->setAttributeAndModes(program.get());
+    if(!mSpriteProgram)
+    {
+        mSpriteProgram = new osg::Program();
+        mSpriteProgram->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/sprite.vert"));
+        mSpriteProgram->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/sprite.frag"));
+    }
+    ss->setAttributeAndModes(mSpriteProgram.get());
 
     if(centered)
         bb->addDrawable(geometry);

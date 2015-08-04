@@ -115,7 +115,9 @@ osg::ref_ptr<osg::Texture> TextureManager::getTexture(size_t idx, int16_t *xoffs
     tex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST_MIPMAP_LINEAR);
     tex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::NEAREST);
 
-    mTexCache[idx] = TextureInfo{tex, x_offset, y_offset, 1.0f + x_scale/256.0f, 1.0f + y_scale/256.0f};
+    mTexCache[idx] = TextureInfo{
+        tex, x_offset, y_offset, 1.0f + x_scale/256.0f, 1.0f + y_scale/256.0f
+    };
     return tex;
 }
 

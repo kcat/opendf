@@ -18,7 +18,7 @@ out vec4 IlluminationData;
 
 void main()
 {
-    vec4 color = texture2D(diffuseTex, TexCoords.xy);
+    vec4 color = texture(diffuseTex, TexCoords.xy);
     color.a = ((color.a < 0.5) ? 1.0 : 0.0);
     vec4 nn = vec4(0.5, 0.5, 1.0, 1.0);
 
