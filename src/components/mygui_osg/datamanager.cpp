@@ -25,7 +25,7 @@ public:
         {
             mStream->clear();
             std::streampos pos = mStream->tellg();
-			if (pos != std::streampos(-1) && mStream->seekg(0, std::ios_base::end))
+            if (pos != std::streampos(-1) && mStream->seekg(0, std::ios_base::end))
             {
                 mSize = mStream->tellg();
                 mStream->seekg(pos);

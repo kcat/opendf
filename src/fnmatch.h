@@ -15,6 +15,10 @@ Library General Public License for more details.  */
 
 #define	_FNMATCH_H	1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Bits set in the FLAGS argument to `fnmatch'.  */
 #undef FNM_PATHNAME
 #define	FNM_PATHNAME	(1 << 0)/* No wildcard can ever match `/'.  */
@@ -32,5 +36,9 @@ Library General Public License for more details.  */
 /* Match STRING against the filename pattern PATTERN,
    returning zero if it matches, FNM_NOMATCH if not.  */
 extern int fnmatch (const char *pattern, const char *string, int flags);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif	/* fnmatch.h */
