@@ -140,9 +140,8 @@ struct MBlockHeader {
     std::array<uint32_t,32> mBlockSizes;
 
     std::array<uint8_t,8> mUnknown2;
-    // Ground texture byte format: IRTTTTTT
-    // I: Invert flag (flip texture on X/Y)
-    // R: Rotate flag (rotate 90 degrees)
+    // Ground texture byte format: RRTTTTTT
+    // R: Rotation (90 degree increments)
     // T: Texture index, [0-64). File depends on location and weather.
     std::array<uint8_t,256> mGroundTexture;
     std::array<uint8_t,256> mUnknown3;
