@@ -583,9 +583,9 @@ void World::rotate(float xrel, float yrel)
 
 void World::update(float timediff)
 {
-    bool ingame = (GuiIface::get().getMode() == GuiIface::Mode_Game);
+    GuiIface::Mode guimode = GuiIface::get().getMode();
 
-    if(ingame)
+    if(guimode <= GuiIface::Mode_Cursor)
     {
         Linker::get().update();
         Mover::get().update(timediff);
@@ -602,7 +602,7 @@ void World::update(float timediff)
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);
 
-    if(ingame)
+    if(guimode == GuiIface::Mode_Game)
         mCurrentSelection = castCameraToViewportRay(0.5f, 0.5f, 1024.0f, false);
     else
     {

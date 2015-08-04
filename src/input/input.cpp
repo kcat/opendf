@@ -59,7 +59,7 @@ void Input::update(float timediff)
         SDL_PushEvent(&evt);
     }
 
-    if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+    if(GuiIface::get().getMode() <= GuiIface::Mode_Cursor)
     {
         float speed = 64.0f * timediff;
         if(keystate[SDL_SCANCODE_LSHIFT])
@@ -136,7 +136,7 @@ void Input::handleKeyboardEvent(const SDL_KeyboardEvent &evt)
             else
             {
                 GuiIface::get().popMode(GuiIface::Mode_Console);
-                if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+                if(GuiIface::get().getMode() <= GuiIface::Mode_Cursor)
                 {
                     SDL_StopTextInput();
                     SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -145,8 +145,16 @@ void Input::handleKeyboardEvent(const SDL_KeyboardEvent &evt)
         }
         else if(evt.keysym.sym == SDLK_e)
         {
-            if(GuiIface::get().getMode() == GuiIface::Mode_Game)
+            if(GuiIface::get().getMode() <= GuiIface::Mode_Cursor)
                 WorldIface::get().activate();
+        }
+        else if(evt.keysym.sym == SDLK_RETURN)
+        {
+            GuiIface::Mode mode = GuiIface::get().getMode();
+            if(mode == GuiIface::Mode_Game)
+                GuiIface::get().pushMode(GuiIface::Mode_Cursor);
+            else if(mode == GuiIface::Mode_Cursor)
+                GuiIface::get().popMode(GuiIface::Mode_Cursor);
         }
         else if(evt.keysym.sym == SDLK_F3)
             mViewer->getEventQueue()->keyPress(osgGA::GUIEventAdapter::KEY_F3);

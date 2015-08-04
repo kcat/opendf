@@ -28,7 +28,8 @@ class GuiIface {
 public:
     enum Mode {
         Mode_Game,
-        Mode_Console = 1<<0,
+        Mode_Cursor  = 1<<0, // Cursor only, no GUI
+        Mode_Console = 1<<1,
 
         Mode_Highest = Mode_Console
     };

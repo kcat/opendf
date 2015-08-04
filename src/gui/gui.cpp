@@ -338,7 +338,6 @@ public:
     {
         mMainWidget->setVisible(active);
         mMainWidget->setEnabled(active);
-        MyGUI::PointerManager::getInstance().setVisible(active);
     }
 
     void print(const std::string &str)
@@ -458,10 +457,12 @@ void Gui::pushMode(GuiIface::Mode mode)
         case Mode_Console:
             mConsole->setActive(true);
             break;
+        case Mode_Cursor:
         case Mode_Game:
             break;
     }
     mActiveModes |= mode;
+    MyGUI::PointerManager::getInstance().setVisible(!!mActiveModes);
 }
 
 void Gui::popMode(GuiIface::Mode mode)
@@ -474,10 +475,12 @@ void Gui::popMode(GuiIface::Mode mode)
         case Mode_Console:
             mConsole->setActive(false);
             break;
+        case Mode_Cursor:
         case Mode_Game:
             break;
     }
     mActiveModes &= ~mode;
+    MyGUI::PointerManager::getInstance().setVisible(!!mActiveModes);
 }
 
 GuiIface::Mode Gui::getMode() const
