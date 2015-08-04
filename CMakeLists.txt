@@ -16,6 +16,11 @@ if(HAVE_WALL_SWITCH)
     add_definitions("-Wall")
 endif()
 
+if(MSVC)
+	add_definitions("-DNOMINMAX")
+	set(CMAKE_EXE_LINKER_FLAGS "/FORCE:Multiple ${CMAKE_EXE_LINKER_FLAGS}")
+endif()
+
 find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA osgUtil)
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -56,6 +61,13 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
          src/opendf/engine.cpp
          src/opendf/main.cpp
 )
+
+if(MSVC)
+	set(SRCS src/fnmatch.c
+			 ${SRCS}
+	)
+endif()
+
 set(HDRS src/misc/sparsearray.hpp
          src/components/sdlutil/graphicswindow.hpp
          src/components/settings/configfile.hpp
@@ -93,6 +105,12 @@ set(HDRS src/misc/sparsearray.hpp
          src/opendf/cvars.hpp
          src/opendf/engine.hpp
 )
+
+if(MSVC)
+	set(HDRS src/fnmatch.h
+			 ${SRCS}
+	)
+endif()
 
 set(DATA_PATH "${opendf_SOURCE_DIR}")
 configure_file("${opendf_SOURCE_DIR}/settings.cfg.in"

@@ -3,8 +3,9 @@
 
 #ifdef _WIN32
 #include "dirent.h"
-#include "Shlwapi.h"
-#define fnmatch(x,y,z) PathMatchSpec(y,x)
+extern "C" {
+ #include "fnmatch.h"
+}
 #else
 #include <dirent.h>
 #include <sys/stat.h>
