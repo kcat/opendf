@@ -12,7 +12,7 @@ if(HAVE_STD_CXX11)
 endif()
 
 check_cxx_compiler_flag("-Wall" HAVE_WALL_SWITCH)
-if(HAVE_WALL_SWITCH)
+if(HAVE_WALL_SWITCH AND NOT MSVC)
     add_definitions("-Wall")
 endif()
 
