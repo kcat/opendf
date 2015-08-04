@@ -77,8 +77,6 @@ struct ObjectBase : public Referenceable {
 
     void loadAction(std::istream &stream);
 
-    virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) = 0;
-
     virtual void print(std::ostream &stream) const;
 };
 
@@ -94,9 +92,7 @@ struct ModelObject : public ObjectBase {
 
     ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
 
-    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata);
-
-    virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) final;
+    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, osg::Group *root);
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -109,9 +105,7 @@ struct FlatObject : public ObjectBase {
     uint8_t mUnknown;
 
     FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
-    void load(std::istream &stream);
-
-    virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) final;
+    void load(std::istream &stream, osg::Group *root);
 
     virtual void print(std::ostream &stream) const final;
 };

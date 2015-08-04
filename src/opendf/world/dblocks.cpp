@@ -114,7 +114,7 @@ void ObjectBase::print(std::ostream &stream) const
 }
 
 
-void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata)
+void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, osg::Group *root)
 {
     mXRot = VFS::read_le32(stream);
     mYRot = VFS::read_le32(stream);
@@ -126,10 +126,9 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     mActionOffset = VFS::read_le32(stream);
 
     mModelData = mdldata.at(mModelIdx);
-}
 
-void ModelObject::buildNodes(osg::Group *root, size_t regnum, size_t locnum)
-{
+    loadAction(stream);
+
     if(mModelData[0] == -1)
         return;
 
@@ -173,17 +172,16 @@ void ModelObject::print(std::ostream &stream) const
 }
 
 
-void FlatObject::load(std::istream &stream)
+void FlatObject::load(std::istream &stream, osg::Group *root)
 {
     mTexture = VFS::read_le16(stream);
     mGender = VFS::read_le16(stream);
     mFactionId = VFS::read_le16(stream);
     mActionOffset = VFS::read_le32(stream);
     mUnknown = stream.get();
-}
 
-void FlatObject::buildNodes(osg::Group *root, size_t /*regnum*/, size_t /*locnum*/)
-{
+    loadAction(stream);
+
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
     node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
@@ -233,6 +231,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
     for(int32_t &val : rootoffsets)
         val = VFS::read_le32(stream);
 
+    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
     for(int32_t offset : rootoffsets)
     {
         while(offset > 0)
@@ -251,7 +250,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
             {
                 stream.seekg(objoffset);
                 ref_ptr<ModelObject> mdl(new ModelObject(blockid|offset, x, y, z));
-                mdl->load(stream, mModelData);
+                mdl->load(stream, mModelData, regnum, locnum, mBaseNode);
 
                 mObjects.insert(blockid|offset, mdl);
             }
@@ -259,7 +258,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
             {
                 stream.seekg(objoffset);
                 ref_ptr<FlatObject> flat(new FlatObject(blockid|offset, x, y, z));
-                flat->load(stream);
+                flat->load(stream, mBaseNode);
 
                 mObjects.insert(blockid|offset, flat);
             }
@@ -267,13 +266,6 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
             offset = next;
         }
     }
-
-    for(ref_ptr<ObjectBase> &obj : mObjects)
-        obj->loadAction(stream);
-
-    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
-    for(ref_ptr<ObjectBase> &obj : mObjects)
-        obj->buildNodes(mBaseNode.get(), regnum, locnum);
 
     root->addChild(mBaseNode);
 }
