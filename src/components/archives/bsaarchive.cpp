@@ -53,7 +53,7 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
     {
         std::array<char,12> name;
         stream.read(name.data(), name.size());
-        names.push_back(std::string(name.data(), name.size()));
+        names.push_back(std::string(name.data(),0,12));
         int iscompressed = read_le16(stream);
         if(iscompressed != 0)
             throw std::runtime_error("Compressed entries not supported");
