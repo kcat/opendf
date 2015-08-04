@@ -1,6 +1,7 @@
 
 #include "mover.hpp"
 
+#include <algorithm>
 
 #include "placeable.hpp"
 #include "activator.hpp"
@@ -15,13 +16,13 @@ Mover Mover::sMovers;
 void Mover::allocateTranslate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration)
 {
     mSoundIds[idx] = soundid;
-    mTranslateStart[idx] = (MoverData){ idx, orig, amount, duration };
+    mTranslateStart[idx] = MoverData{ idx, orig, amount, duration };
 }
 
 void Mover::allocateRotate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration)
 {
     mSoundIds[idx] = soundid;
-    mRotateStart[idx] = (MoverData){ idx, orig, amount, duration };
+    mRotateStart[idx] = MoverData{ idx, orig, amount, duration };
 }
 
 
