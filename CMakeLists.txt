@@ -11,15 +11,25 @@ if(HAVE_STD_CXX11)
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 endif()
 
-check_cxx_compiler_flag("-Wall" HAVE_WALL_SWITCH)
-if(HAVE_WALL_SWITCH AND NOT MSVC)
-    add_definitions("-Wall")
+if(MSVC)
+    add_definitions("-DNOMINMAX")
+    set(CMAKE_EXE_LINKER_FLAGS "/FORCE:Multiple ${CMAKE_EXE_LINKER_FLAGS}")
+else()
+    check_cxx_compiler_flag("-Wall" HAVE_WALL_SWITCH)
+    if(HAVE_WALL_SWITCH)
+        add_definitions("-Wall")
+    endif()
+    check_cxx_compiler_flag("-Wextra" HAVE_WEXTRA_SWITCH)
+    if(HAVE_WEXTRA_SWITCH)
+        add_definitions("-Wextra")
+    endif()
+    # MyGUI triggers a lot of unused parameter warnings...
+    check_cxx_compiler_flag("-Wno-unused-parameter" HAVE_WNO_UNUSED_PARAMETER_SWITCH)
+    if(HAVE_WNO_UNUSED_PARAMETER_SWITCH)
+        add_definitions("-Wno-unused-parameter")
+    endif()
 endif()
 
-if(MSVC)
-	add_definitions("-DNOMINMAX")
-	set(CMAKE_EXE_LINKER_FLAGS "/FORCE:Multiple ${CMAKE_EXE_LINKER_FLAGS}")
-endif()
 
 find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA osgUtil)
 find_package(SDL2 REQUIRED)
@@ -62,12 +72,6 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
          src/opendf/main.cpp
 )
 
-if(MSVC)
-	set(SRCS src/misc/fnmatch.c
-			 ${SRCS}
-	)
-endif()
-
 set(HDRS src/misc/sparsearray.hpp
          src/components/sdlutil/graphicswindow.hpp
          src/components/settings/configfile.hpp
@@ -106,10 +110,14 @@ set(HDRS src/misc/sparsearray.hpp
          src/opendf/engine.hpp
 )
 
-if(MSVC)
-	set(HDRS src/misc/fnmatch.h
-			 ${HDRS}
-	)
+if(WIN32)
+    set(SRCS src/misc/fnmatch.c
+             ${SRCS}
+    )
+
+    set(HDRS src/misc/fnmatch.h
+             ${HDRS}
+    )
 endif()
 
 set(DATA_PATH "${opendf_SOURCE_DIR}")
