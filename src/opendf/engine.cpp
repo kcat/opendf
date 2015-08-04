@@ -36,6 +36,12 @@
 #include "cvars.hpp"
 #include "log.hpp"
 
+#ifdef _WIN32
+#include <direct.h>
+#define mkdir(x,y) _mkdir(x)
+#define S_IRWXU 0
+#endif
+
 
 namespace
 {

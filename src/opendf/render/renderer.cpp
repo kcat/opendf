@@ -1,8 +1,6 @@
 
 #include "renderer.hpp"
 
-#include <osg/MatrixTransform>
-
 #include "class/placeable.hpp"
 
 
