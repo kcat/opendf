@@ -529,23 +529,20 @@ void World::loadDungeonByExterior(int regnum, int extid)
             if(!stream) throw std::runtime_error("Failed to open "+name);
 
             mDungeon.push_back(std::unique_ptr<DBlockHeader>(new DBlockHeader()));
-            mDungeon.back()->load(*stream, std::distance(dinfo.mBlocks.data(), &block)<<24);
-        }
+            mDungeon.back()->load(*stream, std::distance(dinfo.mBlocks.data(), &block)<<24,
+                                  block.mX*2048.0f, block.mZ*2048.0f, regnum, extid,
+                                  mSceneRoot);
 
-        for(size_t i = 0;i < mDungeon.size();++i)
-        {
-            mDungeon[i]->buildNodes(mSceneRoot, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ, regnum, extid);
-
-            if(dinfo.mBlocks[i].mStartBlock)
+            if(block.mStartBlock)
             {
                 size_t startobj = InvalidHandle;
                 if(mFirstStart)
                 {
                     mFirstStart = false;
-                    startobj = mDungeon[i]->getObjectByTexture(Marker_EnterID);
+                    startobj = mDungeon.back()->getObjectByTexture(Marker_EnterID);
                 }
                 if(startobj == InvalidHandle)
-                    startobj = mDungeon[i]->getObjectByTexture(Marker_StartID);
+                    startobj = mDungeon.back()->getObjectByTexture(Marker_StartID);
 
                 if(startobj == InvalidHandle)
                     mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
@@ -553,7 +550,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
                 {
                     Position pos = Placeable::get().getPos(startobj);
                     mCameraPos = osg::componentMultiply(
-                        -(pos.mPoint + osg::Vec3f(dinfo.mBlocks[i].mX*2048.0f, 0.0f, dinfo.mBlocks[i].mZ*2048.0f)),
+                        -(pos.mPoint + osg::Vec3f(block.mX*2048.0f, 0.0f, block.mZ*2048.0f)),
                         osg::Vec3f(1.0f, -1.0f, -1.0f)
                     );
                 }

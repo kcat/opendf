@@ -75,7 +75,7 @@ struct ObjectBase : public Referenceable {
     ObjectBase(size_t id, uint8_t type, int x, int y, int z);
     virtual ~ObjectBase();
 
-    void loadAction(std::istream &stream, DBlockHeader &block);
+    void loadAction(std::istream &stream);
 
     virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) = 0;
 
@@ -142,9 +142,7 @@ struct DBlockHeader {
 
     ~DBlockHeader();
 
-    void load(std::istream &stream, size_t blockid);
-
-    void buildNodes(osg::Group *root, int x, int z, size_t regnum, size_t locnum);
+    void load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum, osg::Group *root);
     void detachNode();
 
     ObjectBase *getObject(size_t id);

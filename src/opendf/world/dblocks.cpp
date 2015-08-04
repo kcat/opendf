@@ -37,7 +37,7 @@ ObjectBase::~ObjectBase()
     Activator::get().deallocate(mId);
 }
 
-void ObjectBase::loadAction(std::istream &stream, DBlockHeader &block)
+void ObjectBase::loadAction(std::istream &stream)
 {
     if(mActionOffset <= 0)
         return;
@@ -216,7 +216,7 @@ DBlockHeader::~DBlockHeader()
 }
 
 
-void DBlockHeader::load(std::istream &stream, size_t blockid)
+void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum, osg::Group *root)
 {
     mUnknown1 = VFS::read_le32(stream);
     mWidth = VFS::read_le32(stream);
@@ -269,21 +269,11 @@ void DBlockHeader::load(std::istream &stream, size_t blockid)
     }
 
     for(ref_ptr<ObjectBase> &obj : mObjects)
-        obj->loadAction(stream, *this);
-}
+        obj->loadAction(stream);
 
-
-void DBlockHeader::buildNodes(osg::Group *root, int x, int z, size_t regnum, size_t locnum)
-{
-    if(!mBaseNode)
-    {
-        osg::ref_ptr<osg::MatrixTransform> base(new osg::MatrixTransform());
-        base->setMatrix(osg::Matrix::translate(x*2048.0f, 0.0f, z*2048.0f));
-        mBaseNode = base;
-
-        for(ref_ptr<ObjectBase> &obj : mObjects)
-            obj->buildNodes(mBaseNode.get(), regnum, locnum);
-    }
+    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
+    for(ref_ptr<ObjectBase> &obj : mObjects)
+        obj->buildNodes(mBaseNode.get(), regnum, locnum);
 
     root->addChild(mBaseNode);
 }
