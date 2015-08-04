@@ -1,6 +1,8 @@
 
 #include "pipeline.hpp"
 
+#include <SDL_opengl.h>
+
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/TextureRectangle>
