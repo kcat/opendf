@@ -77,7 +77,7 @@ struct ObjectBase : public Referenceable {
 
     void loadAction(std::istream &stream, DBlockHeader &block);
 
-    virtual void buildNodes(osg::Group *root) = 0;
+    virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) = 0;
 
     virtual void print(std::ostream &stream) const;
 };
@@ -96,7 +96,7 @@ struct ModelObject : public ObjectBase {
 
     void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata);
 
-    virtual void buildNodes(osg::Group *root) final;
+    virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) final;
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -111,7 +111,7 @@ struct FlatObject : public ObjectBase {
     FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
     void load(std::istream &stream);
 
-    virtual void buildNodes(osg::Group *root) final;
+    virtual void buildNodes(osg::Group *root, size_t regnum, size_t locnum) final;
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -144,7 +144,7 @@ struct DBlockHeader {
 
     void load(std::istream &stream, size_t blockid);
 
-    void buildNodes(osg::Group *root, int x, int z);
+    void buildNodes(osg::Group *root, int x, int z, size_t regnum, size_t locnum);
     void detachNode();
 
     ObjectBase *getObject(size_t id);

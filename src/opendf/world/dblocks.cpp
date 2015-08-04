@@ -18,6 +18,7 @@
 #include "class/linker.hpp"
 #include "class/mover.hpp"
 #include "class/door.hpp"
+#include "class/exitdoor.hpp"
 
 
 namespace DF
@@ -127,7 +128,7 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     mModelData = mdldata.at(mModelIdx);
 }
 
-void ModelObject::buildNodes(osg::Group *root)
+void ModelObject::buildNodes(osg::Group *root, size_t regnum, size_t locnum)
 {
     if(mModelData[0] == -1)
         return;
@@ -148,6 +149,11 @@ void ModelObject::buildNodes(osg::Group *root)
     {
         Door::get().allocate(mId, 0.0f);
         Activator::get().allocate(mId, mActionFlags|0x02, Door::activateFunc, ~static_cast<size_t>(0), Door::deallocateFunc);
+    }
+    else if(mModelData[5] == 'E' && mModelData[6] == 'X' && mModelData[7] == 'T')
+    {
+        ExitDoor::get().allocate(mId, regnum, locnum);
+        Activator::get().allocate(mId, mActionFlags|0x02, ExitDoor::activateFunc, ~static_cast<size_t>(0), ExitDoor::deallocateFunc);
     }
     Renderer::get().setNode(mId, node);
     Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(mXRot, mYRot, mZRot));
@@ -176,7 +182,7 @@ void FlatObject::load(std::istream &stream)
     mUnknown = stream.get();
 }
 
-void FlatObject::buildNodes(osg::Group *root)
+void FlatObject::buildNodes(osg::Group *root, size_t /*regnum*/, size_t /*locnum*/)
 {
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
     node->setNodeMask(Renderer::Mask_Flat);
@@ -267,7 +273,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid)
 }
 
 
-void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
+void DBlockHeader::buildNodes(osg::Group *root, int x, int z, size_t regnum, size_t locnum)
 {
     if(!mBaseNode)
     {
@@ -276,7 +282,7 @@ void DBlockHeader::buildNodes(osg::Group *root, int x, int z)
         mBaseNode = base;
 
         for(ref_ptr<ObjectBase> &obj : mObjects)
-            obj->buildNodes(mBaseNode.get());
+            obj->buildNodes(mBaseNode.get(), regnum, locnum);
     }
 
     root->addChild(mBaseNode);

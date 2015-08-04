@@ -18,6 +18,7 @@
 #include "class/linker.hpp"
 #include "class/mover.hpp"
 #include "class/door.hpp"
+#include "class/exitdoor.hpp"
 #include "gui/iface.hpp"
 #include "mblocks.hpp"
 #include "dblocks.hpp"
@@ -533,7 +534,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
 
         for(size_t i = 0;i < mDungeon.size();++i)
         {
-            mDungeon[i]->buildNodes(mSceneRoot, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ);
+            mDungeon[i]->buildNodes(mSceneRoot, dinfo.mBlocks[i].mX, dinfo.mBlocks[i].mZ, regnum, extid);
 
             if(dinfo.mBlocks[i].mStartBlock)
             {
@@ -587,6 +588,7 @@ void World::update(float timediff)
 
     if(guimode <= GuiIface::Mode_Cursor)
     {
+        ExitDoor::get().update();
         Linker::get().update();
         Mover::get().update(timediff);
         Door::get().update(timediff);
