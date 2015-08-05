@@ -52,8 +52,7 @@ struct MFlat : public MObjectBase {
     uint8_t mFlags;
 
     void load(std::istream &stream);
-
-    void buildNodes(osg::Group *root);
+    void allocate(osg::Group *root);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -83,8 +82,7 @@ struct MModel : public MObjectBase {
     uint16_t mNullValue4;
 
     void load(std::istream &stream);
-
-    void buildNodes(osg::Group *root);
+    void allocate(osg::Group *root);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -110,11 +108,12 @@ struct MBlock {
 
     osg::ref_ptr<osg::Group> mBaseNode;
 
-    ~MBlock();
+    ~MBlock() { deallocate(); }
 
-    void load(std::istream &stream, size_t blockid);
+    void load(std::istream &stream, size_t blockid, int x, int z, int yrot, osg::Group *root);
 
-    void buildNodes(osg::Group *root, int x, int z, int yrot);
+    void allocate();
+    void deallocate();
 
     MObjectBase *getObject(size_t id);
 };
@@ -157,10 +156,9 @@ struct MBlockHeader {
     osg::ref_ptr<osg::Group> mBaseNode;
 
     ~MBlockHeader();
+    void deallocate();
 
-    void load(std::istream &stream, size_t blockid);
-
-    void buildNodes(osg::Group *root, int x, int z);
+    void load(std::istream &stream, size_t blockid, float x, float z, osg::Group *root);
     void detachNode();
 
     MObjectBase *getObject(size_t id);

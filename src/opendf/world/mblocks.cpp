@@ -55,7 +55,7 @@ void MFlat::load(std::istream &stream)
     mFlags = stream.get();
 }
 
-void MFlat::buildNodes(osg::Group *root)
+void MFlat::allocate(osg::Group *root)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Flat);
@@ -108,7 +108,7 @@ void MModel::load(std::istream &stream)
     mNullValue4 = VFS::read_le16(stream);
 }
 
-void MModel::buildNodes(osg::Group *root)
+void MModel::allocate(osg::Group *root)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Static);
@@ -140,22 +140,14 @@ void MModel::print(std::ostream &stream) const
 }
 
 
-MBlock::~MBlock()
+void MBlock::load(std::istream &stream, size_t blockid, int x, int z, int yrot, osg::Group *root)
 {
-    if(!mModels.empty())
-    {
-        Renderer::get().remove(&*mModels.getIdList(), mModels.size());
-        Placeable::get().deallocate(&*mModels.getIdList(), mModels.size());
-    }
-    if(!mFlats.empty())
-    {
-        Renderer::get().remove(&*mFlats.getIdList(), mFlats.size());
-        Placeable::get().deallocate(&*mFlats.getIdList(), mFlats.size());
-    }
-}
+    osg::Matrix mat(osg::Matrix::rotate(
+        -yrot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f)
+    ));
+    mat.postMultTranslate(osg::Vec3(x, 0.0f, -z));
+    mBaseNode = new osg::MatrixTransform(mat);
 
-void MBlock::load(std::istream &stream, size_t blockid)
-{
     mModelCount = stream.get();
     mFlatCount = stream.get();
     mSection3Count = stream.get();
@@ -191,26 +183,34 @@ void MBlock::load(std::istream &stream, size_t blockid)
     mDoors.resize(mDoorCount);
     for(MDoor &door : mDoors)
         door.load(stream);
-}
-
-void MBlock::buildNodes(osg::Group *root, int x, int z, int yrot)
-{
-    if(!mBaseNode)
-    {
-        osg::Matrix mat(osg::Matrix::rotate(
-            -yrot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f)
-        ));
-        mat.postMultTranslate(osg::Vec3(x, 0.0f, -z));
-
-        mBaseNode = new osg::MatrixTransform(mat);
-        for(MModel &model : mModels)
-            model.buildNodes(mBaseNode);
-        for(MFlat &flat : mFlats)
-            flat.buildNodes(mBaseNode);
-    }
 
     root->addChild(mBaseNode);
 }
+
+void MBlock::allocate()
+{
+    for(MModel &model : mModels)
+        model.allocate(mBaseNode);
+    for(MFlat &flat : mFlats)
+        flat.allocate(mBaseNode);
+}
+
+void MBlock::deallocate()
+{
+    if(mBaseNode)
+        mBaseNode->removeChildren(0, mBaseNode->getNumChildren());
+    if(!mModels.empty())
+    {
+        Renderer::get().remove(&*mModels.getIdList(), mModels.size());
+        Placeable::get().deallocate(&*mModels.getIdList(), mModels.size());
+    }
+    if(!mFlats.empty())
+    {
+        Renderer::get().remove(&*mFlats.getIdList(), mFlats.size());
+        Placeable::get().deallocate(&*mFlats.getIdList(), mFlats.size());
+    }
+}
+
 
 MObjectBase *MBlock::getObject(size_t id)
 {
@@ -233,6 +233,11 @@ void MBlockPosition::load(std::istream &stream)
 MBlockHeader::~MBlockHeader()
 {
     detachNode();
+    deallocate();
+}
+
+void MBlockHeader::deallocate()
+{
     if(!mModels.empty())
     {
         Renderer::get().remove(&*mModels.getIdList(), mModels.size());
@@ -245,8 +250,11 @@ MBlockHeader::~MBlockHeader()
     }
 }
 
-void MBlockHeader::load(std::istream &stream, size_t blockid)
+
+void MBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, osg::Group *root)
 {
+    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
+
     mBlockCount = stream.get();
     mModelCount = stream.get();
     mFlatCount = stream.get();
@@ -284,8 +292,13 @@ void MBlockHeader::load(std::istream &stream, size_t blockid)
     for(size_t i = 0;i < mBlockCount;++i)
     {
         size_t pos = stream.tellg();
-        mExteriorBlocks[i].load(stream, blockid | (i<<17) | 0x00000);
-        mInteriorBlocks[i].load(stream, blockid | (i<<17) | 0x10000);
+        mExteriorBlocks[i].load(stream, blockid | (i<<17) | 0x00000,
+                                mBlockPositions[i].mX, mBlockPositions[i].mZ,
+                                mBlockPositions[i].mYRot, mBaseNode);
+
+        mInteriorBlocks[i].load(stream, blockid | (i<<17) | 0x10000,
+                                mBlockPositions[i].mX, mBlockPositions[i].mZ,
+                                mBlockPositions[i].mYRot, mBaseNode);
         stream.seekg(pos + mBlockSizes[i]);
     }
 
@@ -303,31 +316,15 @@ void MBlockHeader::load(std::istream &stream, size_t blockid)
         flat.mId = blockid | 0x00ff0000 | (mModelCount+i);
         flat.load(stream);
     }
-}
-
-void MBlockHeader::buildNodes(osg::Group *root, int x, int z)
-{
-    if(!mBaseNode)
-    {
-        osg::Matrix mat(osg::Matrix::translate(
-            osg::Vec3(x*4096.0f, 0.0f, z*4096.0f)
-        ));
-
-        mBaseNode = new osg::MatrixTransform(mat);
-        for(size_t i = 0;i < mBlockCount;++i)
-        {
-            MBlock &block = mExteriorBlocks[i];
-            block.buildNodes(mBaseNode, mBlockPositions[i].mX, mBlockPositions[i].mZ,
-                             mBlockPositions[i].mYRot);
-        }
-
-        for(MModel &model : mModels)
-            model.buildNodes(mBaseNode);
-        for(MFlat &flat : mFlats)
-            flat.buildNodes(mBaseNode);
-    }
 
     root->addChild(mBaseNode);
+
+    for(size_t i = 0;i < mBlockCount;++i)
+        mExteriorBlocks[i].allocate();
+    for(MModel &model : mModels)
+        model.allocate(mBaseNode);
+    for(MFlat &flat : mFlats)
+        flat.allocate(mBaseNode);
 }
 
 void MBlockHeader::detachNode()
@@ -339,6 +336,7 @@ void MBlockHeader::detachNode()
         parent->removeChild(mBaseNode);
     }
 }
+
 
 MObjectBase *MBlockHeader::getObject(size_t id)
 {

@@ -445,6 +445,8 @@ void World::loadExterior(int regnum, int extid)
 
     Log::get().stream()<< "Entering "<<extloc.mLocationName;
     size_t count = extloc.mWidth * extloc.mHeight;
+    size_t startobj = InvalidHandle;
+
     mExterior.reserve(count);
     for(size_t i = 0;i < count;++i)
     {
@@ -462,23 +464,18 @@ void World::loadExterior(int regnum, int extid)
         VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
         if(!stream) throw std::runtime_error("Failed to open "+name);
 
-        mExterior.push_back(std::unique_ptr<MBlockHeader>(new MBlockHeader()));
-        mExterior.back()->load(*stream, i<<24);
-    }
-
-    size_t startobj = InvalidHandle;
-    for(size_t i = 0;i < mExterior.size();++i)
-    {
         int x = i%extloc.mWidth;
         int y = i/extloc.mWidth;
-        mExterior[i]->buildNodes(mSceneRoot, x, y);
+
+        mExterior.push_back(std::unique_ptr<MBlockHeader>(new MBlockHeader()));
+        mExterior.back()->load(*stream, i<<24, x*4096.0f, y*4096.0f, mSceneRoot);
 
         if(startobj != InvalidHandle)
             continue;
 
-        startobj = mExterior[i]->getObjectByTexture(Marker_EnterID);
+        startobj = mExterior.back()->getObjectByTexture(Marker_EnterID);
         if(startobj == InvalidHandle)
-            startobj = mExterior[i]->getObjectByTexture(Marker_StartID);
+            startobj = mExterior.back()->getObjectByTexture(Marker_StartID);
 
         if(startobj != InvalidHandle)
         {
