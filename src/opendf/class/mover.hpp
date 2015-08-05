@@ -2,33 +2,41 @@
 #define CLASS_MOVER_HPP
 
 #include "misc/sparsearray.hpp"
+
 #include <osg/Vec3>
+#include <osg/Quat>
 
 
 namespace DF
 {
 
-struct MoverData {
-    size_t mId;
-    osg::Vec3f mOrig;
-    osg::Vec3f mAmount;
-    float mDuration;
-};
-
 class Mover {
     static Mover sMovers;
 
+    struct TranslateData {
+        size_t mId;
+        osg::Vec3f mOrig;
+        osg::Vec3f mAmount;
+        float mDuration;
+    };
+    struct RotateData {
+        size_t mId;
+        osg::Quat mOrig;
+        osg::Vec3f mAmount;
+        float mDuration;
+    };
+
     Misc::SparseArray<size_t> mSoundIds;
 
-    Misc::SparseArray<MoverData> mTranslateStart;
-    Misc::SparseArray<std::pair<MoverData,float>> mActiveTrans;
-    Misc::SparseArray<MoverData> mTranslateEnd;
-    Misc::SparseArray<std::pair<MoverData,float>> mActiveTransRev;
+    Misc::SparseArray<TranslateData> mTranslateStart;
+    Misc::SparseArray<std::pair<TranslateData,float>> mActiveTrans;
+    Misc::SparseArray<TranslateData> mTranslateEnd;
+    Misc::SparseArray<std::pair<TranslateData,float>> mActiveTransRev;
 
-    Misc::SparseArray<MoverData> mRotateStart;
-    Misc::SparseArray<std::pair<MoverData,float>> mActiveRot;
-    Misc::SparseArray<MoverData> mRotateEnd;
-    Misc::SparseArray<std::pair<MoverData,float>> mActiveRotRev;
+    Misc::SparseArray<RotateData> mRotateStart;
+    Misc::SparseArray<std::pair<RotateData,float>> mActiveRot;
+    Misc::SparseArray<RotateData> mRotateEnd;
+    Misc::SparseArray<std::pair<RotateData,float>> mActiveRotRev;
 
 public:
     void allocateTranslate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration);
