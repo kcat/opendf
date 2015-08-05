@@ -491,7 +491,7 @@ void World::loadExterior(int regnum, int extid)
         Log::get().message("Failed to find enter or start markers", Log::Level_Error);
         mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
     }
-    mCameraRot = osg::Vec3f(0.0f, 180.0f, 0.0f);
+    mCameraRot = osg::Vec3f(0.0f, 1024.0f, 0.0f);
 }
 
 void World::loadDungeonByExterior(int regnum, int extid)
@@ -551,7 +551,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
                         osg::Vec3f(1.0f, -1.0f, -1.0f)
                     );
                 }
-                mCameraRot = osg::Vec3f(0.0f, 180.0f, 0.0f);
+                mCameraRot = osg::Vec3f(0.0f, 1024.0f, 0.0f);
             }
         }
         break;
@@ -562,16 +562,16 @@ void World::loadDungeonByExterior(int regnum, int extid)
 void World::move(float xrel, float yrel, float zrel)
 {
     osg::Matrixf matf(osg::Matrixf::rotate(
-                                   0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f),
-         mCameraRot.y()*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-        -mCameraRot.x()*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f)
+                                    0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f),
+         mCameraRot.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+        -mCameraRot.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f)
     ));
     mCameraPos += matf*osg::Vec3f(xrel, yrel, zrel);
 }
 
 void World::rotate(float xrel, float yrel)
 {
-    mCameraRot.x() = std::min(std::max(mCameraRot.x()+xrel, -89.0f), 89.0f);
+    mCameraRot.x() = std::min(std::max(mCameraRot.x()+xrel, -511.0f), 511.0f);
     mCameraRot.y() += yrel;
 }
 
@@ -591,9 +591,9 @@ void World::update(float timediff)
     Renderer::get().update();
 
     osg::Matrixf matf(osg::Matrixf::rotate(
-                                   0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f),
-         mCameraRot.y()*3.14159f/180.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-        -mCameraRot.x()*3.14159f/180.0f, osg::Vec3f(1.0f, 0.0f, 0.0f)
+                                    0.0f, osg::Vec3f(0.0f, 0.0f, 1.0f),
+         mCameraRot.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
+        -mCameraRot.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f)
     ));
     matf.preMultTranslate(mCameraPos);
     mViewer->getCamera()->setViewMatrix(matf);

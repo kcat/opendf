@@ -24,8 +24,9 @@ void Renderer::remove(const size_t *ids, size_t count)
 
 void Renderer::markDirty(size_t idx, const Position &pos)
 {
-    if(mBaseNodes.exists(idx))
-        mDirtyNodes.push({mBaseNodes[idx], pos});
+    auto iter = mBaseNodes.find(idx);
+    if(iter != mBaseNodes.end())
+        mDirtyNodes.push({*iter, pos});
 }
 
 void Renderer::update()

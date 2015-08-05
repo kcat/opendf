@@ -59,7 +59,27 @@ void Input::update(float timediff)
         SDL_PushEvent(&evt);
     }
 
-    if(GuiIface::get().getMode() <= GuiIface::Mode_Cursor)
+    GuiIface::Mode guimode = GuiIface::get().getMode();
+    if(guimode == GuiIface::Mode_Cursor)
+    {
+        float xpos, ypos;
+        float xrel, yrel;
+
+        GuiIface::get().getMousePosition(xpos, ypos);
+        if(xpos < 0.125f) yrel = -512.0f;
+        else if(xpos > 0.865f) yrel = 512.0f;
+        else yrel = 0.0f;
+
+        if(*i_inverty)
+            ypos = 1.0f - ypos;
+        if(ypos < 0.125f) xrel = 512.0f;
+        else if(ypos > 0.865f) xrel = -512.0f;
+        else xrel = 0.0f;
+
+        if(xrel != 0.0f || yrel != 0.0f)
+            WorldIface::get().rotate(xrel*timediff, yrel*timediff);
+    }
+    if(guimode <= GuiIface::Mode_Cursor)
     {
         float speed = 64.0f * timediff;
         if(keystate[SDL_SCANCODE_LSHIFT])
@@ -91,9 +111,9 @@ void Input::handleMouseMotionEvent(const SDL_MouseMotionEvent &evt)
     if(GuiIface::get().getMode() == GuiIface::Mode_Game)
     {
         if(*i_inverty)
-            WorldIface::get().rotate(evt.yrel * 0.1f, evt.xrel * 0.1f);
+            WorldIface::get().rotate(evt.yrel, evt.xrel);
         else
-            WorldIface::get().rotate(evt.yrel * -0.1f, evt.xrel * 0.1f);
+            WorldIface::get().rotate(-evt.yrel, evt.xrel);
     }
 
     mMouseX = evt.x;
