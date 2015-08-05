@@ -18,6 +18,64 @@
 namespace DF
 {
 
+struct MSection3 : public MObjectBase {
+    uint16_t mUnknown1;
+    uint16_t mUnknown2;
+
+    void load(std::istream &stream);
+};
+
+struct MDoor : public MObjectBase {
+    uint16_t mUnknown1;
+    int16_t mRotation;
+    uint16_t mUnknown2;
+    uint8_t mNullValue;
+
+    void load(std::istream &stream);
+};
+
+struct MFlat : public MObjectBase {
+    uint16_t mTexture;
+    uint16_t mUnknown;
+    uint8_t mFlags;
+
+    void load(std::istream &stream);
+    void allocate(osg::Group *root);
+
+    virtual void print(std::ostream &stream) const;
+};
+
+struct MPerson : public MObjectBase {
+    uint16_t mTexture;
+    uint16_t mFactionId;
+
+    void load(std::istream &stream);
+};
+
+struct MModel : public MObjectBase {
+    uint32_t mModelIdx; /* le16*100 + byte */
+    uint8_t  mUnknown1;
+    uint32_t mUnknown2;
+    uint32_t mUnknown3;
+    uint32_t mUnknown4;
+    uint32_t mNullValue1;
+    uint32_t mNullValue2;
+    int32_t  mUnknownX, mUnknownY, mUnknownZ;
+    //int32_t  mXPos, mYPos, mZPos;
+    uint32_t mNullValue3;
+    int16_t  mYRotation;
+    uint16_t mUnknown5;
+    uint32_t mUnknown6;
+    uint32_t mUnknown8;
+    uint16_t mNullValue4;
+
+    void load(std::istream &stream);
+    void allocate(osg::Group *root);
+
+    virtual void print(std::ostream &stream) const;
+};
+
+
 void MObjectBase::load(std::istream &stream)
 {
     mXPos = VFS::read_le32(stream);
@@ -140,6 +198,10 @@ void MModel::print(std::ostream &stream) const
 }
 
 
+MBlock::MBlock() { }
+MBlock::~MBlock()
+{ deallocate(); }
+
 void MBlock::load(std::istream &stream, size_t blockid, int x, int z, int yrot, osg::Group *root)
 {
     osg::Matrix mat(osg::Matrix::rotate(
@@ -230,6 +292,7 @@ void MBlockPosition::load(std::istream &stream)
 }
 
 
+MBlockHeader::MBlockHeader() { }
 MBlockHeader::~MBlockHeader()
 {
     detachNode();

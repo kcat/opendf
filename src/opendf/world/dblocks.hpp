@@ -26,42 +26,6 @@ namespace DF
 struct ObjectBase;
 struct DBlockHeader;
 
-
-enum ActionType {
-    // Maybe flags?
-    Action_Translate = 0x01,
-    Action_Rotate    = 0x08,
-    Action_Linker    = 0x1e
-};
-
-struct ActionTranslate {
-    enum Axis {
-        Axis_X    = 0x01,
-        Axis_NegX = 0x02,
-        Axis_Y    = 0x03,
-        Axis_NegY = 0x04,
-        Axis_Z    = 0x05,
-        Axis_NegZ = 0x06
-    };
-};
-struct ActionRotate {
-    enum Axis {
-        Axis_X    = 0x01,
-        Axis_NegX = 0x02,
-        Axis_NegY = 0x03,
-        Axis_Y    = 0x04,
-        Axis_NegZ = 0x05,
-        Axis_Z    = 0x06
-    };
-};
-
-
-enum ObjectType {
-    ObjectType_Model = 0x01,
-    ObjectType_Light = 0x02,
-    ObjectType_Flat = 0x03,
-};
-
 struct ObjectBase : public Referenceable {
     size_t mId;
     uint8_t mType;
@@ -80,35 +44,6 @@ struct ObjectBase : public Referenceable {
     virtual void print(std::ostream &stream) const;
 };
 
-struct ModelObject : public ObjectBase {
-    //int32_t mXRot, mYRot, mZRot;
-
-    uint16_t mModelIdx;
-    //uint32_t mActionFlags;
-    //uint8_t mSoundId;
-    //int32_t  mActionOffset;
-
-    std::array<char,8> mModelData;
-
-    ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
-
-    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, osg::Group *root);
-
-    virtual void print(std::ostream &stream) const final;
-};
-
-struct FlatObject : public ObjectBase {
-    uint16_t mTexture;
-    uint16_t mGender; // Flags?
-    uint16_t mFactionId;
-    //int32_t mActionOffset; // Maybe?
-    uint8_t mUnknown;
-
-    FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
-    void load(std::istream &stream, osg::Group *root);
-
-    virtual void print(std::ostream &stream) const final;
-};
 enum {
     Marker_EnterID = 0x6388,
     Marker_StartID = 0x638A

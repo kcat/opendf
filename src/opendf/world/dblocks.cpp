@@ -21,8 +21,98 @@
 #include "class/exitdoor.hpp"
 
 
+namespace
+{
+
+enum ActionType {
+    // Maybe flags?
+    Action_Translate = 0x01,
+    Action_Rotate    = 0x08,
+    Action_Linker    = 0x1e
+};
+
+struct ActionTranslate {
+    enum Axis {
+        Axis_X    = 0x01,
+        Axis_NegX = 0x02,
+        Axis_Y    = 0x03,
+        Axis_NegY = 0x04,
+        Axis_Z    = 0x05,
+        Axis_NegZ = 0x06
+    };
+};
+struct ActionRotate {
+    enum Axis {
+        Axis_X    = 0x01,
+        Axis_NegX = 0x02,
+        Axis_NegY = 0x03,
+        Axis_Y    = 0x04,
+        Axis_NegZ = 0x05,
+        Axis_Z    = 0x06
+    };
+};
+
+
+enum ObjectType {
+    ObjectType_Model = 0x01,
+    ObjectType_Light = 0x02,
+    ObjectType_Flat = 0x03,
+};
+
+
+template<typename T>
+void getActionData(const std::array<uint8_t,5> &data, osg::Vec3f &amount, float &duration)
+{
+    if(data[0] == T::Axis_X)
+        amount.x() += data[3] | (data[4]<<8);
+    else if(data[0] == T::Axis_NegX)
+        amount.x() -= data[3] | (data[4]<<8);
+    else if(data[0] == T::Axis_Y)
+        amount.y() += data[3] | (data[4]<<8);
+    else if(data[0] == T::Axis_NegY)
+        amount.y() -= data[3] | (data[4]<<8);
+    else if(data[0] == T::Axis_Z)
+        amount.z() += data[3] | (data[4]<<8);
+    else if(data[0] == T::Axis_NegZ)
+        amount.z() -= data[3] | (data[4]<<8);
+    duration = (data[1] | (data[2]<<8)) / 16.0f;
+}
+
+}
+
 namespace DF
 {
+
+struct ModelObject : public ObjectBase {
+    //int32_t mXRot, mYRot, mZRot;
+
+    uint16_t mModelIdx;
+    //uint32_t mActionFlags;
+    //uint8_t mSoundId;
+    //int32_t  mActionOffset;
+
+    std::array<char,8> mModelData;
+
+    ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
+
+    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, osg::Group *root);
+
+    virtual void print(std::ostream &stream) const final;
+};
+
+struct FlatObject : public ObjectBase {
+    uint16_t mTexture;
+    uint16_t mGender; // Flags?
+    uint16_t mFactionId;
+    //int32_t mActionOffset; // Maybe?
+    uint8_t mUnknown;
+
+    FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
+    void load(std::istream &stream, osg::Group *root);
+
+    virtual void print(std::ostream &stream) const final;
+};
+
 
 ObjectBase::ObjectBase(size_t id, uint8_t type, int x, int y, int z)
   : mId(id), mType(type)
@@ -53,20 +143,9 @@ void ObjectBase::loadAction(std::istream &stream)
 
     if(type == Action_Translate)
     {
-        osg::Vec3 amount;
-        if(adata[0] == ActionTranslate::Axis_X)
-            amount.x() += adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionTranslate::Axis_NegX)
-            amount.x() -= adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionTranslate::Axis_Y)
-            amount.y() += adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionTranslate::Axis_NegY)
-            amount.y() -= adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionTranslate::Axis_Z)
-            amount.z() += adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionTranslate::Axis_NegZ)
-            amount.z() -= adata[3] | (adata[4]<<8);
-        float duration = (adata[1] | (adata[2]<<8)) / 16.0f;
+        osg::Vec3f amount;
+        float duration;
+        getActionData<ActionTranslate>(adata, amount, duration);
 
         Mover::get().allocateTranslate(mId, mSoundId, osg::Vec3f(mXPos, mYPos, mZPos), amount, duration);
         Activator::get().allocate(mId, mActionFlags, Mover::activateTranslateFunc,
@@ -75,20 +154,9 @@ void ObjectBase::loadAction(std::istream &stream)
     }
     else if(type == Action_Rotate)
     {
-        osg::Vec3 amount;
-        if(adata[0] == ActionRotate::Axis_X)
-            amount.x() += adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionRotate::Axis_NegX)
-            amount.x() -= adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionRotate::Axis_Y)
-            amount.y() += adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionRotate::Axis_NegY)
-            amount.y() -= adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionRotate::Axis_Z)
-            amount.z() += adata[3] | (adata[4]<<8);
-        else if(adata[0] == ActionRotate::Axis_NegZ)
-            amount.z() -= adata[3] | (adata[4]<<8);
-        float duration = (adata[1] | (adata[2]<<8)) / 16.0f;
+        osg::Vec3f amount;
+        float duration;
+        getActionData<ActionRotate>(adata, amount, duration);
 
         Mover::get().allocateRotate(mId, mSoundId, osg::Vec3f(mXRot, mYRot, mZRot), amount, duration);
         Activator::get().allocate(mId, mActionFlags, Mover::activateRotateFunc,
