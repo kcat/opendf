@@ -1,13 +1,15 @@
 #ifndef CLASS_DOOR_HPP
 #define CLASS_DOOR_HPP
 
+#include <osg/Vec3>
+
 #include "misc/sparsearray.hpp"
 
 
 namespace DF
 {
 
-typedef std::pair<size_t,float> DoorData;
+typedef std::pair<size_t,osg::Vec3f> DoorData;
 typedef std::pair<DoorData,float> DoorActiveData;
 
 /* This duplicates a fair amount of the Mover class's rotate activator type,
@@ -23,7 +25,7 @@ class Door {
     Misc::SparseArray<DoorActiveData> mClosing;
 
 public:
-    void allocate(size_t idx, float yrot);
+    void allocate(size_t idx, const osg::Vec3f &orig);
     void deallocate(size_t idx);
 
     void activate(size_t idx);

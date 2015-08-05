@@ -34,23 +34,12 @@ void Renderer::update()
     {
         const NodePosPair &nodepos = mDirtyNodes.top();
 
-        const Position &pos = nodepos.mPosition;
         osg::Matrix mat;
-        mat.makeRotate(
-             pos.mRotation.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-            -pos.mRotation.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-             pos.mRotation.z()*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-        );
-        mat.postMultRotate(osg::Quat(
-             pos.mLocalRotation.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-            -pos.mLocalRotation.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-             pos.mLocalRotation.z()*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-        ));
-        mat.postMultTranslate(osg::Vec3(pos.mPoint.x(), pos.mPoint.y(), pos.mPoint.z()));
+        mat.makeRotate(nodepos.mPosition.mOrientation);
+        mat.postMultTranslate(nodepos.mPosition.mPoint);
 
-        osg::MatrixTransform *node = nodepos.mNode;
-        //node->setDataVariance(osg::Node::DYNAMIC);
-        node->setMatrix(mat);
+        //nodepos.mNode->setDataVariance(osg::Node::DYNAMIC);
+        nodepos.mNode->setMatrix(mat);
 
         mDirtyNodes.pop();
     }

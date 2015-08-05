@@ -124,8 +124,16 @@ void Mover::update(float timediff)
     {
         iter->second = std::min(iter->second+timediff, iter->first.mDuration);
         float delta = iter->second / iter->first.mDuration;
-        osg::Vec3 rot = iter->first.mOrig + (iter->first.mAmount*delta);
-        Placeable::get().setLocalRot(iter->first.mId, rot);
+        osg::Quat ori = osg::Quat(
+             iter->first.mOrig.x()*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
+            -iter->first.mOrig.y()*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+             iter->first.mOrig.z()*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
+        ) * osg::Quat(
+             iter->first.mAmount.x()*delta*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
+            -iter->first.mAmount.y()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+             iter->first.mAmount.z()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
+        );
+        Placeable::get().setRotate(iter->first.mId, ori);
 
         if(iter->second < iter->first.mDuration)
             ++iter;
@@ -141,8 +149,16 @@ void Mover::update(float timediff)
     {
         iter->second = std::min(iter->second+timediff, iter->first.mDuration);
         float delta = 1.0f - (iter->second / iter->first.mDuration);
-        osg::Vec3 rot = iter->first.mOrig + (iter->first.mAmount*delta);
-        Placeable::get().setLocalRot(iter->first.mId, rot);
+        osg::Quat ori = osg::Quat(
+             iter->first.mOrig.x()*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
+            -iter->first.mOrig.y()*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+             iter->first.mOrig.z()*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
+        ) * osg::Quat(
+             iter->first.mAmount.x()*delta*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
+            -iter->first.mAmount.y()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+             iter->first.mAmount.z()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
+        );
+        Placeable::get().setRotate(iter->first.mId, ori);
 
         if(iter->second < iter->first.mDuration)
             ++iter;

@@ -17,25 +17,18 @@ void Placeable::deallocate(const size_t *ids, size_t count)
 }
 
 
-void Placeable::setPos(size_t idx, const osg::Vec3f &pt, const osg::Vec3f &rot)
+void Placeable::setPos(size_t idx, const osg::Vec3f &pt, const osg::Quat &ori)
 {
     Position &pos = mPositions[idx];
-    pos.mRotation = rot;
+    pos.mOrientation = ori;
     pos.mPoint = pt;
     Renderer::get().markDirty(idx, pos);
 }
 
-void Placeable::setRotate(size_t idx, const osg::Vec3f &rot)
+void Placeable::setRotate(size_t idx, const osg::Quat &ori)
 {
     Position &pos = mPositions[idx];
-    pos.mRotation = rot;
-    Renderer::get().markDirty(idx, pos);
-}
-
-void Placeable::setLocalRot(size_t idx, const osg::Vec3f &rot)
-{
-    Position &pos = mPositions[idx];
-    pos.mLocalRotation = rot;
+    pos.mOrientation = ori;
     Renderer::get().markDirty(idx, pos);
 }
 

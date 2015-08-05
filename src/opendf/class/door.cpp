@@ -13,9 +13,9 @@ namespace DF
 Door Door::sDoors;
 
 
-void Door::allocate(size_t idx, float yrot)
+void Door::allocate(size_t idx, const osg::Vec3f &orig)
 {
-    mClosed[idx] = std::make_pair(idx, yrot);
+    mClosed[idx] = std::make_pair(idx, orig);
 }
 
 void Door::deallocate(size_t idx)
@@ -52,8 +52,10 @@ void Door::update(float timediff)
     while(iter != mOpening.end())
     {
         iter->second = std::min(iter->second+(timediff/1.5f), 1.0f);
-        float yrot = iter->first.second + (512.0f*iter->second);
-        Placeable::get().setLocalRot(iter->first.first, osg::Vec3f(0.0f, yrot, 0.0f));
+        osg::Vec3f rot = iter->first.second;
+        rot.y() += 512.0f * iter->second;
+        Placeable::get().setRotate(iter->first.first, rot);
+
         if(iter->second < 1.0f)
             ++iter;
         else
@@ -67,8 +69,10 @@ void Door::update(float timediff)
     while(iter != mClosing.end())
     {
         iter->second = std::min(iter->second+(timediff/1.5f), 1.0f);
-        float yrot = iter->first.second + (512.0f*(1.0f-iter->second));
-        Placeable::get().setLocalRot(iter->first.first, osg::Vec3f(0.0f, yrot, 0.0f));
+        osg::Vec3f rot = iter->first.second;
+        rot.y() += 512.0f * (1.0f-iter->second);
+        Placeable::get().setRotate(iter->first.first, rot);
+
         if(iter->second < 1.0f)
             ++iter;
         else

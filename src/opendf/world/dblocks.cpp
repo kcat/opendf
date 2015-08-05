@@ -90,7 +90,7 @@ void ObjectBase::loadAction(std::istream &stream)
             amount.z() -= adata[3] | (adata[4]<<8);
         float duration = (adata[1] | (adata[2]<<8)) / 16.0f;
 
-        Mover::get().allocateRotate(mId, mSoundId, osg::Vec3f(0.0f, 0.0f, 0.0f), amount, duration);
+        Mover::get().allocateRotate(mId, mSoundId, osg::Vec3f(mXRot, mYRot, mZRot), amount, duration);
         Activator::get().allocate(mId, mActionFlags, Mover::activateRotateFunc,
                                   ((target > 0) ? target : ~static_cast<size_t>(0)),
                                   Mover::deallocateRotateFunc);
@@ -146,7 +146,7 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     // What to do if a door has an action?
     if(mActionOffset <= 0 && mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
     {
-        Door::get().allocate(mId, 0.0f);
+        Door::get().allocate(mId, osg::Vec3f(mXRot, mYRot, mZRot));
         Activator::get().allocate(mId, mActionFlags|0x02, Door::activateFunc, ~static_cast<size_t>(0), Door::deallocateFunc);
     }
     else if(mModelData[5] == 'E' && mModelData[6] == 'X' && mModelData[7] == 'T')
