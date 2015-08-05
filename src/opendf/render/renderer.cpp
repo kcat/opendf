@@ -17,8 +17,8 @@ void Renderer::setNode(size_t idx, osg::MatrixTransform *node)
 
 void Renderer::remove(const size_t *ids, size_t count)
 {
-    for(size_t i = 0;i < count;++i)
-        mBaseNodes.erase(ids[i]);
+    while(count > 0)
+        mBaseNodes.erase(ids[--count]);
 }
 
 

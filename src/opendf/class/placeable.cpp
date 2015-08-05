@@ -12,8 +12,8 @@ Placeable Placeable::sPlaceables;
 
 void Placeable::deallocate(const size_t *ids, size_t count)
 {
-    for(size_t i = 0;i < count;++i)
-        mPositions.erase(ids[i]);
+    while(count > 0)
+        mPositions.erase(ids[--count]);
 }
 
 
