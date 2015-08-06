@@ -92,7 +92,11 @@ struct MBlockHeader {
     // R: Rotation (90 degree increments)
     // T: Texture index, [0-64). File depends on location and weather.
     std::array<uint8_t,256> mGroundTexture;
-    std::array<uint8_t,256> mUnknown3;
+    // Ground scenery byte format: TTTTTTUU
+    // T: Flat texture index (+1?). File depends on location and weather.
+    // U: Unknown
+    // Value 0xff == nothing
+    std::array<uint8_t,256> mGroundScenery;
 
     std::array<uint8_t,4096> mAutomap;
 

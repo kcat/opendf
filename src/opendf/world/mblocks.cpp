@@ -344,7 +344,7 @@ void MBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
 
     stream.read(reinterpret_cast<char*>(mUnknown2.data()), mUnknown2.size());
     stream.read(reinterpret_cast<char*>(mGroundTexture.data()), mGroundTexture.size());
-    stream.read(reinterpret_cast<char*>(mUnknown3.data()), mUnknown3.size());
+    stream.read(reinterpret_cast<char*>(mGroundScenery.data()), mGroundScenery.size());
     stream.read(reinterpret_cast<char*>(mAutomap.data()), mAutomap.size());
 
     // Unused list? An array of 33 8.3 filenames are here...
