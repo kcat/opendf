@@ -145,7 +145,7 @@ std::string ExteriorLocation::getMapBlockName(size_t idx, size_t regnum) const
             if(mBlockIndex[idx] == 40)
                 q = 0;
         }
-        std::array<std::array<char,3>,12> letters{{
+        const std::array<std::array<char,3>,12> letters{{
             {"AA"}, {"BA"}, {"AL"}, {"BL"}, {"AM"}, {"BM"},
             {"AS"}, {"BS"}, {"GA"}, {"GL"}, {"GM"}, {"GS"}
         }};
