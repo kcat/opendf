@@ -2,6 +2,7 @@
 #include "exitdoor.hpp"
 
 #include "world/iface.hpp"
+#include "class/activator.hpp"
 
 
 namespace DF
@@ -36,6 +37,8 @@ void ExitDoor::update()
     if(iter != mActivatedExit.end())
     {
         auto pos = *iter;
+        while(iter != mActivatedExit.end())
+            Activator::get().deactivate(mActivatedExit.getKey(iter++));
         mActivatedExit.clear();
         WorldIface::get().loadExterior(pos.first, pos.second);
     }
