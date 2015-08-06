@@ -105,7 +105,6 @@ void ExteriorLocation::load(std::istream& stream)
     mNullValue3 = stream.get();
     for(uint32_t &val : mUnknown5)
         val = VFS::read_le32(stream);
-    stream.read(reinterpret_cast<char*>(mNullValue4), sizeof(mNullValue4));
     mUnknown6 = VFS::read_le32(stream);
 }
 

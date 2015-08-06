@@ -44,7 +44,6 @@ struct ExteriorLocation : public LocationHeader {
     uint32_t mNullValue2;
     uint8_t  mNullValue3;
     uint32_t mUnknown5[32];
-    uint8_t  mNullValue4[40];
     uint32_t mUnknown6;
 
     void load(std::istream &stream);
