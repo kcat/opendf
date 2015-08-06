@@ -59,6 +59,13 @@ struct DBlockHeader {
     std::array<std::array<char,8>,750> mModelData;
     std::array<uint32_t,750> mUnknown3;
 
+    uint32_t mUnknownOffset;
+    uint32_t mUnknown4;
+    uint32_t mUnknown5;
+    uint32_t mUnknown6;
+
+    std::vector<uint32_t> mUnknownList;
+
     /* Objects are stored in the files as an array of (width*height) root
      * offsets, which contain a linked list of objects. We merely use an array
      * of pointers to polymorphic objects, using its offset as a lookup. The

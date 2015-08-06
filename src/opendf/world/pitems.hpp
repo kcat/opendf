@@ -7,6 +7,8 @@
 namespace DF
 {
 
+class LogStream;
+
 struct ExteriorBuilding {
     uint16_t mNameSeed;
     uint32_t mNullValue1;
@@ -35,7 +37,9 @@ struct ExteriorLocation : public LocationHeader {
     uint8_t  mBlockIndex[64];
     uint8_t  mBlockNumber[64];
     uint8_t  mBlockCharacter[64];
-    uint8_t  mUnknown4[34];
+    char mName2[32]; // Name again? Some places it's empty, though (e.g. Gothway Garden)
+    uint8_t  mUnknown4;
+    uint8_t  mUnknownCount; // Size of Unknown5?
     uint32_t mNullValue1;
     uint32_t mNullValue2;
     uint8_t  mNullValue3;
@@ -47,6 +51,7 @@ struct ExteriorLocation : public LocationHeader {
 
     std::string getMapBlockName(size_t idx, size_t regnum) const;
 };
+LogStream& operator<<(LogStream &stream, const ExteriorLocation &ext);
 
 }
 

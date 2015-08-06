@@ -7,6 +7,8 @@
 
 #include "components/vfs/manager.hpp"
 
+#include "log.hpp"
+
 
 namespace
 {
@@ -95,7 +97,9 @@ void ExteriorLocation::load(std::istream& stream)
     stream.read(reinterpret_cast<char*>(mBlockIndex), sizeof(mBlockIndex));
     stream.read(reinterpret_cast<char*>(mBlockNumber), sizeof(mBlockNumber));
     stream.read(reinterpret_cast<char*>(mBlockCharacter), sizeof(mBlockCharacter));
-    stream.read(reinterpret_cast<char*>(mUnknown4), sizeof(mUnknown4));
+    stream.read(mName2, sizeof(mName2));
+    mUnknown4 = stream.get();
+    mUnknownCount = stream.get();
     mNullValue1 = VFS::read_le32(stream);
     mNullValue2 = VFS::read_le32(stream);
     mNullValue3 = stream.get();
@@ -151,6 +155,58 @@ std::string ExteriorLocation::getMapBlockName(size_t idx, size_t regnum) const
     name<< ".RMB";
 
     return name.str();
+}
+
+LogStream& operator<<(LogStream &stream, const ExteriorLocation &ext)
+{
+    stream<< static_cast<const LocationHeader&>(ext) <<"\n";
+    stream<<std::setfill('0');
+
+    stream<< "  BuildingCount: "<<ext.mBuildingCount<<"\n";
+    stream<< "  Unknown:";//<<std::hex<<std::setw(2);
+    for(uint32_t unk : ext.mUnknown1)
+        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
+    stream<<std::setw(0)<<std::dec<<"\n";
+
+    for(size_t i = 0;i < ext.mBuildingCount;++i)
+    {
+        const ExteriorBuilding &building = ext.mBuildings[i];
+        stream<< "  Building "<<i<<"\n";
+        stream<< "    NameSeed: 0x"<<std::hex<<std::setw(4)<<building.mNameSeed<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    FactionId: 0x"<<std::hex<<std::setw(4)<<building.mFactionId<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    Sector: 0x"<<std::hex<<std::setw(4)<<building.mSector<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    LocationId: 0x"<<std::hex<<std::setw(4)<<building.mLocationId<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    BuildingType: 0x"<<std::hex<<std::setw(2)<<(int)building.mBuildingType<<std::setw(0)<<std::dec<<"\n";
+        stream<< "    Quality: 0x"<<std::hex<<std::setw(2)<<(int)building.mQuality<<std::setw(0)<<std::dec<<"\n";
+    }
+
+    stream<< "  Name: \""<<ext.mName<<"\"\n";
+    stream<< "  MapId: 0x"<<std::hex<<std::setw(8)<<ext.mMapId<<std::setw(0)<<std::dec<<"\n";
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<ext.mUnknown2<<std::setw(0)<<std::dec<<"\n";
+    stream<< "  Width: "<<(int)ext.mWidth<<"\n";
+    stream<< "  Height: "<<(int)ext.mHeight<<"\n";
+    stream<< "  Unknown:";
+    for(uint32_t unk : ext.mUnknown3)
+        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
+    stream<<std::setw(0)<<std::dec<<"\n";
+    /*uint8_t  mBlockIndex[64];
+    uint8_t  mBlockNumber[64];
+    uint8_t  mBlockCharacter[64];*/
+    stream<< "  Name2: \""<<ext.mName2<<"\"\n";
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(2)<<(int)ext.mUnknown4<<std::setw(0)<<std::dec<<"\n";
+    stream<< "  UnknownCount: "<<(int)ext.mUnknownCount<<"\n";
+    /*uint32_t mNullValue1;
+    uint32_t mNullValue2;
+    uint8_t  mNullValue3;*/
+    stream<< "  Unknown:";
+    for(uint32_t unk : ext.mUnknown5)
+        stream<< " 0x"<<std::hex<<std::setw(8)<<unk;
+    stream<<std::setw(0)<<std::dec<<"\n";
+    /*uint8_t  mNullValue4[40];*/
+    stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<ext.mUnknown6<<std::setw(0)<<std::dec<<"\n";
+
+    stream<<std::setfill(' ');
+    return stream;
 }
 
 } // namespace DF

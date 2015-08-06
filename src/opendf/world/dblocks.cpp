@@ -177,6 +177,7 @@ void ObjectBase::loadAction(std::istream &stream)
 
 void ObjectBase::print(std::ostream &stream) const
 {
+    stream<< "ID: 0x"<<std::hex<<std::setw(8)<<mId<<std::dec<<std::setw(0)<<"\n";
     stream<< "Type: 0x"<<std::hex<<std::setw(2)<<(int)mType<<std::dec<<std::setw(0)<<"\n";
     stream<< "Pos: "<<mXPos<<" "<<mYPos<<" "<<mZPos<<"\n";
 }
@@ -293,6 +294,24 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
     for(uint32_t &val : mUnknown3)
         val = VFS::read_le32(stream);
 
+    mUnknownOffset = VFS::read_le32(stream);
+    mUnknown4 = VFS::read_le32(stream);
+    mUnknown5 = VFS::read_le32(stream);
+    mUnknown6 = VFS::read_le32(stream);
+
+    {
+        // Seems to be one entry for each valid ModelData....
+        int32_t offset = mUnknownOffset;
+        while(stream.good() && offset > 0)
+        {
+            mUnknownList.push_back(offset);
+            stream.seekg(offset);
+            offset = VFS::read_le32(stream);
+        }
+        mUnknownList.push_back(offset);
+    }
+
+    stream.clear();
     stream.seekg(mObjectRootOffset);
 
     std::vector<int32_t> rootoffsets(mWidth*mHeight);
@@ -392,6 +411,10 @@ void DBlockHeader::print(std::ostream &stream, int objtype) const
         ++unknown;
         ++idx;
     }
+    stream<< "UnknownOffset: 0x"<<std::hex<<std::setw(8)<<mUnknownOffset<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown4<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown5<<std::dec<<std::setw(0)<<"\n";
+    stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown6<<std::dec<<std::setw(0)<<"\n";
 
     auto iditer = mObjects.getIdList();
     for(ref_ptr<ObjectBase> obj : mObjects)

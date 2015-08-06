@@ -665,7 +665,7 @@ void World::dumpArea() const
         int mapnum = std::distance(mCurrentRegion->mExteriors.data(), mCurrentExterior);
         stream<< "Current exterior index: "<<mapnum<<"\n";
         stream<< "Current Exterior:\n";
-        stream<< static_cast<const LocationHeader&>(*mCurrentExterior);
+        stream<< *mCurrentExterior;
     }
     else if(mCurrentRegion)
     {
