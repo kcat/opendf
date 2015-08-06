@@ -27,9 +27,9 @@ struct LocationHeader {
     uint32_t mAlwaysOne1;
     uint16_t mNullValue1;
     uint8_t mNullValue2;
-    int32_t mY;
-    uint32_t mNullValue3;
     int32_t mX;
+    uint32_t mNullValue3;
+    int32_t mY;
     uint16_t mIsExterior;
     uint16_t mNullValue4;
     uint32_t mUnknown1;

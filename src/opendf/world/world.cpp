@@ -81,9 +81,9 @@ void LocationHeader::load(std::istream &stream)
     mAlwaysOne1 = VFS::read_le32(stream);
     mNullValue1 = VFS::read_le16(stream);
     mNullValue2 = stream.get();
-    mY = VFS::read_le32(stream);
-    mNullValue3 = VFS::read_le32(stream);
     mX = VFS::read_le32(stream);
+    mNullValue3 = VFS::read_le32(stream);
+    mY = VFS::read_le32(stream);
     mIsExterior = VFS::read_le16(stream);
     mNullValue4 = VFS::read_le16(stream);
     mUnknown1 = VFS::read_le32(stream);
@@ -115,9 +115,9 @@ LogStream& operator<<(LogStream &stream, const LocationHeader &loc)
     stream<< "  Always one: "<<loc.mAlwaysOne1<<"\n";
     stream<< "  Null: "<<loc.mNullValue1<<"\n";
     stream<< "  Null: "<<(int)loc.mNullValue2<<"\n";
-    stream<< "  Y: "<<loc.mY<<"\n";
-    stream<< "  Null: "<<loc.mNullValue3<<"\n";
     stream<< "  X: "<<loc.mX<<"\n";
+    stream<< "  Null: "<<loc.mNullValue3<<"\n";
+    stream<< "  Y: "<<loc.mY<<"\n";
     stream<< "  IsExterior: "<<loc.mIsExterior<<"\n";
     stream<< "  Null: "<<loc.mNullValue4<<"\n";
     stream<< "  Unknown: 0x"<<std::hex<<std::setw(8)<<loc.mUnknown1<<std::setw(0)<<std::dec<<"\n";
@@ -395,11 +395,30 @@ void World::loadPakList(std::string&& fname, std::vector<PakArray> &paklist)
 
 uint8_t World::getPakListValue(const std::vector<PakArray> &paklist, size_t x, size_t y)
 {
-    x = x/32768 + 2;
+    /* As mentioned on UESP: http://uesp.net/wiki/Daggerfall:WOODS.WLD_format
+     *
+     * "the valid domain for each axis is defined as:
+     * Dom(X) = (51200, 32389120)
+     * Dom(Y) = (-80, 1228)
+     * Dom(Z) = (40961, 16332801)"
+     *
+     * However, there appears to be a mistake in that the Dom(X) and Dom(Z)
+     * values correspond to the ExteriorLocation's X and Y values, where those
+     * are the region map's Longitude and Latitude value*256 + n (where n is
+     * 0...255). Additionally, the latitude increases while going north. Thus,
+     * the correct domain for the longitude/latitude is:
+     *
+     * Dom(X) = [200, 126520]
+     * Dom(Z) = [63800, 160]
+     *
+     * However, I'm not sure if this range corectly maps to the world/climate/
+     * etc map extents.
+     */
+    if(x <= 200) x = 0;
+    else x = size_t(uint64_t(x-200) * 1000 / (126520-200));
 
-    y /= 32768;
-    if(y >= 499) y = 1;
-    else y = 499 - y;
+    if(y <= 160) y = 499;
+    else y = 499 - size_t(uint64_t(y-160) * 499 / (63800-160));
 
     uint8_t value = 0;
     const PakArray &pak = paklist[std::min(y, paklist.size()-1)];
@@ -441,7 +460,7 @@ void World::loadExterior(int regnum, int extid)
     mCurrentDungeon = nullptr;
     mCurrentSelection = InvalidHandle;
 
-    uint8_t climate = getClimateValue(extloc.mX, extloc.mY);
+    uint8_t climate = getClimateValue(extloc.mX/256, extloc.mY/256);
     Log::get().stream()<< "Climate "<<(int)climate;
 
     Log::get().stream()<< "Entering "<<extloc.mLocationName;
@@ -469,7 +488,7 @@ void World::loadExterior(int regnum, int extid)
         int y = i/extloc.mWidth;
 
         mExterior.push_back(std::unique_ptr<MBlockHeader>(new MBlockHeader()));
-        mExterior.back()->load(*stream, i<<24, x*4096.0f, y*4096.0f, mSceneRoot);
+        mExterior.back()->load(*stream, climate, i<<24, x*4096.0f, y*4096.0f, mSceneRoot);
 
         if(startobj != InvalidHandle)
             continue;
@@ -511,7 +530,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
         mCurrentDungeon = &dinfo;
         mCurrentSelection = InvalidHandle;
 
-        uint8_t climate = getClimateValue(extloc.mX, extloc.mY);
+        uint8_t climate = getClimateValue(extloc.mX/256, extloc.mY/256);
         Log::get().stream()<< "Climate "<<(int)climate;
 
         Log::get().stream()<< "Entering "<<dinfo.mLocationName;

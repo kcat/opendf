@@ -311,12 +311,29 @@ void MBlockHeader::deallocate()
         Renderer::get().remove(&*mFlats.getIdList(), mFlats.size());
         Placeable::get().deallocate(&*mFlats.getIdList(), mFlats.size());
     }
+    if(!mScenery.empty())
+    {
+        Renderer::get().remove(&*mScenery.getIdList(), mScenery.size());
+        Placeable::get().deallocate(&*mScenery.getIdList(), mScenery.size());
+    }
 }
 
 
-void MBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, osg::Group *root)
+void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z, osg::Group *root)
 {
     mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
+
+    size_t texfile = 0;
+    if(climate == 223) texfile = 502<<7;
+    else if(climate == 224) texfile = 503<<7;
+    else if(climate == 225) texfile = 503<<7;
+    else if(climate == 226) texfile = 510<<7;
+    else if(climate == 227) texfile = 500<<7;
+    else if(climate == 228) texfile = 502<<7;
+    else if(climate == 229) texfile = 503<<7;
+    else if(climate == 230) texfile = 504<<7;
+    else if(climate == 231) texfile = 508<<7;
+    else if(climate == 232) texfile = 508<<7;
 
     mBlockCount = stream.get();
     mModelCount = stream.get();
@@ -379,6 +396,20 @@ void MBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
         flat.mId = blockid | 0x00ff0000 | (mModelCount+i);
         flat.load(stream);
     }
+    for(size_t i = 0;i < mGroundScenery.size();++i)
+    {
+        if(mGroundScenery[i] == 0xff)
+            continue;
+
+        MFlat &flat = mScenery[blockid | 0x00ff0000 | (mModelCount+mFlatCount+i)];
+        flat.mId = blockid | 0x00ff0000 | (mModelCount+mFlatCount+i);
+        flat.mXPos = (i%16) * 256.0f;
+        flat.mYPos = 0.0f;
+        flat.mZPos = (i/16) * -256.0f;
+        flat.mTexture = texfile | (mGroundScenery[i]>>2);
+        flat.mUnknown = 0;
+        flat.mFlags = 0;
+    }
 
     root->addChild(mBaseNode);
 
@@ -387,6 +418,8 @@ void MBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
     for(MModel &model : mModels)
         model.allocate(mBaseNode);
     for(MFlat &flat : mFlats)
+        flat.allocate(mBaseNode);
+    for(MFlat &flat : mScenery)
         flat.allocate(mBaseNode);
 }
 

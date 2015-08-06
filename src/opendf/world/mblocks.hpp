@@ -93,7 +93,7 @@ struct MBlockHeader {
     // T: Texture index, [0-64). File depends on location and weather.
     std::array<uint8_t,256> mGroundTexture;
     // Ground scenery byte format: TTTTTTUU
-    // T: Flat texture index (+1?). File depends on location and weather.
+    // T: Flat texture index. File depends on location (not weather?).
     // U: Unknown
     // Value 0xff == nothing
     std::array<uint8_t,256> mGroundScenery;
@@ -105,6 +105,7 @@ struct MBlockHeader {
 
     Misc::SparseArray<MModel> mModels;
     Misc::SparseArray<MFlat> mFlats;
+    Misc::SparseArray<MFlat> mScenery;
 
     osg::ref_ptr<osg::Group> mBaseNode;
 
@@ -112,7 +113,7 @@ struct MBlockHeader {
     ~MBlockHeader();
     void deallocate();
 
-    void load(std::istream &stream, size_t blockid, float x, float z, osg::Group *root);
+    void load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z, osg::Group *root);
     void detachNode();
 
     MObjectBase *getObject(size_t id);
