@@ -62,6 +62,7 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
          src/opendf/actions/mover.cpp
          src/opendf/actions/door.cpp
          src/opendf/actions/exitdoor.cpp
+         src/opendf/actions/unknown.cpp
          src/opendf/world/world.cpp
          src/opendf/world/pitems.cpp
          src/opendf/world/ditems.cpp
@@ -100,6 +101,7 @@ set(HDRS src/misc/sparsearray.hpp
          src/opendf/actions/mover.hpp
          src/opendf/actions/door.hpp
          src/opendf/actions/exitdoor.hpp
+         src/opendf/actions/unknown.hpp
          src/opendf/world/iface.hpp
          src/opendf/world/world.hpp
          src/opendf/world/itembase.hpp

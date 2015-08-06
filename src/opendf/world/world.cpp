@@ -19,6 +19,7 @@
 #include "actions/mover.hpp"
 #include "actions/door.hpp"
 #include "actions/exitdoor.hpp"
+#include "actions/unknown.hpp"
 #include "gui/iface.hpp"
 #include "mblocks.hpp"
 #include "dblocks.hpp"
@@ -580,6 +581,7 @@ void World::update(float timediff)
 {
     GuiIface::Mode guimode = GuiIface::get().getMode();
 
+    UnknownAction::get().update();
     if(guimode <= GuiIface::Mode_Cursor)
     {
         ExitDoor::get().update();

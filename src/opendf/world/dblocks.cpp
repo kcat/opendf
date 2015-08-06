@@ -19,6 +19,7 @@
 #include "actions/mover.hpp"
 #include "actions/door.hpp"
 #include "actions/exitdoor.hpp"
+#include "actions/unknown.hpp"
 
 
 namespace
@@ -173,6 +174,10 @@ void ObjectBase::loadAction(std::istream &stream)
     }
     else
     {
+        UnknownAction::get().allocate(mId, type, adata);
+        Activator::get().allocate(mId, mActionFlags, UnknownAction::activateFunc,
+                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
+                                  UnknownAction::deallocateFunc);
         Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
     }
 }
