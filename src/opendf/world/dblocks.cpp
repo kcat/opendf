@@ -104,8 +104,10 @@ struct FlatObject : public ObjectBase {
     uint16_t mTexture;
     uint16_t mGender; // Flags?
     uint16_t mFactionId;
-    //int32_t mActionOffset; // Maybe?
-    uint8_t mUnknown;
+    //int32_t mActionOffset;
+    uint8_t mUnknown; // DFTfU says this is monster passiveness (0=hostile, 99=passive).
+                      // It's also used on non-monster flats too, though, particularly
+                      // those with associated actions.
 
     FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
     void load(std::istream &stream, osg::Group *root);
