@@ -1,7 +1,7 @@
 
 #include "linker.hpp"
 
-#include "activator.hpp"
+#include "class/activator.hpp"
 
 
 namespace DF

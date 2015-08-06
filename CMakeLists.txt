@@ -58,10 +58,10 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
          src/opendf/gui/gui.cpp
          src/opendf/class/placeable.cpp
          src/opendf/class/activator.cpp
-         src/opendf/class/linker.cpp
-         src/opendf/class/mover.cpp
-         src/opendf/class/door.cpp
-         src/opendf/class/exitdoor.cpp
+         src/opendf/actions/linker.cpp
+         src/opendf/actions/mover.cpp
+         src/opendf/actions/door.cpp
+         src/opendf/actions/exitdoor.cpp
          src/opendf/world/world.cpp
          src/opendf/world/pitems.cpp
          src/opendf/world/ditems.cpp
@@ -96,10 +96,10 @@ set(HDRS src/misc/sparsearray.hpp
          src/opendf/gui/gui.hpp
          src/opendf/class/placeable.hpp
          src/opendf/class/activator.hpp
-         src/opendf/class/linker.hpp
-         src/opendf/class/mover.hpp
-         src/opendf/class/door.hpp
-         src/opendf/class/exitdoor.hpp
+         src/opendf/actions/linker.hpp
+         src/opendf/actions/mover.hpp
+         src/opendf/actions/door.hpp
+         src/opendf/actions/exitdoor.hpp
          src/opendf/world/iface.hpp
          src/opendf/world/world.hpp
          src/opendf/world/itembase.hpp

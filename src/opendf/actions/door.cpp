@@ -3,8 +3,8 @@
 
 #include <algorithm>
 
-#include "placeable.hpp"
-#include "activator.hpp"
+#include "class/placeable.hpp"
+#include "class/activator.hpp"
 
 
 namespace DF

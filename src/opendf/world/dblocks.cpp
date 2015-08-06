@@ -15,10 +15,10 @@
 #include "render/renderer.hpp"
 #include "class/placeable.hpp"
 #include "class/activator.hpp"
-#include "class/linker.hpp"
-#include "class/mover.hpp"
-#include "class/door.hpp"
-#include "class/exitdoor.hpp"
+#include "actions/linker.hpp"
+#include "actions/mover.hpp"
+#include "actions/door.hpp"
+#include "actions/exitdoor.hpp"
 
 
 namespace
