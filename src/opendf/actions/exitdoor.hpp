@@ -1,5 +1,5 @@
-#ifndef CLASS_EXITDOOR_HPP
-#define CLASS_EXITDOOR_HPP
+#ifndef ACTIONS_EXITDOOR_HPP
+#define ACTIONS_EXITDOOR_HPP
 
 #include "misc/sparsearray.hpp"
 
@@ -28,4 +28,4 @@ public:
 
 } // namespace DF
 
-#endif /* CLASS_EXITDOOR_HPP */
+#endif /* ACTIONS_EXITDOOR_HPP */

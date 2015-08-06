@@ -1,5 +1,5 @@
-#ifndef CLASS_DOOR_HPP
-#define CLASS_DOOR_HPP
+#ifndef ACTIONS_DOOR_HPP
+#define ACTIONS_DOOR_HPP
 
 #include <osg/Vec3>
 
@@ -39,4 +39,4 @@ public:
 
 } // namespace DF
 
-#endif /* CLASS_DOOR_HPP */
+#endif /* ACTIONS_DOOR_HPP */

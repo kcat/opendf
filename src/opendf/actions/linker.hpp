@@ -1,5 +1,5 @@
-#ifndef CLASS_LINKER_HPP
-#define CLASS_LINKER_HPP
+#ifndef ACTIONS_LINKER_HPP
+#define ACTIONS_LINKER_HPP
 
 #include "misc/sparsearray.hpp"
 
@@ -28,4 +28,4 @@ public:
 
 } // namespace DF
 
-#endif /* CLASS_LINKER_HPP */
+#endif /* ACTIONS_LINKER_HPP */

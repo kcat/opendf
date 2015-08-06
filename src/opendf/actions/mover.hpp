@@ -1,5 +1,5 @@
-#ifndef CLASS_MOVER_HPP
-#define CLASS_MOVER_HPP
+#ifndef ACTIONS_MOVER_HPP
+#define ACTIONS_MOVER_HPP
 
 #include "misc/sparsearray.hpp"
 
@@ -58,4 +58,4 @@ public:
 
 } // namespace DF
 
-#endif /* CLASS_MOVER_HPP */
+#endif /* ACTIONS_MOVER_HPP */
