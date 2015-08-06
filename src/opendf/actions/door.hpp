@@ -1,6 +1,8 @@
 #ifndef ACTIONS_DOOR_HPP
 #define ACTIONS_DOOR_HPP
 
+#include <cstdint>
+
 #include <osg/Vec3>
 
 #include "misc/sparsearray.hpp"
@@ -24,16 +26,17 @@ class Door {
     Misc::SparseArray<DoorData> mOpened;
     Misc::SparseArray<DoorActiveData> mClosing;
 
+    static void activateFunc(size_t idx) { sDoors.activate(idx); }
+    static void deallocateFunc(size_t idx) { sDoors.deallocate(idx); }
+
 public:
-    void allocate(size_t idx, const osg::Vec3f &orig);
+    void allocate(size_t idx, uint32_t flags, size_t link, const osg::Vec3f &orig);
     void deallocate(size_t idx);
 
     void activate(size_t idx);
 
     void update(float timediff);
 
-    static void activateFunc(size_t idx) { sDoors.activate(idx); }
-    static void deallocateFunc(size_t idx) { sDoors.deallocate(idx); }
     static Door &get() { return sDoors; }
 };
 

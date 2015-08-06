@@ -1,10 +1,12 @@
 #ifndef ACTIONS_MOVER_HPP
 #define ACTIONS_MOVER_HPP
 
-#include "misc/sparsearray.hpp"
+#include <cstdint>
 
 #include <osg/Vec3>
 #include <osg/Quat>
+
+#include "misc/sparsearray.hpp"
 
 
 namespace DF
@@ -38,9 +40,14 @@ class Mover {
     Misc::SparseArray<RotateData> mRotateEnd;
     Misc::SparseArray<std::pair<RotateData,float>> mActiveRotRev;
 
+    static void activateTranslateFunc(size_t idx) { sMovers.activateTranslate(idx); }
+    static void activateRotateFunc(size_t idx) { sMovers.activateRotate(idx); }
+    static void deallocateTranslateFunc(size_t idx) { sMovers.deallocateTranslate(idx); }
+    static void deallocateRotateFunc(size_t idx) { sMovers.deallocateRotate(idx); }
+
 public:
-    void allocateTranslate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration);
-    void allocateRotate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration);
+    void allocateTranslate(size_t idx, uint32_t flags, size_t link, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration);
+    void allocateRotate(size_t idx, uint32_t flags, size_t link, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration);
     void deallocateTranslate(size_t idx);
     void deallocateRotate(size_t idx);
 
@@ -49,10 +56,6 @@ public:
 
     void update(float timediff);
 
-    static void activateTranslateFunc(size_t idx) { sMovers.activateTranslate(idx); }
-    static void activateRotateFunc(size_t idx) { sMovers.activateRotate(idx); }
-    static void deallocateTranslateFunc(size_t idx) { sMovers.deallocateTranslate(idx); }
-    static void deallocateRotateFunc(size_t idx) { sMovers.deallocateRotate(idx); }
     static Mover &get() { return sMovers; }
 };
 

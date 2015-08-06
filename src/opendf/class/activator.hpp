@@ -1,6 +1,8 @@
 #ifndef CLASS_ACTIVATOR_HPP
 #define CLASS_ACTIVATOR_HPP
 
+#include <cstdint>
+
 #include "misc/sparsearray.hpp"
 
 
@@ -21,18 +23,17 @@ class Activator {
     static Activator sActivators;
 
     Misc::SparseArray<ActivatorCallback> mDeallocators;
-    Misc::SparseArray<size_t> mFlags;
+    Misc::SparseArray<uint32_t> mFlags;
     Misc::SparseArray<ActivatorData> mInactive;
     Misc::SparseArray<ActivatorData> mActive;
 
 public:
-    void allocate(size_t idx, size_t flags, ActivatorCallback callback, size_t link, ActivatorCallback dealloc);
+    void allocate(size_t idx, uint32_t flags, size_t link, ActivatorCallback callback, ActivatorCallback dealloc);
     void deallocate(size_t idx);
 
     void activate(size_t idx);
     void deactivate(size_t idx);
 
-    static void deallocateFunc(size_t idx) { }
     static Activator &get() { return sActivators; }
 };
 

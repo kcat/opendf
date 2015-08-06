@@ -13,9 +13,10 @@ namespace DF
 Door Door::sDoors;
 
 
-void Door::allocate(size_t idx, const osg::Vec3f &orig)
+void Door::allocate(size_t idx, uint32_t flags, size_t link, const osg::Vec3f &orig)
 {
     mClosed[idx] = std::make_pair(idx, orig);
+    Activator::get().allocate(idx, flags, link, Door::activateFunc, Door::deallocateFunc);
 }
 
 void Door::deallocate(size_t idx)

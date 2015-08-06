@@ -13,9 +13,11 @@ namespace DF
 UnknownAction UnknownAction::sActions;
 
 
-void UnknownAction::allocate(size_t idx, uint8_t type, const std::array<uint8_t,5> &data)
+void UnknownAction::allocate(size_t idx, uint32_t flags, size_t link, uint8_t type, const std::array<uint8_t,5> &data)
 {
     mUnknowns[idx] = TypeDataPair{type, data};
+    Activator::get().allocate(idx, flags, link, UnknownAction::activateFunc,
+                              UnknownAction::deallocateFunc);
 }
 
 void UnknownAction::deallocate(size_t idx)

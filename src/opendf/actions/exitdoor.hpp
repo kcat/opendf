@@ -1,6 +1,8 @@
 #ifndef ACTIONS_EXITDOOR_HPP
 #define ACTIONS_EXITDOOR_HPP
 
+#include <cstdint>
+
 #include "misc/sparsearray.hpp"
 
 
@@ -13,16 +15,17 @@ class ExitDoor {
     Misc::SparseArray<std::pair<size_t,size_t>> mExits;
     Misc::SparseArray<std::pair<size_t,size_t>> mActivatedExit;
 
+    static void activateFunc(size_t idx) { sExitDoors.activate(idx); }
+    static void deallocateFunc(size_t idx) { sExitDoors.deallocate(idx); }
+
 public:
-    void allocate(size_t idx, size_t regnum, size_t locnum);
+    void allocate(size_t idx, uint32_t flags, size_t link, size_t regnum, size_t locnum);
     void deallocate(size_t idx);
 
     void activate(size_t idx);
 
     void update();
 
-    static void activateFunc(size_t idx) { sExitDoors.activate(idx); }
-    static void deallocateFunc(size_t idx) { sExitDoors.deallocate(idx); }
     static ExitDoor &get() { return sExitDoors; }
 };
 

@@ -1,6 +1,7 @@
 #ifndef ACTIONS_UNKNOWN_HPP
 #define ACTIONS_UNKNOWN_HPP
 
+#include <cstdint>
 #include <array>
 
 #include "misc/sparsearray.hpp"
@@ -16,16 +17,17 @@ class UnknownAction {
     Misc::SparseArray<TypeDataPair> mUnknowns;
     Misc::SparseArray<TypeDataPair> mActive;
 
+    static void activateFunc(size_t idx) { sActions.activate(idx); }
+    static void deallocateFunc(size_t idx) { sActions.deallocate(idx); }
+
 public:
-    void allocate(size_t idx, uint8_t type, const std::array<uint8_t,5> &data);
+    void allocate(size_t idx, uint32_t flags, size_t link, uint8_t type, const std::array<uint8_t,5> &data);
     void deallocate(size_t idx);
 
     void activate(size_t idx);
 
     void update();
 
-    static void activateFunc(size_t idx) { sActions.activate(idx); }
-    static void deallocateFunc(size_t idx) { sActions.deallocate(idx); }
     static UnknownAction &get() { return sActions; }
 };
 

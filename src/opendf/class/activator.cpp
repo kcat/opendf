@@ -8,7 +8,7 @@ namespace DF
 Activator Activator::sActivators;
 
 
-void Activator::allocate(size_t idx, size_t flags, ActivatorCallback callback, size_t link, ActivatorCallback dealloc)
+void Activator::allocate(size_t idx, uint32_t flags, size_t link, ActivatorCallback callback, ActivatorCallback dealloc)
 {
     mDeallocators[idx] = dealloc;
     mFlags[idx] = flags;

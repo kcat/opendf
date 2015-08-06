@@ -26,7 +26,6 @@ namespace
 {
 
 enum ActionType {
-    // Maybe flags?
     Action_Translate = 0x01,
     Action_Rotate    = 0x08,
     Action_Linker    = 0x1e
@@ -141,8 +140,9 @@ void ObjectBase::loadAction(std::istream &stream)
     int32_t target = VFS::read_le32(stream);
     uint8_t type = stream.get();
 
+    size_t link = ~static_cast<size_t>(0);
     if(target > 0)
-        target |= mId&0xff000000;
+        link = target | (mId&0xff000000);
 
     if(type == Action_Translate)
     {
@@ -150,10 +150,9 @@ void ObjectBase::loadAction(std::istream &stream)
         float duration;
         getActionData<ActionTranslate>(adata, amount, duration);
 
-        Mover::get().allocateTranslate(mId, mSoundId, osg::Vec3f(mXPos, mYPos, mZPos), amount, duration);
-        Activator::get().allocate(mId, mActionFlags, Mover::activateTranslateFunc,
-                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
-                                  Mover::deallocateTranslateFunc);
+        Mover::get().allocateTranslate(mId, mActionFlags, link, mSoundId,
+                                       osg::Vec3f(mXPos, mYPos, mZPos),
+                                       amount, duration);
     }
     else if(type == Action_Rotate)
     {
@@ -161,23 +160,18 @@ void ObjectBase::loadAction(std::istream &stream)
         float duration;
         getActionData<ActionRotate>(adata, amount, duration);
 
-        Mover::get().allocateRotate(mId, mSoundId, osg::Vec3f(mXRot, mYRot, mZRot), amount, duration);
-        Activator::get().allocate(mId, mActionFlags, Mover::activateRotateFunc,
-                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
-                                  Mover::deallocateRotateFunc);
+        Mover::get().allocateRotate(mId, mActionFlags, link, mSoundId,
+                                    osg::Vec3f(mXRot, mYRot, mZRot),
+                                    amount, duration);
     }
     else if(type == Action_Linker)
     {
-        Activator::get().allocate(mId, mActionFlags, Linker::activateFunc,
-                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
+        Activator::get().allocate(mId, mActionFlags, link, Linker::activateFunc,
                                   Linker::deallocateFunc);
     }
     else
     {
-        UnknownAction::get().allocate(mId, type, adata);
-        Activator::get().allocate(mId, mActionFlags, UnknownAction::activateFunc,
-                                  ((target > 0) ? target : ~static_cast<size_t>(0)),
-                                  UnknownAction::deallocateFunc);
+        UnknownAction::get().allocate(mId, mActionFlags, link, type, adata);
         Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
     }
 }
@@ -221,15 +215,9 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     // Is this how doors are specified, or is it determined by the model index?
     // What to do if a door has an action?
     if(mActionOffset <= 0 && mModelData[5] == 'D' && mModelData[6] == 'O' && mModelData[7] == 'R')
-    {
-        Door::get().allocate(mId, osg::Vec3f(mXRot, mYRot, mZRot));
-        Activator::get().allocate(mId, mActionFlags|0x02, Door::activateFunc, ~static_cast<size_t>(0), Door::deallocateFunc);
-    }
+        Door::get().allocate(mId, mActionFlags|0x02, ~static_cast<size_t>(0), osg::Vec3f(mXRot, mYRot, mZRot));
     else if(mModelData[5] == 'E' && mModelData[6] == 'X' && mModelData[7] == 'T')
-    {
-        ExitDoor::get().allocate(mId, regnum, locnum);
-        Activator::get().allocate(mId, mActionFlags|0x02, ExitDoor::activateFunc, ~static_cast<size_t>(0), ExitDoor::deallocateFunc);
-    }
+        ExitDoor::get().allocate(mId, mActionFlags|0x02, ~static_cast<size_t>(0), regnum, locnum);
     Renderer::get().setNode(mId, node);
     Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(mXRot, mYRot, mZRot));
 }

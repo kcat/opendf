@@ -11,9 +11,10 @@ namespace DF
 ExitDoor ExitDoor::sExitDoors;
 
 
-void ExitDoor::allocate(size_t idx, size_t regnum, size_t locnum)
+void ExitDoor::allocate(size_t idx, uint32_t flags, size_t link, size_t regnum, size_t locnum)
 {
     mExits[idx] = std::make_pair(regnum, locnum);
+    Activator::get().allocate(idx, flags, link, ExitDoor::activateFunc, ExitDoor::deallocateFunc);
 }
 
 void ExitDoor::deallocate(size_t idx)

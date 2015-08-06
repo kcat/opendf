@@ -13,13 +13,15 @@ namespace DF
 Mover Mover::sMovers;
 
 
-void Mover::allocateTranslate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration)
+void Mover::allocateTranslate(size_t idx, uint32_t flags, size_t link, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration)
 {
     mSoundIds[idx] = soundid;
     mTranslateStart[idx] = TranslateData{ idx, orig, amount, duration };
+    Activator::get().allocate(idx, flags, link, Mover::activateTranslateFunc,
+                              Mover::deallocateTranslateFunc);
 }
 
-void Mover::allocateRotate(size_t idx, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration)
+void Mover::allocateRotate(size_t idx, uint32_t flags, size_t link, size_t soundid, const osg::Vec3f &orig, const osg::Vec3f &amount, float duration)
 {
     mSoundIds[idx] = soundid;
     mRotateStart[idx] = RotateData{ idx,
@@ -30,6 +32,8 @@ void Mover::allocateRotate(size_t idx, size_t soundid, const osg::Vec3f &orig, c
         ),
         amount, duration
     };
+    Activator::get().allocate(idx, flags, link, Mover::activateRotateFunc,
+                              Mover::deallocateRotateFunc);
 }
 
 
