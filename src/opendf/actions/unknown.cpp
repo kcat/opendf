@@ -42,12 +42,12 @@ void UnknownAction::update()
     {
         do {
             Log::get().stream(Log::Level_Error)<< "Unhandled action:"<<std::setfill('0')
-                <<" Type 0x"<<std::hex<<std::setw(2)<<iter->first<<", data "
-                <<" 0x"<<std::hex<<std::setw(2)<<iter->second[0]
-                <<" 0x"<<std::hex<<std::setw(2)<<iter->second[1]
-                <<" 0x"<<std::hex<<std::setw(2)<<iter->second[2]
-                <<" 0x"<<std::hex<<std::setw(2)<<iter->second[3]
-                <<" 0x"<<std::hex<<std::setw(2)<<iter->second[4];
+                <<" Type 0x"<<std::hex<<std::setw(2)<<(int)iter->first<<", data"
+                <<" 0x"<<std::hex<<std::setw(2)<<(int)iter->second[0]
+                <<" 0x"<<std::hex<<std::setw(2)<<(int)iter->second[1]
+                <<" 0x"<<std::hex<<std::setw(2)<<(int)iter->second[2]
+                <<" 0x"<<std::hex<<std::setw(2)<<(int)iter->second[3]
+                <<" 0x"<<std::hex<<std::setw(2)<<(int)iter->second[4];
             Activator::get().deactivate(mActive.getKey(iter++));
         } while(iter != mActive.end());
         mActive.clear();
