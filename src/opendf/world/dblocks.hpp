@@ -6,18 +6,13 @@
 #include <array>
 #include <set>
 
-#include <osg/ref_ptr>
-#include <osg/Referenced>
-
 #include "misc/sparsearray.hpp"
 #include "referenceable.hpp"
 
 
 namespace osg
 {
-    class Node;
     class Group;
-    class MatrixTransform;
     class Vec3f;
 }
 

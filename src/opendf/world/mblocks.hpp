@@ -5,8 +5,6 @@
 #include <vector>
 #include <array>
 
-#include <osg/ref_ptr>
-
 #include "misc/sparsearray.hpp"
 
 #include "pitems.hpp"
@@ -15,8 +13,6 @@
 namespace osg
 {
     class Group;
-    class Vec3f;
-    class Quat;
 }
 
 namespace DF
