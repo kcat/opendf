@@ -2,6 +2,7 @@
 #define MISC_SPARSEARRAY_HPP
 
 #include <vector>
+#include <stdexcept>
 #include <cstddef>
 
 
@@ -145,6 +146,13 @@ public:
             return *mData.insert(mData.begin()+idx, T());
         }
 
+        return mData[std::distance(mIdxLookup.cbegin(), iter)];
+    }
+    T& at(size_t idx)
+    {
+        auto iter = lookupKey(idx);
+        if(iter == mIdxLookup.cend())
+            throw std::range_error("SparseArray::at: index "+std::to_string(idx)+" does not exist");
         return mData[std::distance(mIdxLookup.cbegin(), iter)];
     }
 

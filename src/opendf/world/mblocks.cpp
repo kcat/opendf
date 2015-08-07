@@ -438,9 +438,13 @@ MObjectBase *MBlockHeader::getObject(size_t id)
 {
     if(((id>>16)&0xff) == 0xff)
     {
-        if(mModels.exists(id))
-            return &mModels[id];
-        return &mFlats[id];
+        auto model = mModels.find(id);
+        if(model != mModels.end())
+            return &*model;
+        auto flat = mFlats.find(id);
+        if(flat != mFlats.end())
+            return &*flat;
+        return &mScenery.at(id);
     }
     if(!(id&0x10000))
         return mExteriorBlocks.at((id>>17)&0x7f).getObject(id);
