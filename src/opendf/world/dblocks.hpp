@@ -18,6 +18,7 @@ namespace osg
     class Node;
     class Group;
     class MatrixTransform;
+    class Vec3f;
 }
 
 namespace DF
@@ -39,7 +40,7 @@ struct ObjectBase : public Referenceable {
     ObjectBase(size_t id, uint8_t type, int x, int y, int z);
     virtual ~ObjectBase();
 
-    void loadAction(std::istream &stream);
+    void loadAction(std::istream &stream, const osg::Vec3f &pos);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -74,12 +75,9 @@ struct DBlockHeader {
      */
     Misc::SparseArray<ref_ptr<ObjectBase>> mObjects;
 
-    osg::ref_ptr<osg::Group> mBaseNode;
-
     ~DBlockHeader();
 
     void load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum, osg::Group *root);
-    void detachNode();
 
     ObjectBase *getObject(size_t id);
 

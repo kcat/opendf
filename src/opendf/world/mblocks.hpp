@@ -15,6 +15,8 @@
 namespace osg
 {
     class Group;
+    class Vec3f;
+    class Quat;
 }
 
 namespace DF
@@ -35,37 +37,8 @@ struct MSection3;
 struct MPerson;
 struct MDoor;
 
-struct MBlock {
-    uint8_t  mModelCount;
-    uint8_t  mFlatCount;
-    uint8_t  mSection3Count;
-    uint8_t  mPersonCount;
-    uint8_t  mDoorCount;
-    uint16_t mUnknown1;
-    uint16_t mUnknown2;
-    uint16_t mUnknown3;
-    uint16_t mUnknown4;
-    uint16_t mUnknown5;
-    uint16_t mUnknown6;
+struct MBlock;
 
-    Misc::SparseArray<MModel> mModels;
-    Misc::SparseArray<MFlat>  mFlats;
-    std::vector<MSection3> mSection3s;
-    std::vector<MPerson>   mNpcs;
-    std::vector<MDoor>     mDoors;
-
-    osg::ref_ptr<osg::Group> mBaseNode;
-
-    MBlock();
-    ~MBlock();
-
-    void load(std::istream &stream, size_t blockid, int x, int z, int yrot, osg::Group *root);
-
-    void allocate();
-    void deallocate();
-
-    MObjectBase *getObject(size_t id);
-};
 
 struct MBlockPosition {
     uint32_t mUnknown1;
@@ -107,14 +80,11 @@ struct MBlockHeader {
     Misc::SparseArray<MFlat> mFlats;
     Misc::SparseArray<MFlat> mScenery;
 
-    osg::ref_ptr<osg::Group> mBaseNode;
-
     MBlockHeader();
     ~MBlockHeader();
     void deallocate();
 
     void load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z, osg::Group *root);
-    void detachNode();
 
     MObjectBase *getObject(size_t id);
 

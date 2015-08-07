@@ -501,8 +501,7 @@ void World::loadExterior(int regnum, int extid)
         {
             Position pos = Placeable::get().getPos(startobj);
             mCameraPos = osg::componentMultiply(
-                -(pos.mPoint + osg::Vec3f(x*4096.0f, 0.0f, y*4096.0f)),
-                osg::Vec3f(1.0f, -1.0f, -1.0f)
+                -pos.mPoint, osg::Vec3f(1.0f, -1.0f, -1.0f)
             );
         }
     }

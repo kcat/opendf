@@ -95,7 +95,8 @@ struct ModelObject : public ObjectBase {
 
     ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
 
-    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, osg::Group *root);
+    void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata,
+              size_t regnum, size_t locnum, const osg::Vec3 &basepos, osg::Group *root);
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -110,7 +111,7 @@ struct FlatObject : public ObjectBase {
                       // those with associated actions.
 
     FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
-    void load(std::istream &stream, osg::Group *root);
+    void load(std::istream &stream, const osg::Vec3 &basepos, osg::Group *root);
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -129,7 +130,7 @@ ObjectBase::~ObjectBase()
     Activator::get().deallocate(mId);
 }
 
-void ObjectBase::loadAction(std::istream &stream)
+void ObjectBase::loadAction(std::istream &stream, const osg::Vec3 &pos)
 {
     if(mActionOffset <= 0)
         return;
@@ -151,8 +152,7 @@ void ObjectBase::loadAction(std::istream &stream)
         getActionData<ActionTranslate>(adata, amount, duration);
 
         Mover::get().allocateTranslate(mId, mActionFlags, link, mSoundId,
-                                       osg::Vec3f(mXPos, mYPos, mZPos),
-                                       amount, duration);
+                                       pos, amount, duration);
     }
     else if(type == Action_Rotate)
     {
@@ -184,7 +184,7 @@ void ObjectBase::print(std::ostream &stream) const
 }
 
 
-void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, osg::Group *root)
+void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, const osg::Vec3 &basepos, osg::Group *root)
 {
     mXRot = VFS::read_le32(stream);
     mYRot = VFS::read_le32(stream);
@@ -197,7 +197,8 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
 
     mModelData = mdldata.at(mModelIdx);
 
-    loadAction(stream);
+    osg::Vec3 pos = basepos + osg::Vec3(mXPos, mYPos, mZPos);
+    loadAction(stream, pos);
 
     if(mModelData[0] == -1)
         return;
@@ -219,7 +220,7 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     else if(mModelData[5] == 'E' && mModelData[6] == 'X' && mModelData[7] == 'T')
         ExitDoor::get().allocate(mId, mActionFlags|0x02, ~static_cast<size_t>(0), regnum, locnum);
     Renderer::get().setNode(mId, node);
-    Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(mXRot, mYRot, mZRot));
+    Placeable::get().setPos(mId, pos, osg::Vec3f(mXRot, mYRot, mZRot));
 }
 
 void ModelObject::print(std::ostream &stream) const
@@ -236,7 +237,7 @@ void ModelObject::print(std::ostream &stream) const
 }
 
 
-void FlatObject::load(std::istream &stream, osg::Group *root)
+void FlatObject::load(std::istream &stream, const osg::Vec3 &basepos, osg::Group *root)
 {
     mTexture = VFS::read_le16(stream);
     mGender = VFS::read_le16(stream);
@@ -244,7 +245,8 @@ void FlatObject::load(std::istream &stream, osg::Group *root)
     mActionOffset = VFS::read_le32(stream);
     mUnknown = stream.get();
 
-    loadAction(stream);
+    osg::Vec3 pos = basepos + osg::Vec3(mXPos, mYPos, mZPos);
+    loadAction(stream, pos);
 
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
     node->setNodeMask(Renderer::Mask_Flat);
@@ -253,7 +255,7 @@ void FlatObject::load(std::istream &stream, osg::Group *root)
     root->addChild(node);
 
     Renderer::get().setNode(mId, node);
-    Placeable::get().setPoint(mId, osg::Vec3f(mXPos, mYPos, mZPos));
+    Placeable::get().setPoint(mId, pos);
 }
 
 void FlatObject::print(std::ostream &stream) const
@@ -269,7 +271,6 @@ void FlatObject::print(std::ostream &stream) const
 
 DBlockHeader::~DBlockHeader()
 {
-    detachNode();
     if(!mObjects.empty())
     {
         Renderer::get().remove(&*mObjects.getIdList(), mObjects.size());
@@ -313,7 +314,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
     for(int32_t &val : rootoffsets)
         val = VFS::read_le32(stream);
 
-    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
+    osg::Vec3 basepos(x, 0.0f, z);
     for(int32_t offset : rootoffsets)
     {
         while(offset > 0)
@@ -332,7 +333,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
             {
                 stream.seekg(objoffset);
                 ref_ptr<ModelObject> mdl(new ModelObject(blockid|offset, x, y, z));
-                mdl->load(stream, mModelData, regnum, locnum, mBaseNode);
+                mdl->load(stream, mModelData, regnum, locnum, basepos, root);
 
                 mObjects.insert(blockid|offset, mdl);
             }
@@ -340,25 +341,13 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
             {
                 stream.seekg(objoffset);
                 ref_ptr<FlatObject> flat(new FlatObject(blockid|offset, x, y, z));
-                flat->load(stream, mBaseNode);
+                flat->load(stream, basepos, root);
 
                 mObjects.insert(blockid|offset, flat);
             }
 
             offset = next;
         }
-    }
-
-    root->addChild(mBaseNode);
-}
-
-void DBlockHeader::detachNode()
-{
-    if(!mBaseNode) return;
-    while(mBaseNode->getNumParents() > 0)
-    {
-        osg::Group *parent = mBaseNode->getParent(0);
-        parent->removeChild(mBaseNode);
     }
 }
 

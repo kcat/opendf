@@ -40,7 +40,7 @@ struct MFlat : public MObjectBase {
     uint8_t mFlags;
 
     void load(std::istream &stream);
-    void allocate(osg::Group *root);
+    void allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -70,9 +70,39 @@ struct MModel : public MObjectBase {
     uint16_t mNullValue4;
 
     void load(std::istream &stream);
-    void allocate(osg::Group *root);
+    void allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori);
 
     virtual void print(std::ostream &stream) const;
+};
+
+
+struct MBlock {
+    uint8_t  mModelCount;
+    uint8_t  mFlatCount;
+    uint8_t  mSection3Count;
+    uint8_t  mPersonCount;
+    uint8_t  mDoorCount;
+    uint16_t mUnknown1;
+    uint16_t mUnknown2;
+    uint16_t mUnknown3;
+    uint16_t mUnknown4;
+    uint16_t mUnknown5;
+    uint16_t mUnknown6;
+
+    Misc::SparseArray<MModel> mModels;
+    Misc::SparseArray<MFlat>  mFlats;
+    std::vector<MSection3> mSection3s;
+    std::vector<MPerson>   mNpcs;
+    std::vector<MDoor>     mDoors;
+
+    ~MBlock() { deallocate(); }
+
+    void load(std::istream &stream, size_t blockid);
+
+    void allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori);
+    void deallocate();
+
+    MObjectBase *getObject(size_t id);
 };
 
 
@@ -113,7 +143,7 @@ void MFlat::load(std::istream &stream)
     mFlags = stream.get();
 }
 
-void MFlat::allocate(osg::Group *root)
+void MFlat::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Flat);
@@ -122,7 +152,7 @@ void MFlat::allocate(osg::Group *root)
     root->addChild(node);
 
     Renderer::get().setNode(mId, node);
-    Placeable::get().setPoint(mId, osg::Vec3f(mXPos, mYPos, mZPos));
+    Placeable::get().setPoint(mId, (ori * osg::Vec3f(mXPos, mYPos, mZPos)) + pos);
 }
 
 void MFlat::print(std::ostream &stream) const
@@ -166,7 +196,7 @@ void MModel::load(std::istream &stream)
     mNullValue4 = VFS::read_le16(stream);
 }
 
-void MModel::allocate(osg::Group *root)
+void MModel::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Static);
@@ -175,7 +205,10 @@ void MModel::allocate(osg::Group *root)
     root->addChild(node);
 
     Renderer::get().setNode(mId, node);
-    Placeable::get().setPos(mId, osg::Vec3f(mXPos, mYPos, mZPos), osg::Vec3f(0.0f, mYRotation, 0.0f));
+    Placeable::get().setPos(mId,
+        (ori * osg::Vec3f(mXPos, mYPos, mZPos)) + pos,
+        ori * osg::Quat(-mYRotation*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f))
+    );
 }
 
 void MModel::print(std::ostream &stream) const
@@ -198,18 +231,8 @@ void MModel::print(std::ostream &stream) const
 }
 
 
-MBlock::MBlock() { }
-MBlock::~MBlock()
-{ deallocate(); }
-
-void MBlock::load(std::istream &stream, size_t blockid, int x, int z, int yrot, osg::Group *root)
+void MBlock::load(std::istream &stream, size_t blockid)
 {
-    osg::Matrix mat(osg::Matrix::rotate(
-        -yrot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f)
-    ));
-    mat.postMultTranslate(osg::Vec3(x, 0.0f, -z));
-    mBaseNode = new osg::MatrixTransform(mat);
-
     mModelCount = stream.get();
     mFlatCount = stream.get();
     mSection3Count = stream.get();
@@ -245,22 +268,18 @@ void MBlock::load(std::istream &stream, size_t blockid, int x, int z, int yrot, 
     mDoors.resize(mDoorCount);
     for(MDoor &door : mDoors)
         door.load(stream);
-
-    root->addChild(mBaseNode);
 }
 
-void MBlock::allocate()
+void MBlock::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
 {
     for(MModel &model : mModels)
-        model.allocate(mBaseNode);
+        model.allocate(root, pos, ori);
     for(MFlat &flat : mFlats)
-        flat.allocate(mBaseNode);
+        flat.allocate(root, pos, ori);
 }
 
 void MBlock::deallocate()
 {
-    if(mBaseNode)
-        mBaseNode->removeChildren(0, mBaseNode->getNumChildren());
     if(!mModels.empty())
     {
         Renderer::get().remove(&*mModels.getIdList(), mModels.size());
@@ -295,7 +314,6 @@ void MBlockPosition::load(std::istream &stream)
 MBlockHeader::MBlockHeader() { }
 MBlockHeader::~MBlockHeader()
 {
-    detachNode();
     deallocate();
 }
 
@@ -321,8 +339,6 @@ void MBlockHeader::deallocate()
 
 void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z, osg::Group *root)
 {
-    mBaseNode = new osg::MatrixTransform(osg::Matrix::translate(x, 0.0f, z));
-
     size_t texfile = 0;
     if(climate == 223) texfile = 502<<7;
     else if(climate == 224) texfile = 503<<7;
@@ -372,13 +388,9 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
     for(size_t i = 0;i < mBlockCount;++i)
     {
         size_t pos = stream.tellg();
-        mExteriorBlocks[i].load(stream, blockid | (i<<17) | 0x00000,
-                                mBlockPositions[i].mX, mBlockPositions[i].mZ,
-                                mBlockPositions[i].mYRot, mBaseNode);
+        mExteriorBlocks[i].load(stream, blockid | (i<<17) | 0x00000);
 
-        mInteriorBlocks[i].load(stream, blockid | (i<<17) | 0x10000,
-                                mBlockPositions[i].mX, mBlockPositions[i].mZ,
-                                mBlockPositions[i].mYRot, mBaseNode);
+        mInteriorBlocks[i].load(stream, blockid | (i<<17) | 0x10000);
         stream.seekg(pos + mBlockSizes[i]);
     }
 
@@ -411,26 +423,18 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
         flat.mFlags = 0;
     }
 
-    root->addChild(mBaseNode);
-
+    osg::Vec3f basepos(x, 0.0f, z);
     for(size_t i = 0;i < mBlockCount;++i)
-        mExteriorBlocks[i].allocate();
+        mExteriorBlocks[i].allocate(root,
+            basepos + osg::Vec3(mBlockPositions[i].mX, 0.0f, -mBlockPositions[i].mZ),
+            osg::Quat(-mBlockPositions[i].mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f))
+        );
     for(MModel &model : mModels)
-        model.allocate(mBaseNode);
+        model.allocate(root, basepos, osg::Quat());
     for(MFlat &flat : mFlats)
-        flat.allocate(mBaseNode);
+        flat.allocate(root, basepos, osg::Quat());
     for(MFlat &flat : mScenery)
-        flat.allocate(mBaseNode);
-}
-
-void MBlockHeader::detachNode()
-{
-    if(!mBaseNode) return;
-    while(mBaseNode->getNumParents() > 0)
-    {
-        osg::Group *parent = mBaseNode->getParent(0);
-        parent->removeChild(mBaseNode);
-    }
+        flat.allocate(root, basepos, osg::Quat());
 }
 
 

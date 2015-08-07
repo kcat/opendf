@@ -18,7 +18,18 @@ void Renderer::setNode(size_t idx, osg::MatrixTransform *node)
 void Renderer::remove(const size_t *ids, size_t count)
 {
     while(count > 0)
-        mBaseNodes.erase(ids[--count]);
+    {
+        auto iter = mBaseNodes.find(ids[--count]);
+        if(iter == mBaseNodes.end())
+            continue;
+
+        while((*iter)->getNumParents() > 0)
+        {
+            osg::Group *parent = (*iter)->getParent(0);
+            parent->removeChild(*iter);
+        }
+        mBaseNodes.erase(iter);
+    }
 }
 
 
