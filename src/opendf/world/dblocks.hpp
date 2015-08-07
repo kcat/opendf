@@ -2,9 +2,9 @@
 #define WORLD_DBLOCKS_HPP
 
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <array>
-#include <set>
 
 #include "misc/sparsearray.hpp"
 #include "referenceable.hpp"
@@ -22,23 +22,21 @@ namespace DF
 struct ObjectBase;
 struct DBlockHeader;
 
-struct ObjectBase : public Referenceable {
+struct ObjectBase {
     size_t mId;
     uint8_t mType;
 
     int32_t mXPos, mYPos, mZPos;
-    int32_t mXRot, mYRot, mZRot;
-    uint32_t mActionFlags;
-    uint8_t mSoundId; // Played when activated
-    int32_t mActionOffset;
 
-    ObjectBase(size_t id, uint8_t type, int x, int y, int z);
+    ObjectBase(size_t id, uint8_t type, int x, int y, int z) : mId(id), mType(type), mXPos(x), mYPos(y), mZPos(z) { }
     virtual ~ObjectBase();
 
-    void loadAction(std::istream &stream, const osg::Vec3f &pos);
+    void loadAction(std::istream &stream, int32_t actionoffset, uint32_t actionflags, uint8_t soundid, const osg::Vec3f &pos, const osg::Vec3f &rot);
 
     virtual void print(std::ostream &stream) const;
 };
+struct ModelObject;
+struct FlatObject;
 
 enum {
     Marker_EnterID = 0x6388,
@@ -62,14 +60,10 @@ struct DBlockHeader {
 
     std::vector<uint32_t> mUnknownList;
 
-    /* Objects are stored in the files as an array of (width*height) root
-     * offsets, which contain a linked list of objects. We merely use an array
-     * of pointers to polymorphic objects, using its offset as a lookup. The
-     * offset is used as an ID lookup for Action records that specify targets
-     * as a byte offset.
-     */
-    Misc::SparseArray<ref_ptr<ObjectBase>> mObjects;
+    Misc::SparseArray<std::unique_ptr<ModelObject>> mModels;
+    Misc::SparseArray<std::unique_ptr<FlatObject>> mFlats;
 
+    DBlockHeader();
     ~DBlockHeader();
 
     void load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum, osg::Group *root);

@@ -84,12 +84,12 @@ namespace DF
 {
 
 struct ModelObject : public ObjectBase {
-    //int32_t mXRot, mYRot, mZRot;
+    int32_t mXRot, mYRot, mZRot;
 
     uint16_t mModelIdx;
-    //uint32_t mActionFlags;
-    //uint8_t mSoundId;
-    //int32_t  mActionOffset;
+    uint32_t mActionFlags;
+    uint8_t  mSoundId;
+    int32_t  mActionOffset;
 
     std::array<char,8> mModelData;
 
@@ -105,38 +105,28 @@ struct FlatObject : public ObjectBase {
     uint16_t mTexture;
     uint16_t mGender; // Flags?
     uint16_t mFactionId;
-    //int32_t mActionOffset;
+    int32_t mActionOffset;
     uint8_t mUnknown; // DFTfU says this is monster passiveness (0=hostile, 99=passive).
                       // It's also used on non-monster flats too, though, particularly
                       // those with associated actions.
 
     FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
+
     void load(std::istream &stream, const osg::Vec3 &basepos, osg::Group *root);
 
     virtual void print(std::ostream &stream) const final;
 };
 
 
-ObjectBase::ObjectBase(size_t id, uint8_t type, int x, int y, int z)
-  : mId(id), mType(type)
-  , mXPos(x), mYPos(y), mZPos(z)
-  , mXRot(0), mYRot(0), mZRot(0)
-  , mActionFlags(0)
-  , mActionOffset(0)
-{
-}
 ObjectBase::~ObjectBase()
 {
     Activator::get().deallocate(mId);
 }
 
-void ObjectBase::loadAction(std::istream &stream, const osg::Vec3 &pos)
+void ObjectBase::loadAction(std::istream &stream, int32_t actionoffset, uint32_t actionflags, uint8_t soundid, const osg::Vec3 &pos, const osg::Vec3f &rot)
 {
-    if(mActionOffset <= 0)
-        return;
-
     std::array<uint8_t,5> adata;
-    stream.seekg(mActionOffset);
+    stream.seekg(actionoffset);
     stream.read(reinterpret_cast<char*>(adata.data()), adata.size());
     int32_t target = VFS::read_le32(stream);
     uint8_t type = stream.get();
@@ -151,7 +141,7 @@ void ObjectBase::loadAction(std::istream &stream, const osg::Vec3 &pos)
         float duration;
         getActionData<ActionTranslate>(adata, amount, duration);
 
-        Mover::get().allocateTranslate(mId, mActionFlags, link, mSoundId,
+        Mover::get().allocateTranslate(mId, actionflags, link, soundid,
                                        pos, amount, duration);
     }
     else if(type == Action_Rotate)
@@ -160,18 +150,17 @@ void ObjectBase::loadAction(std::istream &stream, const osg::Vec3 &pos)
         float duration;
         getActionData<ActionRotate>(adata, amount, duration);
 
-        Mover::get().allocateRotate(mId, mActionFlags, link, mSoundId,
-                                    osg::Vec3f(mXRot, mYRot, mZRot),
-                                    amount, duration);
+        Mover::get().allocateRotate(mId, actionflags, link, soundid,
+                                    rot, amount, duration);
     }
     else if(type == Action_Linker)
     {
-        Activator::get().allocate(mId, mActionFlags, link, Linker::activateFunc,
+        Activator::get().allocate(mId, actionflags, link, Linker::activateFunc,
                                   Linker::deallocateFunc);
     }
     else
     {
-        UnknownAction::get().allocate(mId, mActionFlags, link, type, adata);
+        UnknownAction::get().allocate(mId, actionflags, link, type, adata);
         Log::get().stream(Log::Level_Error)<< "Unhandled action type: 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<(int)type;
     }
 }
@@ -198,7 +187,8 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     mModelData = mdldata.at(mModelIdx);
 
     osg::Vec3 pos = basepos + osg::Vec3(mXPos, mYPos, mZPos);
-    loadAction(stream, pos);
+    if(mActionOffset > 0)
+        loadAction(stream, mActionOffset, mActionFlags, mSoundId, pos, osg::Vec3(mXRot, mYRot, mZRot));
 
     if(mModelData[0] == -1)
         return;
@@ -246,7 +236,8 @@ void FlatObject::load(std::istream &stream, const osg::Vec3 &basepos, osg::Group
     mUnknown = stream.get();
 
     osg::Vec3 pos = basepos + osg::Vec3(mXPos, mYPos, mZPos);
-    loadAction(stream, pos);
+    if(mActionOffset > 0)
+        loadAction(stream, mActionOffset, 0x02, 0, pos, osg::Vec3());
 
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
     node->setNodeMask(Renderer::Mask_Flat);
@@ -269,12 +260,18 @@ void FlatObject::print(std::ostream &stream) const
 }
 
 
+DBlockHeader::DBlockHeader() { }
 DBlockHeader::~DBlockHeader()
 {
-    if(!mObjects.empty())
+    if(!mModels.empty())
     {
-        Renderer::get().remove(&*mObjects.getIdList(), mObjects.size());
-        Placeable::get().deallocate(&*mObjects.getIdList(), mObjects.size());
+        Renderer::get().remove(&*mModels.getIdList(), mModels.size());
+        Placeable::get().deallocate(&*mModels.getIdList(), mModels.size());
+    }
+    if(!mFlats.empty())
+    {
+        Renderer::get().remove(&*mFlats.getIdList(), mFlats.size());
+        Placeable::get().deallocate(&*mFlats.getIdList(), mFlats.size());
     }
 }
 
@@ -300,11 +297,10 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
         int32_t offset = mUnknownOffset;
         while(stream.good() && offset > 0)
         {
-            mUnknownList.push_back(offset);
             stream.seekg(offset);
             offset = VFS::read_le32(stream);
+            mUnknownList.push_back(offset);
         }
-        mUnknownList.push_back(offset);
     }
 
     stream.clear();
@@ -332,18 +328,18 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
             if(type == ObjectType_Model)
             {
                 stream.seekg(objoffset);
-                ref_ptr<ModelObject> mdl(new ModelObject(blockid|offset, x, y, z));
-                mdl->load(stream, mModelData, regnum, locnum, basepos, root);
-
-                mObjects.insert(blockid|offset, mdl);
+                ModelObject *model = mModels.insert(blockid|offset,
+                    std::unique_ptr<ModelObject>(new ModelObject(blockid|offset, x, y, z))
+                ).first->get();
+                model->load(stream, mModelData, regnum, locnum, basepos, root);
             }
             else if(type == ObjectType_Flat)
             {
                 stream.seekg(objoffset);
-                ref_ptr<FlatObject> flat(new FlatObject(blockid|offset, x, y, z));
+                FlatObject *flat = mFlats.insert(blockid|offset,
+                    std::unique_ptr<FlatObject>(new FlatObject(blockid|offset, x, y, z))
+                ).first->get();
                 flat->load(stream, basepos, root);
-
-                mObjects.insert(blockid|offset, flat);
             }
 
             offset = next;
@@ -354,21 +350,25 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
 
 ObjectBase *DBlockHeader::getObject(size_t id)
 {
-    auto iter = mObjects.find(id);
-    if(iter == mObjects.end())
-        return nullptr;
-    return *iter;
+    {
+        auto iter = mModels.find(id);
+        if(iter != mModels.end())
+            return iter->get();
+    }
+    {
+        auto iter = mFlats.find(id);
+        if(iter != mFlats.end())
+            return iter->get();
+    }
+    return nullptr;
 }
 
 size_t DBlockHeader::getObjectByTexture(size_t texid) const
 {
-    for(const ObjectBase *obj : mObjects)
+    for(const std::unique_ptr<FlatObject> &flat : mFlats)
     {
-        if(obj->mType == ObjectType_Flat)
-        {
-            const FlatObject *flat = static_cast<const FlatObject*>(obj);
-            if(flat->mTexture == texid) return flat->mId;
-        }
+        if(flat->mTexture == texid)
+            return flat->mId;
     }
     Log::get().stream(Log::Level_Error)<< "Failed to find Flat with texture 0x"<<std::setfill('0')<<std::setw(4)<<std::hex<<texid;
     return ~static_cast<size_t>(0);
@@ -400,11 +400,18 @@ void DBlockHeader::print(std::ostream &stream, int objtype) const
     stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown5<<std::dec<<std::setw(0)<<"\n";
     stream<< "Unknown: 0x"<<std::hex<<std::setw(8)<<mUnknown6<<std::dec<<std::setw(0)<<"\n";
 
-    auto iditer = mObjects.getIdList();
-    for(ref_ptr<ObjectBase> obj : mObjects)
+    auto iditer = mModels.getIdList();
+    for(const std::unique_ptr<ModelObject> &model : mModels)
     {
         stream<< "**** Object 0x"<<std::hex<<std::setw(8)<<*iditer<<std::setw(0)<<std::dec<<" ****\n";
-        obj->print(stream);
+        model->print(stream);
+        ++iditer;
+    }
+    iditer = mFlats.getIdList();
+    for(const std::unique_ptr<FlatObject> &flat : mFlats)
+    {
+        stream<< "**** Object 0x"<<std::hex<<std::setw(8)<<*iditer<<std::setw(0)<<std::dec<<" ****\n";
+        flat->print(stream);
         ++iditer;
     }
 }
