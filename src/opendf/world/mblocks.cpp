@@ -311,7 +311,7 @@ void MBlockPosition::load(std::istream &stream)
 }
 
 
-MBlockHeader::MBlockHeader() { }
+MBlockHeader::MBlockHeader() : mTerrainId(~static_cast<size_t>(0)) { }
 MBlockHeader::~MBlockHeader()
 {
     deallocate();
@@ -333,6 +333,12 @@ void MBlockHeader::deallocate()
     {
         Renderer::get().remove(&*mScenery.getIdList(), mScenery.size());
         Placeable::get().deallocate(&*mScenery.getIdList(), mScenery.size());
+    }
+    if(mTerrainId != ~static_cast<size_t>(0))
+    {
+        Renderer::get().remove(&mTerrainId, 1);
+        Placeable::get().deallocate(&mTerrainId, 1);
+        mTerrainId = ~static_cast<size_t>(0);
     }
 }
 
@@ -435,6 +441,17 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
         flat.allocate(root, basepos, osg::Quat());
     for(MFlat &flat : mScenery)
         flat.allocate(root, basepos, osg::Quat());
+
+    mTerrainId = blockid | 0x00ffffff;
+    osg::ref_ptr<osg::MatrixTransform> terrainbase(new osg::MatrixTransform());
+    terrainbase->setNodeMask(Renderer::Mask_Static);
+    //terrainbase->setUserData(new ObjectRef(mTerrainId));
+    terrainbase->addChild(Resource::MeshManager::get().getTerrain(4096.0f));
+    root->addChild(terrainbase);
+
+    Renderer::get().setNode(mTerrainId, terrainbase);
+    // Slight Y offset because some planes lay exactly on Y=0 and would Z-fight horribly.
+    Placeable::get().setPoint(mTerrainId, basepos + osg::Vec3(0.0f, 0.125f, 0.0f));
 }
 
 

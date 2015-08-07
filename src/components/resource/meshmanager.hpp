@@ -23,9 +23,11 @@ class MeshManager {
     std::map<size_t,osg::observer_ptr<osg::Node>> mModelCache;
     std::map<size_t,osg::observer_ptr<osg::StateSet>> mStateSetCache;
     std::map<std::pair<size_t,bool>,osg::observer_ptr<osg::Node>> mFlatCache;
+    std::map<float,osg::observer_ptr<osg::Node>> mTerrainCache;
 
     osg::ref_ptr<osg::Program> mModelProgram;
     osg::ref_ptr<osg::Program> mFlatProgram;
+    osg::ref_ptr<osg::Program> mTerrainProgram;
 
     MeshManager();
     ~MeshManager();
@@ -41,6 +43,8 @@ public:
      * returns the number of frames in the loaded texture.
      */
     osg::ref_ptr<osg::Node> loadFlat(size_t texid, bool centered, size_t *num_frames=nullptr);
+
+    osg::ref_ptr<osg::Node> getTerrain(float dim);
 
     static MeshManager &get() { return sManager; }
 };

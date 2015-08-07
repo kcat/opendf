@@ -35,8 +35,10 @@ void MeshManager::initialize()
 void MeshManager::deinitialize()
 {
     mStateSetCache.clear();
+    mTerrainCache.clear();
     mFlatCache.clear();
     mModelCache.clear();
+    mTerrainProgram = nullptr;
     mFlatProgram = nullptr;
     mModelProgram = nullptr;
 }
@@ -164,8 +166,6 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
 
 osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_t *num_frames)
 {
-    /* Nodes for flats are stored with an inverted texid as a lookup, to avoid
-     * clashes with ARCH3D indices. */
     auto iter = mFlatCache.find(std::make_pair(texid, centered));
     if(iter != mFlatCache.end())
     {
@@ -264,5 +264,62 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
     return base;
 }
 
+osg::ref_ptr<osg::Node> MeshManager::getTerrain(float size)
+{
+    auto iter = mTerrainCache.find(size);
+    if(iter != mTerrainCache.end())
+    {
+        osg::ref_ptr<osg::Node> node;
+        if(iter->second.lock(node))
+            return node;
+    }
+
+    if(!mTerrainProgram)
+    {
+        mTerrainProgram = new osg::Program();
+        mTerrainProgram->addShader(osgDB::readShaderFile(osg::Shader::VERTEX, "shaders/terrain.vert"));
+        mTerrainProgram->addShader(osgDB::readShaderFile(osg::Shader::FRAGMENT, "shaders/terrain.frag"));
+    }
+
+    osg::ref_ptr<osg::Vec3Array> vtxs(new osg::Vec3Array(4));
+    (*vtxs)[0] = osg::Vec3(0.0f, 0.0f, 0.0f);
+    (*vtxs)[1] = osg::Vec3(0.0f, 0.0f, -size);
+    (*vtxs)[2] = osg::Vec3(size, 0.0f, -size);
+    (*vtxs)[3] = osg::Vec3(size, 0.0f, 0.0f);
+    osg::ref_ptr<osg::Vec2Array> texcrds(new osg::Vec2Array(4));
+    (*texcrds)[0] = osg::Vec2(0.0f, 0.0f);
+    (*texcrds)[1] = osg::Vec2(0.0f, size);
+    (*texcrds)[2] = osg::Vec2(size, size);
+    (*texcrds)[3] = osg::Vec2(size, 0.0f);
+    osg::ref_ptr<osg::Vec3Array> nrms(new osg::Vec3Array(4));
+    (*nrms)[0] = osg::Vec3(0.0f, -1.0f, 0.0f);
+    (*nrms)[1] = osg::Vec3(0.0f, -1.0f, 0.0f);
+    (*nrms)[2] = osg::Vec3(0.0f, -1.0f, 0.0f);
+    (*nrms)[3] = osg::Vec3(0.0f, -1.0f, 0.0f);
+
+    osg::ref_ptr<osg::VertexBufferObject> vbo(new osg::VertexBufferObject());
+    vtxs->setVertexBufferObject(vbo);
+    texcrds->setVertexBufferObject(vbo);
+    nrms->setVertexBufferObject(vbo);
+
+    osg::ref_ptr<osg::Geometry> geometry(new osg::Geometry);
+    geometry->setVertexArray(vtxs);
+    geometry->setTexCoordArray(0, texcrds, osg::Array::BIND_PER_VERTEX);
+    geometry->setNormalArray(nrms, osg::Array::BIND_PER_VERTEX);
+    geometry->setUseDisplayList(false);
+    geometry->setUseVertexBufferObjects(true);
+    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4));
+
+    osg::StateSet *ss = geometry->getOrCreateStateSet();
+    ss->setAttributeAndModes(mTerrainProgram);
+    ss->addUniform(new osg::Uniform("diffuseTex", 0));
+    ss->addUniform(new osg::Uniform("tilemapTex", 1));
+
+    osg::ref_ptr<osg::Geode> base(new osg::Geode());
+    base->addDrawable(geometry);
+
+    mTerrainCache[size] = osg::ref_ptr<osg::Node>(base);
+    return base;
+}
 
 } // namespace Resource

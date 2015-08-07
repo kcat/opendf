@@ -75,6 +75,7 @@ struct MBlockHeader {
     Misc::SparseArray<MModel> mModels;
     Misc::SparseArray<MFlat> mFlats;
     Misc::SparseArray<MFlat> mScenery;
+    size_t mTerrainId;
 
     MBlockHeader();
     ~MBlockHeader();
