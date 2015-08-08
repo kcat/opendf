@@ -44,6 +44,8 @@ public:
         return load(idx, &xoffset, &yoffset, &xscale, &yscale, palette);
     }
 
+    std::vector<ImagePtrArray> loadAll(size_t idx, const Resource::Palette &palette);
+
     static TexLoader &get() { return sLoader; }
 };
 

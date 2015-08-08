@@ -54,6 +54,10 @@ public:
     osg::ref_ptr<osg::Texture> getTexture(size_t idx, int16_t *xoffset, int16_t *yoffset, float *xscale, float *yscale);
     osg::ref_ptr<osg::Texture> getTexture(size_t idx);
 
+    // Really returns a Texture2DArray
+    osg::ref_ptr<osg::Texture> getTerrainTileset(size_t idx);
+    osg::ref_ptr<osg::Texture> createTerrainMap(const uint8_t *data, size_t dim);
+
     static TextureManager &get() { return sManager; }
 };
 

@@ -325,4 +325,116 @@ ImagePtrArray TexLoader::load(size_t idx, int16_t *xoffset, int16_t *yoffset, in
     return images;
 }
 
+std::vector<ImagePtrArray> TexLoader::loadAll(size_t idx, const Resource::Palette &palette)
+{
+    std::stringstream sstr; sstr.fill('0');
+    sstr<<"TEXTURE."<<std::setw(3)<<(idx>>7);
+
+    VFS::IStreamPtr stream = VFS::Manager::get().open(sstr.str());
+
+    TexFileHeader hdr;
+    hdr.load(*stream);
+
+    std::vector<ImagePtrArray> allimages;
+    allimages.reserve(hdr.getImageCount());
+
+    for(const TexEntryHeader &entryhdr : hdr.getHeaders())
+    {
+        ImagePtrArray images;
+
+        if(entryhdr.getOffset() == 0)
+        {
+            osg::ref_ptr<osg::Image> image(new osg::Image());
+
+            // Solid color "texture".
+            image->allocateImage(1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE);
+            uint8_t idx = entryhdr.getColor();
+            unsigned char *dst = image->data(0, 0);
+            *(dst++) = palette[idx].r;
+            *(dst++) = palette[idx].g;
+            *(dst++) = palette[idx].b;
+            *(dst++) = (idx==0) ? 0 : 255;
+
+            images.push_back(image);
+            goto next;
+        }
+
+        if(!stream->seekg(entryhdr.getOffset()))
+            throw std::runtime_error("Failed to seek to texture offset");
+
+        TexHeader texhdr;
+        texhdr.load(*stream);
+
+        // Would be nice to load a multiframe texture as a 3D Image, but such an
+        // image can't be properly loaded into a Texture2DArray (it wants to load
+        // a 2D Image for each individual layer).
+        if(texhdr.getFrameCount() == 0)
+        {
+            // Allocate a dummy image
+            images.push_back(createDummyImage());
+        }
+        else if(texhdr.getFrameCount() == 1)
+        {
+            osg::ref_ptr<osg::Image> image;
+
+            if(texhdr.getCompression() == texhdr.sRleCompressed)
+                std::cerr<< "Unhandled RleCompressed compression type"<< std::endl;
+            else if(texhdr.getCompression() == texhdr.sImageRle)
+                std::cerr<< "Unhandled ImageRle compression type"<< std::endl;
+            else if(texhdr.getCompression() == texhdr.sRecordRle)
+                std::cerr<< "Unhandled RecordRle compression type"<< std::endl;
+            else //if(texhdr.getCompression() == texhdr.sUncompressed)
+            {
+                if(!stream->seekg(entryhdr.getOffset() + texhdr.getDataOffset()))
+                    throw std::runtime_error("Failed to seek to image offset");
+
+                image = loadUncompressedSingle(texhdr.getWidth(), texhdr.getHeight(), palette, *stream);
+            }
+
+            if(!image)
+                image = createDummyImage();
+
+            images.push_back(image);
+        }
+        else
+        {
+            if(texhdr.getCompression() == texhdr.sRleCompressed)
+                std::cerr<< "Unhandled RleCompressed compression type"<< std::endl;
+            else if(texhdr.getCompression() == texhdr.sImageRle)
+                std::cerr<< "Unhandled ImageRle compression type"<< std::endl;
+            else if(texhdr.getCompression() == texhdr.sRecordRle)
+                std::cerr<< "Unhandled RecordRle compression type"<< std::endl;
+            else //if(texhdr.getCompression() == texhdr.sUncompressed)
+            {
+                if(!stream->seekg(entryhdr.getOffset() + texhdr.getDataOffset()))
+                    throw std::runtime_error("Failed to seek to image offset");
+                std::vector<uint32_t> offsets(texhdr.getFrameCount());
+                for(uint32_t &offset : offsets)
+                    offset = VFS::read_le32(*stream);
+
+                for(uint32_t offset : offsets)
+                {
+                    if(!stream->seekg(entryhdr.getOffset() + texhdr.getDataOffset() + offset))
+                        throw std::runtime_error("Failed to seek to frame offset");
+                    images.push_back(new osg::Image());
+
+                    osg::Image *image = images.back();
+                    image->allocateImage(texhdr.getWidth(), texhdr.getHeight(), 1,
+                                        GL_RGBA, GL_UNSIGNED_BYTE);
+
+                    loadUncompressedMulti(image, palette, *stream);
+                }
+            }
+
+            if(images.empty())
+                images.push_back(createDummyImage());
+        }
+
+    next:
+        allimages.push_back(std::move(images));
+    }
+
+    return allimages;
+}
+
 } // namespace DFOSG

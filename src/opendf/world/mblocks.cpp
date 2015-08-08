@@ -6,9 +6,11 @@
 
 #include <osg/Group>
 #include <osg/MatrixTransform>
+#include <osg/Texture>
 
 #include "components/vfs/manager.hpp"
 #include "components/resource/meshmanager.hpp"
+#include "components/resource/texturemanager.hpp"
 
 #include "render/renderer.hpp"
 #include "world.hpp"
@@ -442,11 +444,29 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
     for(MFlat &flat : mScenery)
         flat.allocate(root, basepos, osg::Quat());
 
+    // Load up terrain...
+    texfile = 2;
+    if(climate == 223) texfile = 402<<7;
+    else if(climate == 224) texfile = 002<<7;
+    else if(climate == 225) texfile = 002<<7;
+    else if(climate == 226) texfile = 102<<7;
+    else if(climate == 227) texfile = 402<<7;
+    else if(climate == 228) texfile = 402<<7;
+    else if(climate == 229) texfile = 002<<7;
+    else if(climate == 230) texfile = 102<<7;
+    else if(climate == 231) texfile = 302<<7;
+    else if(climate == 232) texfile = 302<<7;
+
     mTerrainId = blockid | 0x00ffffff;
     osg::ref_ptr<osg::MatrixTransform> terrainbase(new osg::MatrixTransform());
     terrainbase->setNodeMask(Renderer::Mask_Static);
     //terrainbase->setUserData(new ObjectRef(mTerrainId));
     terrainbase->addChild(Resource::MeshManager::get().getTerrain(4096.0f));
+    {
+        osg::StateSet *ss = terrainbase->getOrCreateStateSet();
+        ss->setTextureAttribute(0, Resource::TextureManager::get().getTerrainTileset(texfile));
+        ss->setTextureAttribute(1, Resource::TextureManager::get().createTerrainMap(mGroundTexture.data(), 16));
+    }
     root->addChild(terrainbase);
 
     Renderer::get().setNode(mTerrainId, terrainbase);
