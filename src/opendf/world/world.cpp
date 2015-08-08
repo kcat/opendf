@@ -508,7 +508,7 @@ void World::loadExterior(int regnum, int extid)
     if(startobj == InvalidHandle)
     {
         Log::get().message("Failed to find enter or start markers", Log::Level_Error);
-        mCameraPos = osg::Vec3f(0.0f, 0.0f, 0.0f);
+        mCameraPos = osg::Vec3f(-2048.0f, 0.0f, -2048.0f);
     }
     mCameraRot = osg::Vec3f(0.0f, 1024.0f, 0.0f);
 }
