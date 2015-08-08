@@ -57,6 +57,12 @@ class MdlPoint {
 
 public:
     void load(std::istream &stream);
+    void set(int32_t x, int32_t y, int32_t z)
+    {
+        mX = x;
+        mY = y;
+        mZ = z;
+    }
 
     int32_t x() const { return mX; }
     int32_t y() const { return mY; }
@@ -87,6 +93,9 @@ class MdlPlane {
     std::vector<MdlPlanePoint> mPoints;
     MdlPoint mNormal;
 
+    // Calculated on load
+    MdlPoint mBinormal;
+
 public:
     void load(std::istream &stream, uint32_t offset_scale);
 
@@ -97,6 +106,7 @@ public:
     const std::vector<MdlPlanePoint> &getPoints() const { return mPoints; }
     uint16_t getTextureId() const { return mTextureId; }
     const MdlPoint &getNormal() const { return mNormal; }
+    const MdlPoint &getBinormal() const { return mBinormal; }
 };
 
 class Mesh {

@@ -5,6 +5,7 @@ uniform mat4 osg_ModelViewMatrix;
 
 in vec4 osg_Vertex;
 in vec3 osg_Normal;
+in vec3 osg_MultiTexCoord1; // Binormal
 in vec4 osg_Color;
 in vec4 osg_MultiTexCoord0;
 
@@ -23,8 +24,7 @@ void main()
 
     pos_viewspace = (osg_ModelViewMatrix * osg_Vertex).xyz;
 
-    vec3 binormal = cross(osg_Normal, vec3(1.0, 0.0, 0.0));
     n_viewspace   = normalize(mat3(osg_ModelViewMatrix) * osg_Normal);
-    t_viewspace   = normalize(mat3(osg_ModelViewMatrix) * cross(osg_Normal, binormal));
-    b_viewspace   = normalize(mat3(osg_ModelViewMatrix) * binormal);
+    b_viewspace   = normalize(mat3(osg_ModelViewMatrix) * osg_MultiTexCoord1);
+    t_viewspace   = cross(n_viewspace, b_viewspace);
 }

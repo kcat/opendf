@@ -65,9 +65,34 @@ void MdlPoint::load(std::istream& stream)
 
 void MdlPlanePoint::load(std::istream& stream, uint32_t offset_scale)
 {
-    mIndex = VFS::read_le32(stream) / offset_scale;
-    mU = (int16_t)VFS::read_le16(stream) / 16.0f;
-    mV = (int16_t)VFS::read_le16(stream) / 16.0f;
+    uint32_t offset = VFS::read_le32(stream);
+    int u = (int16_t)VFS::read_le16(stream);
+    int v = (int16_t)VFS::read_le16(stream);
+
+    /* WTF is this. Using the read values as they are works for most meshes,
+     * but a few go wrong. UESP's note about only using the lower 12 bits (and
+     * sign-extending bit 11) breaks many meshes. Using sign-extended 14 bits
+     * fixes the original problem meshes, but breaks others, and using sign-
+     * extended 15 bits fixes those broken ones but re-breaks the original
+     * problem meshes.
+     *
+     * This, somehow, seems to fix both cases, but I have no idea what it's
+     * doing (based on code from Daggerfall Tools for Unity, by Gavin Clayton,
+     * under the MIT license (http://www.opensource.org/licenses/mit-license.php).
+     */
+    int threshold = 0x3fff;
+    while(u > threshold)
+        u = 0x4000 - u;
+    while(u < -threshold)
+        u = 0x4000 + u;
+    while(v > threshold)
+        v = 0x4000 - v;
+    while(v < -threshold)
+        v = 0x4000 + v;
+
+    mIndex = offset / offset_scale;
+    mU = u / 16.0f;
+    mV = v / 16.0f;
 }
 
 
@@ -98,67 +123,79 @@ void MdlPlane::fixUVs(const std::vector<MdlPoint> &points)
     }
 
     /* Daggerfall does not use the provided UV coords for the 4th point and
-     * beyond, so we can't rely on them. Check if they need to be calculated.
+     * beyond, so we can't rely on them.
+     *
+     * "Experiments show the Daggerfall rendering engine only uses the UV
+     * coordinates for the first three PlanePoint records."
+     *
+     * http://uesp.net/wiki/Daggerfall:UV_texture_coordinates
+     *
+     * This means with the first three UV coordinates and point positions,
+     * Daggerfall must be able to work out the U and V stepping values that it
+     * applies over the whole plane. This provides us a "simple" solution:
+     *
+     * Given the same 3 points Daggerfall uses to calculate U and V stepping,
+     * we can find the tangent (T) and binormal (B) vectors for the plane,
+     * which can then be used to work out UV coordinates for any point on the
+     * plane.
      */
-    if(mPoints.size() >= 4)
+    osg::Vec3 p0(points[mPoints[0].getIndex()].x(), points[mPoints[0].getIndex()].y(), points[mPoints[0].getIndex()].z());
+    osg::Vec3 p1(points[mPoints[1].getIndex()].x(), points[mPoints[1].getIndex()].y(), points[mPoints[1].getIndex()].z());
+    osg::Vec3 p2(points[mPoints[2].getIndex()].x(), points[mPoints[2].getIndex()].y(), points[mPoints[2].getIndex()].z());
+    osg::Vec2 uv0(mPoints[0].u(), mPoints[0].v());
+    osg::Vec2 uv1(mPoints[1].u(), mPoints[1].v());
+    osg::Vec2 uv2(mPoints[2].u(), mPoints[2].v());
+
+    /* Let P = Edge 1 */
+    osg::Vec3 P = p1 - p0;
+    /* Let Q = Edge 2 */
+    osg::Vec3 Q = p2 - p0;
+
+    /* Get UV deltas for the above edges */
+    float s1 = uv1.x() - uv0.x();
+    float t1 = uv1.y() - uv0.y();
+    float s2 = uv2.x() - uv0.x();
+    float t2 = uv2.y() - uv0.y();
+
+    /* We need to solve for T and B:
+     * P = s1*T + t1*B
+     * Q = s2*T + t2*B
+     *
+     * This is a linear system with six unknowns and six equations, for TxTyTz BxByBz
+     * [px,py,pz] = [s1,t1] * [Tx,Ty,Tz]
+     *  qx,qy,qz     s2,t2     Bx,By,Bz
+     *
+     * Multiplying both sides by the inverse of the s,t matrix gives
+     * [Tx,Ty,Tz] = 1/(s1t2-s2t1) * [ t2,-t1] * [px,py,pz]
+     *  Bx,By,Bz                     -s2, s1     qx,qy,qz
+     *
+     * Solve this to get the unormalized T and B vectors.
+     */
+
+    float scale = 1.0f / (s1*t2 - s2*t1);
+    osg::Vec3 tangent = (P*t2 - Q*t1) * scale;
+    osg::Vec3 binormal = (Q*s1 - P*s2) * scale;
+
+    /* Sometimes the above calculation fails to produce a non-0 vector, so
+     * recalculate the shorter of the two vectors (this also ensures T and B
+     * create a right angle).
+     */
+    osg::Vec3 normal(mNormal.x(), mNormal.y(), mNormal.z());
+    normal.normalize();
+    if(tangent.normalize() > binormal.normalize())
+        binormal = normal ^ tangent;
+    else
+        tangent = normal ^ binormal;
+
+    if(mPoints.size() > 3)
     {
-        /* Basing information here from http://uesp.net/wiki/Daggerfall:UV_texture_coordinates
-         *
-         * "Experiments show the Daggerfall rendering engine only uses the UV
-         * coordinates for the first three PlanePoint records."
-         *
-         * This means with the first three UV coordinates and point positions,
-         * Daggerfall must be able to work out the U and V stepping values that
-         * it applies over the whole plane. This gives us a "simple" solution:
-         *
-         * Given the same 3 points Daggerfall uses to calculate U and V
-         * stepping, we can find the tangent (T) and binormal (B) vectors for
-         * the plane, which can then be used to work out UV coordinates for any
-         * point on the plane.
-         */
-        osg::Vec3 p0(points[mPoints[0].getIndex()].x(), points[mPoints[0].getIndex()].y(), points[mPoints[0].getIndex()].z());
-        osg::Vec3 p1(points[mPoints[1].getIndex()].x(), points[mPoints[1].getIndex()].y(), points[mPoints[1].getIndex()].z());
-        osg::Vec3 p2(points[mPoints[2].getIndex()].x(), points[mPoints[2].getIndex()].y(), points[mPoints[2].getIndex()].z());
-        osg::Vec2 uv0(mPoints[0].u(), mPoints[0].v());
-        osg::Vec2 uv1(mPoints[1].u(), mPoints[1].v());
-        osg::Vec2 uv2(mPoints[2].u(), mPoints[2].v());
+        /* Find the U and V scales. Without this, we would assume 1 world unit = 1 UV unit. */
+        float tdp = tangent * P, tdq = tangent * Q;
+        float bdp = binormal * P, bdq = binormal * Q;
+        float uscale = (tdq == 0.0f || (s1 > 0.0f && fabs(tdp) > fabs(tdq))) ? (s1/tdp) : (s2/tdq);
+        float vscale = (bdq == 0.0f || (t1 > 0.0f && fabs(bdp) > fabs(bdq))) ? (t1/bdp) : (t2/bdq);
 
-        // Let P = Edge 1
-        osg::Vec3 P = p1 - p0;
-        // Let Q = Edge 2
-        osg::Vec3 Q = p2 - p0;
-
-        // Get UV deltas for the above edges
-        float s1 = uv1.x() - uv0.x();
-        float t1 = uv1.y() - uv0.y();
-        float s2 = uv2.x() - uv0.x();
-        float t2 = uv2.y() - uv0.y();
-
-        // We need to solve for T and B:
-        // P = s1*T + t1*B
-        // Q = s2*T + t2*B
-
-        // This is a linear system with six unknowns and six equations, for TxTyTz BxByBz
-        // [px,py,pz] = [s1,t1] * [Tx,Ty,Tz]
-        //  qx,qy,qz     s2,t2     Bx,By,Bz
-
-        // Multiplying both sides by the inverse of the s,t matrix gives
-        // [Tx,Ty,Tz] = 1/(s1t2-s2t1) * [ t2,-t1] * [px,py,pz]
-        //  Bx,By,Bz                     -s2, s1     qx,qy,qz
-
-        // Solve this to get the unormalized T and B vectors.
-
-        float scale = 1.0f / (s1*t2 - s2*t1);
-        osg::Vec3 tangent = (P*t2 - Q*t1) * scale;
-        osg::Vec3 binormal = (Q*s1 - P*s2) * scale;
-
-        // Find the U and V scales. Without this, we would have to assume 1 world unit = 1 UV unit.
-        float uscale = ((fabs(tangent * P) > fabs(tangent * Q)) ?
-                        (s1/(tangent*P)) : (s2/(tangent*Q)));
-        float vscale = ((fabs(binormal * P) > fabs(binormal * Q)) ?
-                        (t1/(binormal*P)) : (t2/(binormal*Q)));
-
-        // Now that we have the T and B vectors, we can get the missing UV coordinates,
+        /* Now with the T and B vectors and UV scales, we can get the missing UV coordinates. */
         for(size_t i = 3;i < mPoints.size();++i)
         {
             osg::Vec3 p(points[mPoints[i].getIndex()].x() - p0.x(),
@@ -168,6 +205,8 @@ void MdlPlane::fixUVs(const std::vector<MdlPoint> &points)
             mPoints[i].v() = (binormal*p)*vscale + uv0.y();
         }
     }
+
+    mBinormal.set(int(binormal.x() * 256.0f), int(binormal.y() * 256.0f), int(binormal.z() * 256.0f));
 }
 
 
@@ -201,7 +240,7 @@ void Mesh::load(std::istream &stream)
         plane.loadNormal(stream);
 
     // Fix UV coords, converting from delta to absolute values and generate the
-    // missing coords
+    // missing coords. Also calculates the binormals.
     for(MdlPlane &plane : mPlanes)
         plane.fixUVs(mPoints);
 

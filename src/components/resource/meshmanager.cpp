@@ -72,6 +72,7 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
     {
         osg::ref_ptr<osg::Vec3Array> vtxs(new osg::Vec3Array());
         osg::ref_ptr<osg::Vec3Array> nrms(new osg::Vec3Array());
+        osg::ref_ptr<osg::Vec3Array> binrms(new osg::Vec3Array());
         osg::ref_ptr<osg::Vec2Array> texcrds(new osg::Vec2Array());
         osg::ref_ptr<osg::Vec4ubArray> colors(new osg::Vec4ubArray());
         osg::ref_ptr<osg::DrawElementsUShort> idxs(new osg::DrawElementsUShort(osg::PrimitiveSet::TRIANGLES));
@@ -87,6 +88,7 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
 
             vtxs->resize(last_total + pts.size());
             nrms->resize(last_total + pts.size());
+            binrms->resize(last_total + pts.size());
             texcrds->resize(last_total + pts.size());
             colors->resize(last_total + pts.size());
             idxs->resize((last_total + pts.size() - 2) * 3);
@@ -103,6 +105,10 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
                 (*nrms)[j].x() = iter->getNormal().x() / 256.0f;
                 (*nrms)[j].y() = iter->getNormal().y() / 256.0f;
                 (*nrms)[j].z() = iter->getNormal().z() / 256.0f;
+
+                (*binrms)[j].x() = iter->getBinormal().x() / 256.0f;
+                (*binrms)[j].y() = iter->getBinormal().y() / 256.0f;
+                (*binrms)[j].z() = iter->getBinormal().z() / 256.0f;
 
                 (*texcrds)[j].x() = pt.u() / width;
                 (*texcrds)[j].y() = pt.v() / height;
@@ -133,6 +139,7 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
         osg::ref_ptr<osg::Geometry> geometry(new osg::Geometry);
         geometry->setVertexArray(vtxs);
         geometry->setNormalArray(nrms, osg::Array::BIND_PER_VERTEX);
+        geometry->setTexCoordArray(1, binrms, osg::Array::BIND_PER_VERTEX);
         geometry->setTexCoordArray(0, texcrds, osg::Array::BIND_PER_VERTEX);
         geometry->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
         geometry->setUseDisplayList(false);
