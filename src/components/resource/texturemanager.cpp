@@ -187,8 +187,8 @@ osg::ref_ptr<osg::Texture> TextureManager::getTerrainTileset(size_t idx)
     }
 
     tex->setResizeNonPowerOfTwoHint(false);
-    tex->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
-    tex->setWrap(osg::Texture::WRAP_T, osg::Texture::REPEAT);
+    tex->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+    tex->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
     tex->setUnRefImageDataAfterApply(true);
     // Filter should be configurable. Defaults to nearest to retain DF's pixely
     // look (with linear mipmapping to reduce aliasing).
