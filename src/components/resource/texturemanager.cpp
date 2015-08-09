@@ -204,7 +204,8 @@ osg::ref_ptr<osg::Texture> TextureManager::getTerrainTileset(size_t idx)
 osg::ref_ptr<osg::Texture> TextureManager::createTerrainMap(const uint8_t *data, size_t dim)
 {
     osg::ref_ptr<osg::Image> image(new osg::Image());
-    image->allocateImage(dim, dim, 1, GL_RED, GL_UNSIGNED_BYTE);
+    image->allocateImage(dim, dim, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    image->setInternalTextureFormat(GL_R8UI);
     for(size_t y = 0;y < dim;++y)
     {
         // Swap rotate and texture ID bits (puts rotations next to each other)
