@@ -160,7 +160,7 @@ osg::ref_ptr<osg::Node> MeshManager::get(size_t idx)
             ss = geometry->getOrCreateStateSet();
             ss->setAttributeAndModes(mModelProgram);
             ss->addUniform(new osg::Uniform("diffuseTex", 0));
-            ss->setTextureAttributeAndModes(0, tex);
+            ss->setTextureAttribute(0, tex);
             stateiter = ss;
         }
 
@@ -259,7 +259,7 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
     // texels that should be dropped.
     ss->setAttributeAndModes(new osg::AlphaFunc(osg::AlphaFunc::LESS, 0.5f));
     ss->addUniform(new osg::Uniform("diffuseTex", 0));
-    ss->setTextureAttributeAndModes(0, tex);
+    ss->setTextureAttribute(0, tex);
 
     if(centered)
         bb->addDrawable(geometry);

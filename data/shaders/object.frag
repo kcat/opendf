@@ -2,7 +2,7 @@
 
 uniform vec4 illumination_color;
 
-uniform sampler2D diffuseTex;
+uniform sampler2DArray diffuseTex;
 
 in vec3 pos_viewspace;
 in vec3 n_viewspace;
@@ -18,7 +18,7 @@ out vec4 IlluminationData;
 
 void main()
 {
-    vec4 color = vec4(texture(diffuseTex, TexCoords.xy).rgb, 0.0);
+    vec4 color = vec4(texture(diffuseTex, TexCoords.xyz).rgb, 0.0);
     vec4 nn = vec4(0.5, 0.5, 1.0, 1.0);
 
     mat3 nmat = mat3(normalize(t_viewspace),
