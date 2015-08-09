@@ -461,7 +461,7 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
     osg::ref_ptr<osg::MatrixTransform> terrainbase(new osg::MatrixTransform());
     terrainbase->setNodeMask(Renderer::Mask_Static);
     //terrainbase->setUserData(new ObjectRef(mTerrainId));
-    terrainbase->addChild(Resource::MeshManager::get().getTerrain(4096.0f));
+    terrainbase->addChild(Resource::MeshManager::get().getTerrain(16));
     {
         osg::StateSet *ss = terrainbase->getOrCreateStateSet();
         ss->setTextureAttribute(0, Resource::TextureManager::get().getTerrainTileset(texfile));

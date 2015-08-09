@@ -1,15 +1,15 @@
-#version 130
+#version 140
 
 uniform vec4 illumination_color;
 
 uniform sampler2DArray diffuseTex;
-uniform usampler2D tilemapTex;
 
 in vec3 pos_viewspace;
 in vec3 n_viewspace;
 in vec3 t_viewspace;
 in vec3 b_viewspace;
 in vec4 TexCoords;
+flat in uint TexIndex;
 
 out vec4 ColorData;
 out vec4 NormalData;
@@ -18,9 +18,7 @@ out vec4 IlluminationData;
 
 void main()
 {
-    uint idx = texelFetch(tilemapTex, ivec2(TexCoords.xy), 0).r;
-    vec3 coord = vec3(fract(TexCoords.xy), float(idx));
-
+    vec3 coord = vec3(TexCoords.xy, float(TexIndex));
     vec4 color = vec4(texture(diffuseTex, coord).rgb, 0.0);
     vec4 nn = vec4(0.5, 0.5, 1.0, 1.0);
 

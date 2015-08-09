@@ -44,7 +44,7 @@ public:
      */
     osg::ref_ptr<osg::Node> loadFlat(size_t texid, bool centered, size_t *num_frames=nullptr);
 
-    osg::ref_ptr<osg::Node> getTerrain(float dim);
+    osg::ref_ptr<osg::Node> getTerrain(int size);
 
     static MeshManager &get() { return sManager; }
 };

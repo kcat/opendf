@@ -271,7 +271,7 @@ osg::ref_ptr<osg::Node> MeshManager::loadFlat(size_t texid, bool centered, size_
     return base;
 }
 
-osg::ref_ptr<osg::Node> MeshManager::getTerrain(float size)
+osg::ref_ptr<osg::Node> MeshManager::getTerrain(int size)
 {
     auto iter = mTerrainCache.find(size);
     if(iter != mTerrainCache.end())
@@ -289,33 +289,27 @@ osg::ref_ptr<osg::Node> MeshManager::getTerrain(float size)
     }
 
     osg::ref_ptr<osg::Vec3Array> vtxs(new osg::Vec3Array(4));
-    (*vtxs)[0] = osg::Vec3(0.0f, 0.0f, 0.0f);
-    (*vtxs)[1] = osg::Vec3(0.0f, 0.0f, -size);
-    (*vtxs)[2] = osg::Vec3(size, 0.0f, -size);
-    (*vtxs)[3] = osg::Vec3(size, 0.0f, 0.0f);
+    (*vtxs)[0] = osg::Vec3(  0.0f, 0.0f,    0.0f);
+    (*vtxs)[1] = osg::Vec3(  0.0f, 0.0f, -256.0f);
+    (*vtxs)[2] = osg::Vec3(256.0f, 0.0f, -256.0f);
+    (*vtxs)[3] = osg::Vec3(256.0f, 0.0f,    0.0f);
     osg::ref_ptr<osg::Vec2Array> texcrds(new osg::Vec2Array(4));
-    (*texcrds)[0] = osg::Vec2(       0.0f, 0.0f);
-    (*texcrds)[1] = osg::Vec2(       0.0f, size/256.0f);
-    (*texcrds)[2] = osg::Vec2(size/256.0f, size/256.0f);
-    (*texcrds)[3] = osg::Vec2(size/256.0f, 0.0f);
-    osg::ref_ptr<osg::Vec3Array> nrms(new osg::Vec3Array(4));
-    (*nrms)[0] = osg::Vec3(0.0f, -1.0f, 0.0f);
-    (*nrms)[1] = osg::Vec3(0.0f, -1.0f, 0.0f);
-    (*nrms)[2] = osg::Vec3(0.0f, -1.0f, 0.0f);
-    (*nrms)[3] = osg::Vec3(0.0f, -1.0f, 0.0f);
+    (*texcrds)[0] = osg::Vec2(0.0f, 0.0f);
+    (*texcrds)[1] = osg::Vec2(0.0f, 1.0f);
+    (*texcrds)[2] = osg::Vec2(1.0f, 1.0f);
+    (*texcrds)[3] = osg::Vec2(1.0f, 0.0f);
 
     osg::ref_ptr<osg::VertexBufferObject> vbo(new osg::VertexBufferObject());
     vtxs->setVertexBufferObject(vbo);
     texcrds->setVertexBufferObject(vbo);
-    nrms->setVertexBufferObject(vbo);
 
     osg::ref_ptr<osg::Geometry> geometry(new osg::Geometry);
     geometry->setVertexArray(vtxs);
     geometry->setTexCoordArray(0, texcrds, osg::Array::BIND_PER_VERTEX);
-    geometry->setNormalArray(nrms, osg::Array::BIND_PER_VERTEX);
     geometry->setUseDisplayList(false);
     geometry->setUseVertexBufferObjects(true);
-    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4));
+    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, vtxs->size(), size*size));
+    geometry->setInitialBound(osg::BoundingBox(osg::Vec3(0.0f, -0.5f, -256.0f*size), osg::Vec3(256.0f*size, 0.5f, 0.0f)));
 
     osg::StateSet *ss = geometry->getOrCreateStateSet();
     ss->setAttributeAndModes(mTerrainProgram);
