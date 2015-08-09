@@ -8,6 +8,11 @@
 #include "components/resource/texturemanager.hpp"
 
 
+namespace
+{
+    class TexEntryHeader;
+}
+
 namespace osg
 {
     class Image;
@@ -17,6 +22,7 @@ namespace DFOSG
 {
 
 typedef std::vector<osg::ref_ptr<osg::Image>> ImagePtrArray;
+
 
 class TexLoader {
     static TexLoader sLoader;
@@ -34,6 +40,10 @@ class TexLoader {
                                        std::istream &stream);
     void loadUncompressedMulti(osg::Image *image, const Resource::Palette &palette,
                                std::istream &stream);
+
+    ImagePtrArray load(std::istream &stream, const TexEntryHeader &texentry,
+                       int16_t *xoffset, int16_t *yoffset, int16_t *xscale, int16_t *yscale,
+                       const Resource::Palette &palette);
 
 public:
     ImagePtrArray load(size_t idx, int16_t *xoffset, int16_t *yoffset, int16_t *xscale, int16_t *yscale, const Resource::Palette &palette);
