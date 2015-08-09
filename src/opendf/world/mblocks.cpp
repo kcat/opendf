@@ -13,6 +13,7 @@
 #include "components/resource/texturemanager.hpp"
 
 #include "render/renderer.hpp"
+#include "class/animated.hpp"
 #include "world.hpp"
 #include "log.hpp"
 
@@ -147,13 +148,16 @@ void MFlat::load(std::istream &stream)
 
 void MFlat::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
 {
+    size_t numframes = 0;
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
-    node->addChild(Resource::MeshManager::get().loadFlat(mTexture, false));
+    node->addChild(Resource::MeshManager::get().loadFlat(mTexture, false, &numframes));
     root->addChild(node);
 
     Renderer::get().setNode(mId, node);
+    if(numframes > 1)
+        Animated::get().allocate(mId, numframes, 1.0f/12.0f);
     Placeable::get().setPoint(mId, (ori * osg::Vec3f(mXPos, mYPos, mZPos)) + pos);
 }
 

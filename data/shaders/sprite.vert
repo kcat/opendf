@@ -3,6 +3,8 @@
 uniform mat4 osg_ModelViewProjectionMatrix;
 uniform mat4 osg_ModelViewMatrix;
 
+uniform float CurrentFrame;
+
 in vec4 osg_Vertex;
 in vec3 osg_Normal;
 in vec4 osg_Color;
@@ -19,6 +21,7 @@ void main()
 {
     gl_Position = osg_ModelViewProjectionMatrix * osg_Vertex;
     TexCoords = osg_MultiTexCoord0;
+    TexCoords.z += CurrentFrame;
     Color = osg_Color;
 
     pos_viewspace = (osg_ModelViewMatrix * osg_Vertex).xyz;

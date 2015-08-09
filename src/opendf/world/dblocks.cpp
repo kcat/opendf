@@ -13,6 +13,7 @@
 #include "components/resource/meshmanager.hpp"
 
 #include "render/renderer.hpp"
+#include "class/animated.hpp"
 #include "class/placeable.hpp"
 #include "class/activator.hpp"
 #include "actions/linker.hpp"
@@ -121,6 +122,7 @@ struct FlatObject : public ObjectBase {
 ObjectBase::~ObjectBase()
 {
     Activator::get().deallocate(mId);
+    Animated::get().deallocate(mId);
 }
 
 void ObjectBase::loadAction(std::istream &stream, int32_t actionoffset, uint32_t actionflags, uint8_t soundid, const osg::Vec3 &pos, const osg::Vec3f &rot)
@@ -239,13 +241,19 @@ void FlatObject::load(std::istream &stream, const osg::Vec3 &basepos, osg::Group
     if(mActionOffset > 0)
         loadAction(stream, mActionOffset, 0x02, 0, pos, osg::Vec3());
 
+    size_t numframes = 0;
     osg::ref_ptr<osg::MatrixTransform> node(new osg::MatrixTransform());
     node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
-    node->addChild(Resource::MeshManager::get().loadFlat(mTexture, true));
+    node->addChild(Resource::MeshManager::get().loadFlat(mTexture, true, &numframes));
     root->addChild(node);
 
     Renderer::get().setNode(mId, node);
+    if(numframes > 1)
+    {
+        // Animation speed is hardcoded? Might it be specified somewhere else?
+        Animated::get().allocate(mId, numframes, 1.0f/12.0f);
+    }
     Placeable::get().setPoint(mId, pos);
 }
 

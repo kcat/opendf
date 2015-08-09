@@ -27,6 +27,7 @@ class Renderer {
 
     Misc::SparseArray<osg::ref_ptr<osg::MatrixTransform>> mBaseNodes;
     std::priority_queue<NodePosPair> mDirtyNodes;
+    Misc::SparseArray<osg::ref_ptr<osg::Uniform>> mAnimUniform;
 
 public:
     enum {
@@ -38,10 +39,12 @@ public:
     };
 
     void setNode(size_t idx, osg::MatrixTransform *node);
+    void setAnimated(size_t idx, uint32_t startframe);
 
     void remove(const size_t *ids, size_t count);
 
     void markDirty(size_t idx, const Position &pos);
+    void setFrameNum(size_t idx, uint32_t frame);
 
     void update();
 

@@ -13,6 +13,7 @@
 
 #include "render/renderer.hpp"
 #include "render/pipeline.hpp"
+#include "class/animated.hpp"
 #include "class/placeable.hpp"
 #include "class/activator.hpp"
 #include "actions/linker.hpp"
@@ -606,6 +607,7 @@ void World::update(float timediff)
         Linker::get().update();
         Mover::get().update(timediff);
         Door::get().update(timediff);
+        Animated::get().update(timediff);
     }
 
     Renderer::get().update();
