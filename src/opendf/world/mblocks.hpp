@@ -10,11 +10,6 @@
 #include "pitems.hpp"
 
 
-namespace osg
-{
-    class Group;
-}
-
 namespace DF
 {
 
@@ -81,7 +76,7 @@ struct MBlockHeader {
     ~MBlockHeader();
     void deallocate();
 
-    void load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z, osg::Group *root);
+    void load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z);
 
     MObjectBase *getObject(size_t id);
 

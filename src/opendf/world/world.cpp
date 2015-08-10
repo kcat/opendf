@@ -349,14 +349,14 @@ void World::initialize(osgViewer::Viewer *viewer, osg::Group *sceneroot)
     loadPakList("POLITIC.PAK", mPolitics);
 
     mViewer = viewer;
-    mSceneRoot = sceneroot;
+    Renderer::get().setObjectRoot(sceneroot);
 }
 
 void World::deinitialize()
 {
     mExterior.clear();
     mDungeon.clear();
-    mSceneRoot = nullptr;
+    Renderer::get().setObjectRoot(nullptr);
     mViewer = nullptr;
 }
 
@@ -489,7 +489,7 @@ void World::loadExterior(int regnum, int extid)
         int y = i/extloc.mWidth;
 
         mExterior.push_back(std::unique_ptr<MBlockHeader>(new MBlockHeader()));
-        mExterior.back()->load(*stream, climate, i<<24, x*4096.0f, y*4096.0f, mSceneRoot);
+        mExterior.back()->load(*stream, climate, i<<24, x*4096.0f, y*4096.0f);
 
         if(startobj != InvalidHandle)
             continue;
@@ -547,8 +547,7 @@ void World::loadDungeonByExterior(int regnum, int extid)
 
             mDungeon.push_back(std::unique_ptr<DBlockHeader>(new DBlockHeader()));
             mDungeon.back()->load(*stream, std::distance(dinfo.mBlocks.data(), &block)<<24,
-                                  block.mX*2048.0f, block.mZ*2048.0f, regnum, extid,
-                                  mSceneRoot);
+                                  block.mX*2048.0f, block.mZ*2048.0f, regnum, extid);
 
             if(block.mStartBlock)
             {

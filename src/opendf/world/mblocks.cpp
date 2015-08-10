@@ -43,7 +43,7 @@ struct MFlat : public MObjectBase {
     uint8_t mFlags;
 
     void load(std::istream &stream);
-    void allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori);
+    void allocate(const osg::Vec3 &pos, const osg::Quat &ori);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -73,7 +73,7 @@ struct MModel : public MObjectBase {
     uint16_t mNullValue4;
 
     void load(std::istream &stream);
-    void allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori);
+    void allocate(const osg::Vec3 &pos, const osg::Quat &ori);
 
     virtual void print(std::ostream &stream) const;
 };
@@ -102,7 +102,7 @@ struct MBlock {
 
     void load(std::istream &stream, size_t blockid);
 
-    void allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori);
+    void allocate(const osg::Vec3 &pos, const osg::Quat &ori);
     void deallocate();
 
     MObjectBase *getObject(size_t id);
@@ -146,14 +146,14 @@ void MFlat::load(std::istream &stream)
     mFlags = stream.get();
 }
 
-void MFlat::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
+void MFlat::allocate(const osg::Vec3 &pos, const osg::Quat &ori)
 {
     size_t numframes = 0;
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().loadFlat(mTexture, false, &numframes));
-    root->addChild(node);
+    Renderer::get().getObjectRoot()->addChild(node);
 
     Renderer::get().setNode(mId, node);
     if(numframes > 1)
@@ -202,13 +202,13 @@ void MModel::load(std::istream &stream)
     mNullValue4 = VFS::read_le16(stream);
 }
 
-void MModel::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
+void MModel::allocate(const osg::Vec3 &pos, const osg::Quat &ori)
 {
     osg::ref_ptr<osg::MatrixTransform> node = new osg::MatrixTransform();
     node->setNodeMask(Renderer::Mask_Static);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().get(mModelIdx));
-    root->addChild(node);
+    Renderer::get().getObjectRoot()->addChild(node);
 
     Renderer::get().setNode(mId, node);
     Placeable::get().setPos(mId,
@@ -276,12 +276,12 @@ void MBlock::load(std::istream &stream, size_t blockid)
         door.load(stream);
 }
 
-void MBlock::allocate(osg::Group *root, const osg::Vec3 &pos, const osg::Quat &ori)
+void MBlock::allocate(const osg::Vec3 &pos, const osg::Quat &ori)
 {
     for(MModel &model : mModels)
-        model.allocate(root, pos, ori);
+        model.allocate(pos, ori);
     for(MFlat &flat : mFlats)
-        flat.allocate(root, pos, ori);
+        flat.allocate(pos, ori);
 }
 
 void MBlock::deallocate()
@@ -349,7 +349,7 @@ void MBlockHeader::deallocate()
 }
 
 
-void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z, osg::Group *root)
+void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, float x, float z)
 {
     size_t texfile = 0;
     if(climate == 223) texfile = 502<<7;
@@ -437,16 +437,16 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
 
     osg::Vec3f basepos(x, 0.0f, z);
     for(size_t i = 0;i < mBlockCount;++i)
-        mExteriorBlocks[i].allocate(root,
+        mExteriorBlocks[i].allocate(
             basepos + osg::Vec3(mBlockPositions[i].mX, 0.0f, -mBlockPositions[i].mZ),
             osg::Quat(-mBlockPositions[i].mYRot*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f))
         );
     for(MModel &model : mModels)
-        model.allocate(root, basepos, osg::Quat());
+        model.allocate(basepos, osg::Quat());
     for(MFlat &flat : mFlats)
-        flat.allocate(root, basepos, osg::Quat());
+        flat.allocate(basepos, osg::Quat());
     for(MFlat &flat : mScenery)
-        flat.allocate(root, basepos, osg::Quat());
+        flat.allocate(basepos, osg::Quat());
 
     // Load up terrain...
     texfile = 2;
@@ -471,7 +471,7 @@ void MBlockHeader::load(std::istream &stream, uint8_t climate, size_t blockid, f
         ss->setTextureAttribute(0, Resource::TextureManager::get().getTerrainTileset(texfile));
         ss->setTextureAttribute(1, Resource::TextureManager::get().createTerrainMap(mGroundTexture.data(), 16));
     }
-    root->addChild(terrainbase);
+    Renderer::get().getObjectRoot()->addChild(terrainbase);
 
     Renderer::get().setNode(mTerrainId, terrainbase);
     // Slight Y offset because some planes lay exactly on Y=0 and would Z-fight horribly.

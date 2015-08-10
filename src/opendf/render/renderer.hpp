@@ -4,12 +4,12 @@
 #include <queue>
 
 #include <osg/ref_ptr>
-
 #include <osg/MatrixTransform>
 
 #include "misc/sparsearray.hpp"
 
 #include "class/placeable.hpp"
+
 
 namespace DF
 {
@@ -25,6 +25,7 @@ struct NodePosPair {
 class Renderer {
     static Renderer sRenderer;
 
+    osg::ref_ptr<osg::Group> mObjectRoot;
     Misc::SparseArray<osg::ref_ptr<osg::MatrixTransform>> mBaseNodes;
     std::priority_queue<NodePosPair> mDirtyNodes;
     Misc::SparseArray<osg::ref_ptr<osg::Uniform>> mAnimUniform;
@@ -37,6 +38,9 @@ public:
         Mask_Light  = 1<<3,
         Mask_Flat   = 1<<4,
     };
+
+    void setObjectRoot(osg::Group *root) { mObjectRoot = root; }
+    osg::Group *getObjectRoot() const { return mObjectRoot; }
 
     void setNode(size_t idx, osg::MatrixTransform *node);
     void setAnimated(size_t idx, uint32_t startframe);

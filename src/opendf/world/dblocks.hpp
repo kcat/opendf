@@ -12,7 +12,6 @@
 
 namespace osg
 {
-    class Group;
     class Vec3f;
 }
 
@@ -66,7 +65,7 @@ struct DBlockHeader {
     DBlockHeader();
     ~DBlockHeader();
 
-    void load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum, osg::Group *root);
+    void load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum);
 
     ObjectBase *getObject(size_t id);
 

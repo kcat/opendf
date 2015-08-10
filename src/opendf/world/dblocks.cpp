@@ -97,7 +97,7 @@ struct ModelObject : public ObjectBase {
     ModelObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Model, x, y, z) { }
 
     void load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata,
-              size_t regnum, size_t locnum, const osg::Vec3 &basepos, osg::Group *root);
+              size_t regnum, size_t locnum, const osg::Vec3 &basepos);
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -113,7 +113,7 @@ struct FlatObject : public ObjectBase {
 
     FlatObject(size_t id, int x, int y, int z) : ObjectBase(id, ObjectType_Flat, x, y, z) { }
 
-    void load(std::istream &stream, const osg::Vec3 &basepos, osg::Group *root);
+    void load(std::istream &stream, const osg::Vec3 &basepos);
 
     virtual void print(std::ostream &stream) const final;
 };
@@ -175,7 +175,7 @@ void ObjectBase::print(std::ostream &stream) const
 }
 
 
-void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, const osg::Vec3 &basepos, osg::Group *root)
+void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>,750> &mdldata, size_t regnum, size_t locnum, const osg::Vec3 &basepos)
 {
     mXRot = VFS::read_le32(stream);
     mYRot = VFS::read_le32(stream);
@@ -203,7 +203,7 @@ void ModelObject::load(std::istream &stream, const std::array<std::array<char,8>
     node->setNodeMask(Renderer::Mask_Static);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().get(mdlidx));
-    root->addChild(node);
+    Renderer::get().getObjectRoot()->addChild(node);
 
     // Is this how doors are specified, or is it determined by the model index?
     // What to do if a door has an action?
@@ -229,7 +229,7 @@ void ModelObject::print(std::ostream &stream) const
 }
 
 
-void FlatObject::load(std::istream &stream, const osg::Vec3 &basepos, osg::Group *root)
+void FlatObject::load(std::istream &stream, const osg::Vec3 &basepos)
 {
     mTexture = VFS::read_le16(stream);
     mGender = VFS::read_le16(stream);
@@ -246,7 +246,7 @@ void FlatObject::load(std::istream &stream, const osg::Vec3 &basepos, osg::Group
     node->setNodeMask(Renderer::Mask_Flat);
     node->setUserData(new ObjectRef(mId));
     node->addChild(Resource::MeshManager::get().loadFlat(mTexture, true, &numframes));
-    root->addChild(node);
+    Renderer::get().getObjectRoot()->addChild(node);
 
     Renderer::get().setNode(mId, node);
     if(numframes > 1)
@@ -284,7 +284,7 @@ DBlockHeader::~DBlockHeader()
 }
 
 
-void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum, osg::Group *root)
+void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, size_t regnum, size_t locnum)
 {
     mUnknown1 = VFS::read_le32(stream);
     mWidth = VFS::read_le32(stream);
@@ -339,7 +339,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
                 ModelObject *model = mModels.insert(blockid|offset,
                     std::unique_ptr<ModelObject>(new ModelObject(blockid|offset, x, y, z))
                 ).first->get();
-                model->load(stream, mModelData, regnum, locnum, basepos, root);
+                model->load(stream, mModelData, regnum, locnum, basepos);
             }
             else if(type == ObjectType_Flat)
             {
@@ -347,7 +347,7 @@ void DBlockHeader::load(std::istream &stream, size_t blockid, float x, float z, 
                 FlatObject *flat = mFlats.insert(blockid|offset,
                     std::unique_ptr<FlatObject>(new FlatObject(blockid|offset, x, y, z))
                 ).first->get();
-                flat->load(stream, basepos, root);
+                flat->load(stream, basepos);
             }
 
             offset = next;
