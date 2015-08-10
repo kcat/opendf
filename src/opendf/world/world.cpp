@@ -199,7 +199,7 @@ CCMD(dwarp)
 {
     if(params.empty())
     {
-        Log::get().stream(Log::Level_Error)<< "Usage: dwarp <region index> <location index>";
+        WorldIface::get().loadCurrentExteriorDungeon();
         return;
     }
 
@@ -575,6 +575,19 @@ void World::loadDungeonByExterior(int regnum, int extid)
         }
         break;
     }
+}
+
+void World::loadCurrentExteriorDungeon()
+{
+    if(mCurrentDungeon)
+        Log::get().message("Already in a dungeon");
+    else if(!mCurrentRegion)
+        Log::get().message("Not currently in a region");
+    else if(!mCurrentExterior)
+        Log::get().message("Not currently in an exterior");
+    else
+        loadDungeonByExterior(std::distance((const MapRegion*)mRegions.data(), mCurrentRegion),
+                              std::distance(mCurrentRegion->mExteriors.data(), mCurrentExterior));
 }
 
 

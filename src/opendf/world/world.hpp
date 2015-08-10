@@ -96,6 +96,7 @@ public:
     virtual void loadExterior(int regnum, int extid) final;
 
     virtual void loadDungeonByExterior(int regnum, int extid) final;
+    virtual void loadCurrentExteriorDungeon() final;
 
     virtual void move(/*int objid,*/ float xrel, float yrel, float zrel) final;
     virtual void rotate(/*int objid,*/ float xrel, float yrel) final;
