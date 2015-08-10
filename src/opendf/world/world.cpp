@@ -705,7 +705,14 @@ void World::dumpBlocks() const
     int i = 0;
     for(const std::unique_ptr<DBlockHeader> &block : mDungeon)
     {
-        sstr<< "****** Block "<<i<<" ******\n";
+        sstr<< "****** DBlock "<<i<<" ******\n";
+        block->print(sstr);
+        ++i;
+    }
+    i = 0;
+    for(const std::unique_ptr<MBlockHeader> &block : mExterior)
+    {
+        sstr<< "****** MBlock "<<i<<" ******\n";
         block->print(sstr);
         ++i;
     }

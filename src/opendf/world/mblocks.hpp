@@ -85,6 +85,8 @@ struct MBlockHeader {
      * marker, and is used to identify where to spawn.
      */
     size_t getObjectByTexture(size_t texid) const;
+
+    void print(std::ostream &stream) const;
 };
 
 } // namespace DF

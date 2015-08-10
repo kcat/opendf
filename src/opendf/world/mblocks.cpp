@@ -508,4 +508,35 @@ size_t MBlockHeader::getObjectByTexture(size_t texid) const
     return ~static_cast<size_t>(0);
 }
 
+
+void MBlockHeader::print(std::ostream& stream) const
+{
+    stream<< "BlockCount: "<<(int)mBlockCount <<std::endl;
+    stream<< "ModelCount: "<<(int)mModelCount <<std::endl;
+    stream<< "FlatCount: "<<(int)mFlatCount <<std::endl;
+    //std::array<MBlockPosition,32> mBlockPositions;
+    for(const ExteriorBuilding &building : mBuildings)
+    {
+        stream<< "*** Building "<<std::distance(mBuildings.data(), &building) <<std::endl;
+        stream<< "NameSeed: 0x"<<std::hex<<std::setw(4)<<building.mNameSeed<<std::dec<<std::setw(0) <<std::endl;
+        /*mNullValue1;
+        mNullValue2;
+        mNullValue3;
+        mNullValue4;*/
+        stream<< "FactionId: 0x"<<std::hex<<std::setw(4)<<building.mFactionId<<std::dec<<std::setw(0) <<std::endl;
+        stream<< "Sector: 0x"<<std::hex<<std::setw(4)<<building.mSector<<std::dec<<std::setw(0) <<std::endl;
+        stream<< "LocationID: 0x"<<std::hex<<std::setw(4)<<building.mLocationId<<std::dec<<std::setw(0) <<std::endl;
+        stream<< "BuildingType: 0x"<<std::hex<<std::setw(4)<<(int)building.mBuildingType<<std::dec<<std::setw(0) <<std::endl;
+        stream<< "Quality: "<<(int)building.mQuality <<std::endl;
+    }
+    stream<< "Unknown:";
+    for(uint32_t unk : mUnknown1)
+        stream<< " 0x"<<std::hex<<std::setw(8)<<unk;
+    stream<<std::setw(0)<<std::dec<<std::endl;
+    stream<< "Unknown:";
+    for(uint32_t unk : mUnknown2)
+        stream<< " 0x"<<std::hex<<std::setw(2)<<unk;
+    stream<<std::setw(0)<<std::dec<<std::endl;
+}
+
 } // namespace DF
