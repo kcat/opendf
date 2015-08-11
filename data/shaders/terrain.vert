@@ -1,4 +1,5 @@
-#version 140
+#version 130
+#extension GL_ARB_draw_instanced : enable
 
 uniform mat4 osg_ModelViewProjectionMatrix;
 uniform mat4 osg_ModelViewMatrix;
@@ -17,8 +18,8 @@ flat out uint TexIndex;
 
 void main()
 {
-    int x = gl_InstanceID & 15;
-    int y = gl_InstanceID / 16;
+    int x = gl_InstanceIDARB & 15;
+    int y = gl_InstanceIDARB / 16;
     vec4 pos = osg_Vertex + vec4(x*256, 0, y*-256, 0);
 
     gl_Position = osg_ModelViewProjectionMatrix * pos;
