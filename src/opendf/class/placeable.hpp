@@ -19,16 +19,16 @@ struct Position {
 inline osg::Quat BuildRotation(const osg::Vec3f &rot)
 {
     return osg::Quat(
-         rot.x() * 3.14159f / 1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
         -rot.y() * 3.14159f / 1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+         rot.x() * 3.14159f / 1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
          rot.z() * 3.14159f / 1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
     );
 }
 inline osg::Quat BuildRotation(const osg::Vec3f &rot, float delta)
 {
     return osg::Quat(
-         rot.x()*delta * 3.14159f / 1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
         -rot.y()*delta * 3.14159f / 1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+         rot.x()*delta * 3.14159f / 1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
          rot.z()*delta * 3.14159f / 1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
     );
 }
