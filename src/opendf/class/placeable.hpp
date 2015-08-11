@@ -16,6 +16,23 @@ struct Position {
     osg::Vec3f mPoint;
 };
 
+inline osg::Quat BuildRotation(const osg::Vec3f &rot)
+{
+    return osg::Quat(
+         rot.x() * 3.14159f / 1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
+        -rot.y() * 3.14159f / 1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+         rot.z() * 3.14159f / 1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
+    );
+}
+inline osg::Quat BuildRotation(const osg::Vec3f &rot, float delta)
+{
+    return osg::Quat(
+         rot.x()*delta * 3.14159f / 1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
+        -rot.y()*delta * 3.14159f / 1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
+         rot.z()*delta * 3.14159f / 1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
+    );
+}
+
 class Placeable {
     static Placeable sPlaceables;
 
@@ -30,26 +47,11 @@ public:
     void setPoint(size_t idx, const osg::Vec3f &pt);
 
     void setPos(size_t idx, const osg::Vec3f &pt, const osg::Vec3f &rot)
-    {
-        setPos(idx, pt, osg::Quat(
-             rot.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-            -rot.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-             rot.z()*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-        ));
-    }
+    { setPos(idx, pt, BuildRotation(rot)); }
     void setRotate(size_t idx, const osg::Vec3f &rot)
-    {
-        setRotate(idx, osg::Quat(
-             rot.x()*3.14159f/1024.0f, osg::Vec3f(1.0f, 0.0f, 0.0f),
-            -rot.y()*3.14159f/1024.0f, osg::Vec3f(0.0f, 1.0f, 0.0f),
-             rot.z()*3.14159f/1024.0f, osg::Vec3f(0.0f, 0.0f, 1.0f)
-        ));
-    }
+    { setRotate(idx, BuildRotation(rot)); }
 
-    const Position &getPos(size_t idx)
-    {
-        return mPositions[idx];
-    };
+    const Position &getPos(size_t idx) const { return mPositions.at(idx); };
 
     static Placeable &get() { return sPlaceables; }
 };

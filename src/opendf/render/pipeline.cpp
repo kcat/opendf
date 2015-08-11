@@ -35,7 +35,7 @@ CCMD(setfov)
         return;
     }
     RenderPipeline::get().setProjectionMatrix(osg::Matrix::perspective(
-        *r_fov, RenderPipeline::get().getAspectRatio(), 1.0, 10000.0
+        *r_fov, RenderPipeline::get().getAspectRatio(), 10.0, 10000.0
     ));
 }
 

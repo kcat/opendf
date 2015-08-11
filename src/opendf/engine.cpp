@@ -458,7 +458,9 @@ bool Engine::go(void)
     Input::get().initialize(viewer);
 
     {
-        mSceneRoot = new osg::MatrixTransform(osg::Matrix::scale(osg::Vec3(1.0f, -1.0f, -1.0f)));
+        mSceneRoot = new osg::MatrixTransform(osg::Matrix::rotate(
+            3.14159f, osg::Vec3(1.0f, 0.0f, 0.0f))
+        );
         osg::StateSet *ss = mSceneRoot->getOrCreateStateSet();
         ss->setAttributeAndModes(new osg::Depth(osg::Depth::LESS, 0.0, 1.0, true));
         ss->setAttributeAndModes(new osg::CullFace(osg::CullFace::BACK));
@@ -471,7 +473,7 @@ bool Engine::go(void)
         RenderPipeline &pipeline = RenderPipeline::get();
         pipeline.initialize(mSceneRoot.get(), screen_width, screen_height);
         pipeline.setProjectionMatrix(osg::Matrix::perspective(
-            *r_fov, pipeline.getAspectRatio(), 1.0, 10000.0
+            *r_fov, pipeline.getAspectRatio(), 10.0, 10000.0
         ));
 
         // Add a light so we can see

@@ -152,7 +152,14 @@ public:
     {
         auto iter = lookupKey(idx);
         if(iter == mIdxLookup.cend())
-            throw std::range_error("SparseArray::at: index "+std::to_string(idx)+" does not exist");
+            throw std::out_of_range("SparseArray::at: index "+std::to_string(idx)+" does not exist");
+        return mData[std::distance(mIdxLookup.cbegin(), iter)];
+    }
+    const T& at(size_t idx) const
+    {
+        auto iter = lookupKey(idx);
+        if(iter == mIdxLookup.cend())
+            throw std::out_of_range("SparseArray::at: index "+std::to_string(idx)+" does not exist");
         return mData[std::distance(mIdxLookup.cbegin(), iter)];
     }
 

@@ -25,12 +25,7 @@ void Mover::allocateRotate(size_t idx, uint32_t flags, size_t link, size_t sound
 {
     mSoundIds[idx] = soundid;
     mRotateStart[idx] = RotateData{ idx,
-        osg::Quat(
-             orig.x()*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
-            -orig.y()*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
-             orig.z()*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
-        ),
-        amount, duration
+        BuildRotation(orig), amount, duration
     };
     Activator::get().allocate(idx, flags, link, Mover::activateRotateFunc,
                               Mover::deallocateRotateFunc);
@@ -140,11 +135,7 @@ void Mover::update(float timediff)
         {
             iter->second = std::min(iter->second+timediff, iter->first.mDuration);
             float delta = iter->second / iter->first.mDuration;
-            osg::Quat ori = iter->first.mOrig * osg::Quat(
-                iter->first.mAmount.x()*delta*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
-                -iter->first.mAmount.y()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
-                iter->first.mAmount.z()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
-            );
+            osg::Quat ori = iter->first.mOrig * BuildRotation(iter->first.mAmount, delta);
             Placeable::get().setRotate(iter->first.mId, ori);
 
             if(iter->second < iter->first.mDuration)
@@ -161,11 +152,7 @@ void Mover::update(float timediff)
         {
             iter->second = std::min(iter->second+timediff, iter->first.mDuration);
             float delta = 1.0f - (iter->second / iter->first.mDuration);
-            osg::Quat ori = iter->first.mOrig * osg::Quat(
-                iter->first.mAmount.x()*delta*3.14159f/1024.0f, osg::Vec3(1.0f, 0.0f, 0.0f),
-                -iter->first.mAmount.y()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 1.0f, 0.0f),
-                iter->first.mAmount.z()*delta*3.14159f/1024.0f, osg::Vec3(0.0f, 0.0f, 1.0f)
-            );
+            osg::Quat ori = iter->first.mOrig * BuildRotation(iter->first.mAmount, delta);
             Placeable::get().setRotate(iter->first.mId, ori);
 
             if(iter->second < iter->first.mDuration)
