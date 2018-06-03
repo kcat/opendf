@@ -16,7 +16,7 @@
 namespace DF
 {
 
-CVAR(CVarBool, i_inverty, true);
+CVAR(CVarBool, i_inverty, false);
 
 
 Input Input::sInput;
@@ -81,9 +81,9 @@ void Input::update(float timediff)
     }
     if(guimode <= GuiIface::Mode_Cursor)
     {
-        float speed = 64.0f * timediff;
+        float speed = 128.0f * timediff;
         if(keystate[SDL_SCANCODE_LSHIFT])
-            speed *= 2.0f;
+            speed *= 4.0f;
 
         osg::Vec3f movedir;
         if(keystate[SDL_SCANCODE_W])

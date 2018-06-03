@@ -412,7 +412,7 @@ uint8_t World::getPakListValue(const std::vector<PakArray> &paklist, size_t x, s
      * Dom(X) = [200, 126520]
      * Dom(Z) = [63800, 160]
      *
-     * However, I'm not sure if this range corectly maps to the world/climate/
+     * However, I'm not sure if this range correctly maps to the world/climate/
      * etc map extents.
      */
     if(x <= 200) x = 0;
