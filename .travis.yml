@@ -1,0 +1,25 @@
+language: cpp
+sudo:     required
+dist:     trusty
+os:
+ - linux
+ - osx
+group:    stable
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages: [
+      # Dev Tool Chain
+      g++-5, cmake,
+      # Audio & Video
+      libsdl2-dev, libegl1-mesa-dev, libgles2-mesa-dev,
+    ]
+matrix:
+  allow_failures:
+    - os: osx
+before_script:
+  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX="g++-5"; fi
+  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then brew install sdl2; fi
+script:
+  - mkdir build; cd build; cmake ..; make -j4
