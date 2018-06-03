@@ -26,7 +26,7 @@ before_install:
   - if [[ $TRAVIS_OS_NAME == "osx" ]]; then unzip ~/openmw-deps.zip -d /private/tmp/openmw-deps > /dev/null; fi
 before_script:
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX="g++-5"; fi
-  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then brew install sdl2 openscenegraph; fi
+  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then brew update; brew outdated cmake || brew upgrade cmake; brew outdated pkgconfig || brew upgrade pkgconfig; fi
   - if [[ $TRAVIS_OS_NAME == "osx" ]]; then export DEPENDENCIES_ROOT="/private/tmp/openmw-deps/openmw-deps"; fi
 script:
   - mkdir build; cd build; cmake -D CMAKE_PREFIX_PATH="$DEPENDENCIES_ROOT" ..; make -j4
