@@ -8,18 +8,21 @@ group:    stable
 addons:
   apt:
     sources:
+      - sourceline: 'ppa:openmw/openmw'
       - ubuntu-toolchain-r-test
     packages: [
       # Dev Tool Chain
       g++-5, cmake,
       # Audio & Video
-      libsdl2-dev, libegl1-mesa-dev, libgles2-mesa-dev,
+      libsdl2-dev,
+      # The other ones from OpenMW ppa
+      libopenscenegraph-3.4-dev, libmygui-dev
     ]
 matrix:
   allow_failures:
     - os: osx
 before_script:
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX="g++-5"; fi
-  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then brew install sdl2; fi
+  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then brew install sdl2 openscenegraph; fi
 script:
   - mkdir build; cd build; cmake ..; make -j4
