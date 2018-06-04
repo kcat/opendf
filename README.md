@@ -4,7 +4,7 @@ An open source engine for the game Daggerfall
 # Badges
 [![Build Status](https://travis-ci.org/kcat/opendf.svg?branch=master)](https://travis-ci.org/kcat/opendf)
 
-# Dependancies
+# Dependencies
 * OpenSceneGraph
 * MyGUI
 * SDL2
