@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 
-#include <MyGUI.h>
+#include <MYGUI/MyGUI.h>
 
 #include <SDL_scancode.h>
 #include <SDL_mouse.h>

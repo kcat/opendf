@@ -1,7 +1,7 @@
 #ifndef COMPONENTS_MYGUI_OSG_DATAMANAGER_H
 #define COMPONENTS_MYGUI_OSG_DATAMANAGER_H
 
-#include <MyGUI_DataManager.h>
+#include <MYGUI/MyGUI_DataManager.h>
 
 
 namespace MyGUI_OSG

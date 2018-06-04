@@ -1,11 +1,11 @@
 
 #include "rendermanager.h"
 
-#include <MyGUI_VertexData.h>
-#include <MyGUI_Gui.h>
-#include <MyGUI_Timer.h>
-#include <MyGUI_ITexture.h>
-#include <MyGUI_RenderManager.h>
+#include <MYGUI/MyGUI_VertexData.h>
+#include <MYGUI/MyGUI_Gui.h>
+#include <MYGUI/MyGUI_Timer.h>
+#include <MYGUI/MyGUI_ITexture.h>
+#include <MYGUI/MyGUI_RenderManager.h>
 
 #include <osgViewer/Viewer>
 #include <osgDB/ReadFile>
