@@ -5,7 +5,7 @@
 
 #include <osg/Texture2D>
 #include <osgDB/ReadFile>
-#include <MyGUI_Gui.h>
+#include <MYGUI/MyGUI_Gui.h>
 
 #include "diagnostic.h"
 #include "rendermanager.h"

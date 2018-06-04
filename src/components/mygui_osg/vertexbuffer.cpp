@@ -1,8 +1,8 @@
 
 #include "vertexbuffer.h"
 
-#include <MyGUI_Diagnostic.h>
-#include <MyGUI_VertexData.h>
+#include <MYGUI/MyGUI_Diagnostic.h>
+#include <MYGUI/MyGUI_VertexData.h>
 
 #include <osg/BufferObject>
 #include <osg/Array>

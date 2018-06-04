@@ -1,7 +1,7 @@
 #ifndef COMPONENTS_MYGUI_OSG_TEXTURE_H
 #define COMPONENTS_MYGUI_OSG_TEXTURE_H
 
-#include <MyGUI_ITexture.h>
+#include <MYGUI/MyGUI_ITexture.h>
 
 #include <osg/ref_ptr>
 

@@ -1,7 +1,7 @@
 #ifndef COMPONENTS_MYGUI_OSG_RENDERMANAGER_H
 #define COMPONENTS_MYGUI_OSG_RENDERMANAGER_H
 
-#include <MyGUI_RenderManager.h>
+#include <MYGUI/MyGUI_RenderManager.h>
 
 #include <osg/ref_ptr>
 

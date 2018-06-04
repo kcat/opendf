@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <MyGUI_IVertexBuffer.h>
+#include <MYGUI/MyGUI_IVertexBuffer.h>
 
 #include <osg/ref_ptr>
 #include <osg/BufferObject>

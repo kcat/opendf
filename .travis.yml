@@ -1,0 +1,31 @@
+language: cpp
+sudo:     required
+dist:     trusty
+os:
+ - linux
+ - osx
+group:    stable
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:openmw/openmw'
+      - ubuntu-toolchain-r-test
+    packages: [
+      # Dev Tool Chain
+      g++-5, cmake,
+      # Audio & Video
+      libsdl2-dev,
+      # The other ones from OpenMW ppa
+      libopenscenegraph-3.4-dev, libmygui-dev
+    ]
+matrix:
+  allow_failures:
+    - os: osx
+before_install:
+  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then curl https://downloads.openmw.org/osx/dependencies/openmw-deps-c40905f.zip -o ~/openmw-deps.zip; fi
+  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then unzip ~/openmw-deps.zip -d /private/tmp/openmw-deps > /dev/null; fi
+before_script:
+  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX="g++-5"; fi
+  - if [[ $TRAVIS_OS_NAME == "osx" ]]; then export DEPENDENCIES_ROOT="/private/tmp/openmw-deps/openmw-deps"; fi
+script:
+  - mkdir build; cd build; cmake -D CMAKE_PREFIX_PATH="$DEPENDENCIES_ROOT" ..; make -j4

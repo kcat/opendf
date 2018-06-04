@@ -7,7 +7,7 @@
 #ifndef COMPONENTS_MYGUI_OSG_DIAGNOSTIC_H
 #define COMPONENTS_MYGUI_OSG_DIAGNOSTIC_H
 
-#include "MyGUI_Prerequest.h"
+#include "MYGUI/MyGUI_Prerequest.h"
 
 #define MYGUI_PLATFORM_LOG_SECTION "Platform"
 #define MYGUI_PLATFORM_LOG_FILENAME "MyGUI.log"
