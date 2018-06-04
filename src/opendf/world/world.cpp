@@ -13,6 +13,7 @@
 
 #include "render/renderer.hpp"
 #include "render/pipeline.hpp"
+#include "render/skybox.hpp"
 #include "class/animated.hpp"
 #include "class/placeable.hpp"
 #include "class/activator.hpp"
@@ -512,6 +513,10 @@ void World::loadExterior(int regnum, int extid)
         mCameraPos = osg::Vec3f(-2048.0f, 0.0f, -2048.0f);
     }
     mCameraRot = osg::Vec3f(0.0f, 1024.0f, 0.0f);
+
+    // try to load skybox
+    osg::Node* skybox = createSkyBoxCubeMap("test.png");
+    Renderer::get().getObjectRoot()->addChild(skybox);
 }
 
 void World::loadDungeonByExterior(int regnum, int extid)

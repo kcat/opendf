@@ -55,6 +55,7 @@ set(SRCS src/components/sdlutil/graphicswindow.cpp
          src/opendf/input/input.cpp
          src/opendf/render/pipeline.cpp
          src/opendf/render/renderer.cpp
+         src/opendf/render/skybox.cpp
          src/opendf/gui/gui.cpp
          src/opendf/class/animated.cpp
          src/opendf/class/placeable.cpp
@@ -94,6 +95,7 @@ set(HDRS src/misc/sparsearray.hpp
          src/opendf/input/input.hpp
          src/opendf/render/pipeline.hpp
          src/opendf/render/renderer.hpp
+         src/opendf/render/skybox.hpp
          src/opendf/gui/iface.hpp
          src/opendf/gui/gui.hpp
          src/opendf/class/animated.hpp
