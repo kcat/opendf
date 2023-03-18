@@ -2,6 +2,8 @@
 #define COMPONENTS_RESOURCE_MESHMANAGER_HPP
 
 #include <map>
+#include <cstddef>
+
 
 #include <osg/ref_ptr>
 

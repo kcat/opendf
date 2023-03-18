@@ -1,6 +1,7 @@
 #ifndef COMPONENTS_MYGUI_OSG_TEXTURE_H
 #define COMPONENTS_MYGUI_OSG_TEXTURE_H
 
+#include <cstddef>
 #include <MYGUI/MyGUI_ITexture.h>
 
 #include <osg/ref_ptr>
@@ -37,19 +38,22 @@ public:
 
     virtual void* lock(MyGUI::TextureUsage access);
     virtual void unlock();
-    virtual bool isLocked();
+    virtual bool isLocked() const;
 
-    virtual int getWidth();
-    virtual int getHeight();
+    virtual int getWidth() const;
+    virtual int getHeight() const;
 
-    virtual MyGUI::PixelFormat getFormat() { return mFormat; }
-    virtual MyGUI::TextureUsage getUsage() { return mUsage; }
-    virtual size_t getNumElemBytes() { return mNumElemBytes; }
+    virtual MyGUI::PixelFormat getFormat() const { return mFormat; }
+    virtual MyGUI::TextureUsage getUsage() const { return mUsage; }
+    virtual size_t getNumElemBytes() const { return mNumElemBytes; }
 
     virtual MyGUI::IRenderTarget *getRenderTarget();
 
 /*internal:*/
     osg::Texture2D *getTexture() const { return mTexture.get(); }
+
+    //fake
+    virtual void setShader(const std::string& _shaderName) {};
 };
 
 } // namespace MyGUI_OSG

@@ -2,6 +2,7 @@
 #define COMPONENTS_MYGUI_OSG_VERTEXBUFFER_H
 
 #include <vector>
+#include <cstddef>
 
 #include <MYGUI/MyGUI_IVertexBuffer.h>
 
@@ -27,7 +28,7 @@ public:
     virtual ~VertexBuffer();
 
     virtual void setVertexCount(size_t count);
-    virtual size_t getVertexCount();
+    virtual size_t getVertexCount() const;
 
     virtual MyGUI::Vertex *lock();
     virtual void unlock();

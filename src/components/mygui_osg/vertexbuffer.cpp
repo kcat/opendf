@@ -33,7 +33,7 @@ void VertexBuffer::setVertexCount(size_t count)
     create();
 }
 
-size_t VertexBuffer::getVertexCount()
+size_t VertexBuffer::getVertexCount() const
 {
     return mNeedVertexCount;
 }

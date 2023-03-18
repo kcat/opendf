@@ -6,9 +6,9 @@ set(CMAKE_MODULE_PATH "${opendf_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
 
 include(CheckCXXCompilerFlag)
 
-check_cxx_compiler_flag(-std=c++11 HAVE_STD_CXX11)
-if(HAVE_STD_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+check_cxx_compiler_flag(-std=c++17 HAVE_STD_CXX17)
+if(HAVE_STD_CXX17)
+    set(CMAKE_CXX_FLAGS "-std=c++17 ${CMAKE_CXX_FLAGS}")
 endif()
 
 if(MSVC)

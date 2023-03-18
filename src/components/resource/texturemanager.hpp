@@ -5,6 +5,7 @@
 #include <array>
 #include <map>
 #include <cstdint>
+#include <cstddef>
 
 #include <osg/ref_ptr>
 #include <osg/observer_ptr>

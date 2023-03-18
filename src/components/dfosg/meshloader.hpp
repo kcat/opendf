@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <istream>
+#include <cstddef>
 
 
 namespace osg
