@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <cstring>
 #include <array>
+#include <cstddef>
 
 #include "components/archives/bsaarchive.hpp"
 

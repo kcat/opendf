@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <cstddef>
 
 
 namespace Archives

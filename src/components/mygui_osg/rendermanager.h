@@ -57,7 +57,7 @@ public:
     virtual const MyGUI::IntSize& getViewSize() const { return mViewSize; }
 
     /** @see RenderManager::getVertexFormat */
-    virtual MyGUI::VertexColourType getVertexFormat() { return mVertexFormat; }
+    virtual MyGUI::VertexColourType getVertexFormat() const { return mVertexFormat; }
 
     /** @see RenderManager::isFormatSupported */
     virtual bool isFormatSupported(MyGUI::PixelFormat format, MyGUI::TextureUsage usage);
@@ -82,11 +82,18 @@ public:
     /** @see IRenderTarget::doRender */
     virtual void doRender(MyGUI::IVertexBuffer *buffer, MyGUI::ITexture *texture, size_t count);
     /** @see IRenderTarget::getInfo */
-    virtual const MyGUI::RenderTargetInfo& getInfo() { return mInfo; }
+    virtual const MyGUI::RenderTargetInfo& getInfo() const { return mInfo; }
 
 /*internal:*/
     void drawFrame(osg::RenderInfo &renderInfo);
-    void setViewSize(int width, int height);
+    virtual void setViewSize(int width, int height);
+
+
+    // Fake
+    virtual void registerShader(
+        const std::string& _shaderName,
+        const std::string& _vertexProgramFile,
+        const std::string& _fragmentProgramFile) {};
 };
 
 } // namespace MyGUI_OSG

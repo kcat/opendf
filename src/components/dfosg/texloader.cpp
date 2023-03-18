@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <cstddef>
 
 #include <osg/Image>
 

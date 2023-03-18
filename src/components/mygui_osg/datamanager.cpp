@@ -56,7 +56,7 @@ public:
 namespace MyGUI_OSG
 {
 
-MyGUI::IDataStream *DataManager::getData(const std::string &_name)
+MyGUI::IDataStream *DataManager::getData(const std::string &_name) const
 {
     VFS::IStreamPtr stream = VFS::Manager::get().open(_name.c_str());
     if(!stream) return nullptr;
@@ -68,12 +68,12 @@ void DataManager::freeData(MyGUI::IDataStream *_data)
     delete _data;
 }
 
-bool DataManager::isDataExist(const std::string &_name)
+bool DataManager::isDataExist(const std::string &_name) const
 {
     return VFS::Manager::get().exists(_name.c_str());
 }
 
-const MyGUI::VectorString &DataManager::getDataListNames(const std::string &_pattern)
+const MyGUI::VectorString &DataManager::getDataListNames(const std::string &_pattern) const
 {
     static MyGUI::VectorString namelist;
 
@@ -84,7 +84,7 @@ const MyGUI::VectorString &DataManager::getDataListNames(const std::string &_pat
     return namelist;
 }
 
-const std::string &DataManager::getDataPath(const std::string &_name)
+const std::string &DataManager::getDataPath(const std::string &_name) const
 {
     static std::string path;
 

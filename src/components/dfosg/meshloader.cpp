@@ -2,6 +2,7 @@
 #include "meshloader.hpp"
 
 #include <algorithm>
+#include <cstddef>
 
 #include <osg/Geode>
 #include <osg/Billboard>

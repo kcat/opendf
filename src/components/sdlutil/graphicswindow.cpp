@@ -307,9 +307,6 @@ public:
 };
 
 // declare C entry point for static compilation.
-extern "C" void graphicswindow_SDL2(void)
-{
-    osg::GraphicsContext::setWindowingSystemInterface(new SDL2WindowingSystemInterface);
-}
+REGISTER_WINDOWINGSYSTEMINTERFACE(SDL2, SDL2WindowingSystemInterface);
 
 }
